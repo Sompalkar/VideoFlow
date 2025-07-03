@@ -1,13 +1,25 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +28,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Users,
   UserPlus,
@@ -31,144 +48,148 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-} from "lucide-react"
-import { useAuthStore } from "@/lib/stores/auth-store"
-import { ApiClient } from "@/lib/config/api"
+} from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { apiClient } from "@/lib/config/api";
 
 interface TeamMember {
-  _id: string
+  _id: string;
   userId: {
-    _id: string
-    name: string
-    email: string
-    avatar?: string
-  }
-  role: "creator" | "manager" | "editor" | "viewer"
-  status: "active" | "pending" | "inactive"
-  joinedAt: string
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  role: "creator" | "manager" | "editor" | "viewer";
+  status: "active" | "pending" | "inactive";
+  joinedAt: string;
 }
 
 interface TeamStats {
-  totalMembers: number
-  activeMembers: number
-  pendingMembers: number
+  totalMembers: number;
+  activeMembers: number;
+  pendingMembers: number;
   roleDistribution: {
-    creator: number
-    manager: number
-    editor: number
-    viewer: number
-  }
+    creator: number;
+    manager: number;
+    editor: number;
+    viewer: number;
+  };
 }
 
 export default function TeamPage() {
-  const { user } = useAuthStore()
-  const [team, setTeam] = useState<any>(null)
-  const [members, setMembers] = useState<TeamMember[]>([])
-  const [stats, setStats] = useState<TeamStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [roleFilter, setRoleFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteRole, setInviteRole] = useState<string>("viewer")
-  const [isInviting, setIsInviting] = useState(false)
+  const { user } = useAuthStore();
+  const [team, setTeam] = useState<any>(null);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [stats, setStats] = useState<TeamStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<string>("viewer");
+  const [isInviting, setIsInviting] = useState(false);
 
   useEffect(() => {
-    loadTeamData()
-  }, [])
+    loadTeamData();
+  }, []);
 
   const loadTeamData = async () => {
     try {
-      setIsLoading(true)
-      const [teamResponse, statsResponse] = await Promise.all([ApiClient.get("/team"), ApiClient.get("/team/stats")])
+      setIsLoading(true);
+      const [teamResponse, statsResponse] = await Promise.all([
+        apiClient.get("/team"),
+        apiClient.get("/team/stats"),
+      ]);
 
-      setTeam(teamResponse.team)
-      setMembers(teamResponse.team.members || [])
-      setStats(statsResponse.stats)
+      setTeam(teamResponse.team);
+      setMembers(teamResponse.team.members || []);
+      setStats(statsResponse.stats);
     } catch (error) {
-      console.error("Failed to load team data:", error)
+      console.error("Failed to load team data:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleInviteMember = async () => {
     try {
-      setIsInviting(true)
-      await ApiClient.post("/team/invite", {
+      setIsInviting(true);
+      await apiClient.post("/team/invite", {
         email: inviteEmail,
         role: inviteRole,
-      })
+      });
 
-      setIsInviteDialogOpen(false)
-      setInviteEmail("")
-      setInviteRole("viewer")
-      await loadTeamData()
+      setIsInviteDialogOpen(false);
+      setInviteEmail("");
+      setInviteRole("viewer");
+      await loadTeamData();
     } catch (error) {
-      console.error("Failed to invite member:", error)
+      console.error("Failed to invite member:", error);
     } finally {
-      setIsInviting(false)
+      setIsInviting(false);
     }
-  }
+  };
 
   const handleUpdateRole = async (memberId: string, newRole: string) => {
     try {
-      await ApiClient.put(`/team/members/${memberId}/role`, { role: newRole })
-      await loadTeamData()
+      await apiClient.put(`/team/members/${memberId}/role`, { role: newRole });
+      await loadTeamData();
     } catch (error) {
-      console.error("Failed to update member role:", error)
+      console.error("Failed to update member role:", error);
     }
-  }
+  };
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      await ApiClient.delete(`/team/members/${memberId}`)
-      await loadTeamData()
+      await apiClient.delete(`/team/members/${memberId}`);
+      await loadTeamData();
     } catch (error) {
-      console.error("Failed to remove member:", error)
+      console.error("Failed to remove member:", error);
     }
-  }
+  };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "creator":
-        return <Crown className="w-4 h-4 text-yellow-600" />
+        return <Crown className="w-4 h-4 text-yellow-600" />;
       case "manager":
-        return <Shield className="w-4 h-4 text-blue-600" />
+        return <Shield className="w-4 h-4 text-blue-600" />;
       case "editor":
-        return <Edit className="w-4 h-4 text-green-600" />
+        return <Edit className="w-4 h-4 text-green-600" />;
       case "viewer":
-        return <Eye className="w-4 h-4 text-gray-600" />
+        return <Eye className="w-4 h-4 text-gray-600" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
-        return <CheckCircle className="w-4 h-4 text-green-600" />
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case "pending":
-        return <Clock className="w-4 h-4 text-yellow-600" />
+        return <Clock className="w-4 h-4 text-yellow-600" />;
       case "inactive":
-        return <AlertCircle className="w-4 h-4 text-red-600" />
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const filteredMembers = members.filter((member) => {
     const matchesSearch =
       member.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.userId.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = roleFilter === "all" || member.role === roleFilter
-    const matchesStatus = statusFilter === "all" || member.status === statusFilter
+      member.userId.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === "all" || member.role === roleFilter;
+    const matchesStatus =
+      statusFilter === "all" || member.status === statusFilter;
 
-    return matchesSearch && matchesRole && matchesStatus
-  })
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
-  const canManageMembers = user?.role === "creator" || user?.role === "manager"
+  const canManageMembers = user?.role === "creator" || user?.role === "manager";
 
   if (isLoading) {
     return (
@@ -177,7 +198,7 @@ export default function TeamPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -186,10 +207,15 @@ export default function TeamPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
-          <p className="text-gray-600 mt-2">Manage your team members, roles, and permissions</p>
+          <p className="text-gray-600 mt-2">
+            Manage your team members, roles, and permissions
+          </p>
         </div>
         {canManageMembers && (
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <Dialog
+            open={isInviteDialogOpen}
+            onOpenChange={setIsInviteDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <UserPlus className="w-4 h-4 mr-2" />
@@ -200,7 +226,8 @@ export default function TeamPage() {
               <DialogHeader>
                 <DialogTitle>Invite Team Member</DialogTitle>
                 <DialogDescription>
-                  Send an invitation to join your team. They'll receive an email with instructions.
+                  Send an invitation to join your team. They'll receive an email
+                  with instructions.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -221,18 +248,30 @@ export default function TeamPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="viewer">Viewer - Can view content</SelectItem>
-                      <SelectItem value="editor">Editor - Can edit and upload</SelectItem>
-                      <SelectItem value="manager">Manager - Can manage team</SelectItem>
+                      <SelectItem value="viewer">
+                        Viewer - Can view content
+                      </SelectItem>
+                      <SelectItem value="editor">
+                        Editor - Can edit and upload
+                      </SelectItem>
+                      <SelectItem value="manager">
+                        Manager - Can manage team
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsInviteDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleInviteMember} disabled={isInviting || !inviteEmail}>
+                <Button
+                  onClick={handleInviteMember}
+                  disabled={isInviting || !inviteEmail}
+                >
                   {isInviting ? "Sending..." : "Send Invitation"}
                 </Button>
               </DialogFooter>
@@ -293,7 +332,9 @@ export default function TeamPage() {
                   <Crown className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.roleDistribution.manager}</p>
+                  <p className="text-2xl font-bold">
+                    {stats.roleDistribution.manager}
+                  </p>
                   <p className="text-sm text-gray-600">Managers</p>
                 </div>
               </div>
@@ -348,24 +389,36 @@ export default function TeamPage() {
       <Card>
         <CardHeader>
           <CardTitle>Team Members ({filteredMembers.length})</CardTitle>
-          <CardDescription>Manage your team members and their permissions</CardDescription>
+          <CardDescription>
+            Manage your team members and their permissions
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredMembers.length > 0 ? (
             <div className="space-y-4">
               {filteredMembers.map((member) => (
-                <div key={member._id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={member._id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center space-x-4">
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={member.userId.avatar || "/placeholder.svg"} alt={member.userId.name} />
-                      <AvatarFallback>{member.userId.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarImage
+                        src={member.userId.avatar || "/placeholder.svg"}
+                        alt={member.userId.name}
+                      />
+                      <AvatarFallback>
+                        {member.userId.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center space-x-2">
                         <p className="font-medium">{member.userId.name}</p>
                         {getStatusIcon(member.status)}
                       </div>
-                      <p className="text-sm text-gray-600">{member.userId.email}</p>
+                      <p className="text-sm text-gray-600">
+                        {member.userId.email}
+                      </p>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge variant="outline" className="text-xs">
                           <div className="flex items-center space-x-1">
@@ -373,43 +426,64 @@ export default function TeamPage() {
                             <span className="capitalize">{member.role}</span>
                           </div>
                         </Badge>
-                        <Badge variant={member.status === "active" ? "default" : "secondary"} className="text-xs">
+                        <Badge
+                          variant={
+                            member.status === "active" ? "default" : "secondary"
+                          }
+                          className="text-xs"
+                        >
                           {member.status}
                         </Badge>
                       </div>
                     </div>
                   </div>
 
-                  {canManageMembers && member.role !== "creator" && member.userId._id !== user?.id && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleUpdateRole(member.userId._id, "manager")}>
-                          <Shield className="w-4 h-4 mr-2" />
-                          Make Manager
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateRole(member.userId._id, "editor")}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Make Editor
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateRole(member.userId._id, "viewer")}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          Make Viewer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleRemoveMember(member.userId._id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Remove Member
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                  {canManageMembers &&
+                    member.role !== "creator" &&
+                    member.userId._id !== user?.id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleUpdateRole(member.userId._id, "manager")
+                            }
+                          >
+                            <Shield className="w-4 h-4 mr-2" />
+                            Make Manager
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleUpdateRole(member.userId._id, "editor")
+                            }
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Make Editor
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleUpdateRole(member.userId._id, "viewer")
+                            }
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Make Viewer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleRemoveMember(member.userId._id)
+                            }
+                            className="text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove Member
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                 </div>
               ))}
             </div>
@@ -427,7 +501,9 @@ export default function TeamPage() {
       <Card>
         <CardHeader>
           <CardTitle>Role Permissions</CardTitle>
-          <CardDescription>Understanding what each role can do in your team</CardDescription>
+          <CardDescription>
+            Understanding what each role can do in your team
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
@@ -436,14 +512,18 @@ export default function TeamPage() {
                 <Crown className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div>
                   <p className="font-medium">Creator</p>
-                  <p className="text-sm text-gray-600">Full access to all features, team management, and billing</p>
+                  <p className="text-sm text-gray-600">
+                    Full access to all features, team management, and billing
+                  </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
                   <p className="font-medium">Manager</p>
-                  <p className="text-sm text-gray-600">Can manage team members, upload content, and view analytics</p>
+                  <p className="text-sm text-gray-600">
+                    Can manage team members, upload content, and view analytics
+                  </p>
                 </div>
               </div>
             </div>
@@ -452,14 +532,18 @@ export default function TeamPage() {
                 <Edit className="w-5 h-5 text-green-600 mt-0.5" />
                 <div>
                   <p className="font-medium">Editor</p>
-                  <p className="text-sm text-gray-600">Can upload and edit content, but cannot manage team</p>
+                  <p className="text-sm text-gray-600">
+                    Can upload and edit content, but cannot manage team
+                  </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Eye className="w-5 h-5 text-gray-600 mt-0.5" />
                 <div>
                   <p className="font-medium">Viewer</p>
-                  <p className="text-sm text-gray-600">Can only view content and basic analytics</p>
+                  <p className="text-sm text-gray-600">
+                    Can only view content and basic analytics
+                  </p>
                 </div>
               </div>
             </div>
@@ -467,5 +551,5 @@ export default function TeamPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

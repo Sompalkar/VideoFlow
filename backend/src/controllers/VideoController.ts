@@ -6,6 +6,8 @@ import { YoutubeService } from "../services/YoutubeService";
 import { CloudinaryService } from "../services/CloudinaryService";
 import type { AuthRequest } from "../middleware/auth";
 import mongoose from "mongoose";
+import Team from "../models/Team";
+import { EmailService } from "../services/EmailService";
 
 export class VideoController {
   static async getVideos(req: AuthRequest, res: Response): Promise<void> {
@@ -107,6 +109,40 @@ export class VideoController {
       await video.save();
       await video.populate("uploadedBy", "name email avatar");
 
+      // Notify all team members except uploader
+      const team = await Team.findById(teamId).populate(
+        "members.userId",
+        "email name"
+      );
+      if (team) {
+        const uploaderId = req.user!.userId;
+        // Defensive: uploadedBy may be ObjectId or User
+        const uploaderName =
+          video.uploadedBy &&
+          typeof video.uploadedBy === "object" &&
+          "name" in video.uploadedBy
+            ? (video.uploadedBy as any).name
+            : "";
+        const teamName = team.name;
+        for (const member of team.members) {
+          // Defensive: member.userId may be ObjectId or User
+          const memberUser = member.userId as any;
+          if (
+            memberUser &&
+            memberUser._id &&
+            memberUser._id.toString() !== uploaderId &&
+            memberUser.email
+          ) {
+            await EmailService.sendVideoUploadNotification(memberUser.email, {
+              videoTitle: video.title,
+              uploaderName,
+              teamName,
+              videoUrl: undefined, // Optionally add a link to the video in your frontend
+            });
+          }
+        }
+      }
+
       res.status(201).json({
         video: {
           id: video._id,
@@ -160,6 +196,35 @@ export class VideoController {
       video.approvedAt = new Date();
       await video.save();
 
+      // Notify all team members except creator
+      const team = await Team.findById(video.teamId).populate(
+        "members.userId",
+        "email name"
+      );
+      if (team) {
+        const creator = await User.findOne({
+          teamId: team._id,
+          role: "creator",
+        });
+        const approver = await User.findById(userId);
+        for (const member of team.members) {
+          const memberUser = member.userId as any;
+          if (
+            memberUser &&
+            memberUser._id &&
+            (!creator ||
+              memberUser._id.toString() !== creator._id.toString()) &&
+            memberUser.email
+          ) {
+            await EmailService.sendVideoApprovalNotification(memberUser.email, {
+              videoTitle: video.title,
+              approverName: approver?.name || "A team member",
+              youtubeUrl: undefined,
+            });
+          }
+        }
+      }
+
       // Get the team owner's YouTube tokens
       const teamOwner = await User.findOne({
         teamId: video.teamId,
@@ -173,9 +238,10 @@ export class VideoController {
         return;
       }
 
-      // Upload to YouTube
+      // Always attempt to upload to YouTube on approval
+      let youtubeResult = null;
       try {
-        const youtubeResult = await YoutubeService.uploadVideoFromCloudinary(
+        youtubeResult = await YoutubeService.uploadVideoFromCloudinary(
           teamOwner._id.toString(),
           {
             title: video.title,
@@ -186,14 +252,49 @@ export class VideoController {
           },
           video.cloudinaryVideoId
         );
-
         // Update video with YouTube info only if upload succeeded
-        if (youtubeResult.id) {
+        if (youtubeResult && youtubeResult.id) {
           video.youtubeId = youtubeResult.id;
           video.youtubeUrl = `https://www.youtube.com/watch?v=${youtubeResult.id}`;
           video.status = "published";
+          await video.save();
+
+          // Notify all team members except uploader
+          if (team) {
+            // Defensive: uploadedBy may be ObjectId or User
+            const uploaderId =
+              video.uploadedBy &&
+              typeof video.uploadedBy === "object" &&
+              "_id" in video.uploadedBy
+                ? (video.uploadedBy as any)._id.toString()
+                : "";
+            const uploaderName =
+              video.uploadedBy &&
+              typeof video.uploadedBy === "object" &&
+              "name" in video.uploadedBy
+                ? (video.uploadedBy as any).name
+                : "";
+            for (const member of team.members) {
+              const memberUser = member.userId as any;
+              if (
+                memberUser &&
+                memberUser._id &&
+                memberUser._id.toString() !== uploaderId &&
+                memberUser.email
+              ) {
+                await EmailService.sendVideoPublishedNotification(
+                  memberUser.email,
+                  {
+                    videoTitle: video.title,
+                    uploaderName,
+                    youtubeUrl: video.youtubeUrl,
+                    teamName: team.name,
+                  }
+                );
+              }
+            }
+          }
         }
-        await video.save();
       } catch (youtubeError) {
         // Do not set status to published if upload fails
         console.error("YouTube upload failed:", youtubeError);

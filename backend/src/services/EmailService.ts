@@ -1,14 +1,14 @@
-import nodemailer from "nodemailer"
+import nodemailer from "nodemailer";
 
 interface EmailData {
-  to: string
-  subject: string
-  html: string
-  text?: string
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
 }
 
 export class EmailService {
-  private static transporter: nodemailer.Transporter
+  private static transporter: nodemailer.Transporter;
 
   private static getTransporter(): nodemailer.Transporter {
     if (!this.transporter) {
@@ -18,48 +18,48 @@ export class EmailService {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
         },
-      })
+      });
 
       // Verify connection configuration
       this.transporter.verify((error, success) => {
         if (error) {
-          console.error("Email service configuration error:", error)
+          console.error("Email service configuration error:", error);
         } else {
-          console.log("Email service is ready to send messages")
+          console.log("Email service is ready to send messages");
         }
-      })
+      });
     }
-    return this.transporter
+    return this.transporter;
   }
 
   private static async sendEmail(emailData: EmailData): Promise<void> {
     try {
-      const transporter = this.getTransporter()
+      const transporter = this.getTransporter();
       const mailOptions = {
         from: `"VideoFlow" <${process.env.EMAIL_USER}>`,
         to: emailData.to,
         subject: emailData.subject,
         html: emailData.html,
         text: emailData.text,
-      }
+      };
 
-      const info = await transporter.sendMail(mailOptions)
-      console.log("Email sent successfully:", info.messageId)
+      const info = await transporter.sendMail(mailOptions);
+      console.log("Email sent successfully:", info.messageId);
     } catch (error) {
-      console.error("Email sending failed:", error)
-      throw new Error("Failed to send email")
+      console.error("Email sending failed:", error);
+      throw new Error("Failed to send email");
     }
   }
 
   static async sendInvitation(
     email: string,
     data: {
-      teamName: string
-      inviterName: string
-      role: string
-      tempPassword: string
-      loginUrl: string
-    },
+      teamName: string;
+      inviterName: string;
+      role: string;
+      tempPassword: string;
+      loginUrl: string;
+    }
   ): Promise<void> {
     const html = `
       <!DOCTYPE html>
@@ -108,7 +108,7 @@ export class EmailService {
           </div>
         </body>
       </html>
-    `
+    `;
 
     const text = `
       Welcome to VideoFlow!
@@ -122,23 +122,23 @@ export class EmailService {
       Please log in at ${data.loginUrl} and change your password immediately.
       
       Welcome to the team!
-    `
+    `;
 
     await this.sendEmail({
       to: email,
       subject: `🎬 You've been invited to join ${data.teamName} on VideoFlow`,
       html,
       text,
-    })
+    });
   }
 
   static async sendVideoApprovalNotification(
     email: string,
     data: {
-      videoTitle: string
-      approverName: string
-      youtubeUrl?: string
-    },
+      videoTitle: string;
+      approverName: string;
+      youtubeUrl?: string;
+    }
   ): Promise<void> {
     const html = `
       <!DOCTYPE html>
@@ -161,7 +161,11 @@ export class EmailService {
             </div>
             <div class="content">
               <h2>Great news! ✨</h2>
-              <p>Your video <strong>"${data.videoTitle}"</strong> has been approved by <strong>${data.approverName}</strong>.</p>
+              <p>Your video <strong>"${
+                data.videoTitle
+              }"</strong> has been approved by <strong>${
+      data.approverName
+    }</strong>.</p>
               
               ${
                 data.youtubeUrl
@@ -181,22 +185,22 @@ export class EmailService {
           </div>
         </body>
       </html>
-    `
+    `;
 
     await this.sendEmail({
       to: email,
       subject: `✅ Video "${data.videoTitle}" has been approved!`,
       html,
-    })
+    });
   }
 
   static async sendVideoRejectionNotification(
     email: string,
     data: {
-      videoTitle: string
-      rejectorName: string
-      reason: string
-    },
+      videoTitle: string;
+      rejectorName: string;
+      reason: string;
+    }
   ): Promise<void> {
     const html = `
       <!DOCTYPE html>
@@ -231,12 +235,112 @@ export class EmailService {
           </div>
         </body>
       </html>
-    `
+    `;
 
     await this.sendEmail({
       to: email,
       subject: `📝 Video "${data.videoTitle}" needs revision`,
       html,
-    })
+    });
+  }
+
+  static async sendVideoUploadNotification(
+    email: string,
+    data: {
+      videoTitle: string;
+      uploaderName: string;
+      teamName: string;
+      videoUrl?: string;
+    }
+  ): Promise<void> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>New Video Uploaded - VideoFlow</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f3f4f6; padding: 30px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎬 New Video Uploaded!</h1>
+            </div>
+            <div class="content">
+              <h2>A new video has been uploaded to <strong>${
+                data.teamName
+              }</strong></h2>
+              <p><strong>${data.uploaderName}</strong> just uploaded <strong>"${
+      data.videoTitle
+    }"</strong>.</p>
+              ${
+                data.videoUrl
+                  ? `<div style="text-align: center;"><a href="${data.videoUrl}" class="button">View Video</a></div>`
+                  : ""
+              }
+              <p>Log in to review, comment, or approve this video.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    await this.sendEmail({
+      to: email,
+      subject: `🎬 New video uploaded: ${data.videoTitle}`,
+      html,
+    });
+  }
+
+  static async sendVideoPublishedNotification(
+    email: string,
+    data: {
+      videoTitle: string;
+      uploaderName: string;
+      youtubeUrl: string;
+      teamName: string;
+    }
+  ): Promise<void> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Video Published to YouTube - VideoFlow</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #ef4444 0%, #f59e42 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #fef2f2; padding: 30px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; background: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📢 Video Published!</h1>
+            </div>
+            <div class="content">
+              <h2>"${data.videoTitle}" is now live on YouTube!</h2>
+              <p>Uploaded by <strong>${data.uploaderName}</strong> for team <strong>${data.teamName}</strong>.</p>
+              <div style="text-align: center;">
+                <a href="${data.youtubeUrl}" class="button">Watch on YouTube</a>
+              </div>
+              <p>Share and celebrate your team's new content!</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    await this.sendEmail({
+      to: email,
+      subject: `📢 Video published to YouTube: ${data.videoTitle}`,
+      html,
+    });
   }
 }
