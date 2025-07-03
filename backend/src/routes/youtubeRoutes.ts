@@ -1,11 +1,11 @@
-import { Router } from "express"
-import type { Response } from "express"
-import { authenticate, authorize } from "../middleware/auth"
-import { YoutubeService } from "../services/YoutubeService"
-import User from "../models/User"
-import type { AuthRequest } from "../middleware/auth"
+import { Router } from "express";
+import type { Response } from "express";
+import { authenticate, authorize } from "../middleware/auth";
+import { YoutubeService } from "../services/YoutubeService";
+import User from "../models/User";
+import type { AuthRequest } from "../middleware/auth";
 
-const router = Router()
+const router = Router();
 
 // @route   GET /api/youtube/auth-url
 // @desc    Get YouTube OAuth URL
@@ -16,14 +16,14 @@ router.get(
   authorize(["creator"]),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const authUrl = await YoutubeService.getAuthUrl()
-      res.json({ authUrl })
+      const authUrl = await YoutubeService.getAuthUrl();
+      res.json({ authUrl });
     } catch (error) {
-      console.error("YouTube auth URL error:", error)
-      res.status(500).json({ message: "Failed to generate YouTube auth URL" })
+      console.error("YouTube auth URL error:", error);
+      res.status(500).json({ message: "Failed to generate YouTube auth URL" });
     }
-  },
-)
+  }
+);
 
 // @route   POST /api/youtube/callback
 // @desc    Handle YouTube OAuth callback
@@ -34,104 +34,123 @@ router.post(
   authorize(["creator"]),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { userId } = req.user!
-      const { code } = req.body
+      const { userId } = req.user!;
+      const { code } = req.body;
 
       if (!code) {
-        res.status(400).json({ message: "Authorization code is required" })
-        return
+        res.status(400).json({ message: "Authorization code is required" });
+        return;
       }
 
-      const tokens = await YoutubeService.exchangeCodeForTokens(code)
+      const tokens = await YoutubeService.exchangeCodeForTokens(code);
 
       // Validate tokens before using them
       if (!tokens.accessToken || !tokens.refreshToken) {
-        res.status(400).json({ message: "Invalid tokens received from YouTube" })
-        return
+        res
+          .status(400)
+          .json({ message: "Invalid tokens received from YouTube" });
+        return;
       }
 
       // Get channel info to verify connection
-      const channelInfo = await YoutubeService.getChannelInfo(tokens)
+      const channelInfo = await YoutubeService.getChannelInfo(tokens);
 
       // Update user with YouTube tokens and channel info
       await User.findByIdAndUpdate(userId, {
         youtubeTokens: tokens,
-        youtubeChannelId: channelInfo.id,
-        youtubeChannelName: channelInfo.title,
-      })
+        youtubeChannel: channelInfo,
+      });
 
       res.json({
         success: true,
         message: "YouTube connected successfully",
         channel: channelInfo,
-      })
+      });
     } catch (error) {
-      console.error("YouTube callback error:", error)
+      console.error("YouTube callback error:", error);
       res.status(500).json({
-        message: error instanceof Error ? error.message : "Failed to connect YouTube account",
-      })
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to connect YouTube account",
+      });
     }
-  },
-)
+  }
+);
 
 // @route   GET /api/youtube/channel
 // @desc    Get YouTube channel info
 // @access  Private (Creator only)
-router.get("/channel", authenticate, authorize(["creator"]), async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { userId } = req.user!
+router.get(
+  "/channel",
+  authenticate,
+  authorize(["creator"]),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.user!;
 
-    const user = await User.findById(userId)
-    if (!user || !user.youtubeTokens) {
-      res.status(400).json({ message: "YouTube not connected" })
-      return
+      const user = await User.findById(userId);
+      if (!user || !user.youtubeTokens) {
+        res.status(400).json({ message: "YouTube not connected" });
+        return;
+      }
+
+      // Validate tokens exist
+      if (!user.youtubeTokens.accessToken || !user.youtubeTokens.refreshToken) {
+        res
+          .status(400)
+          .json({ message: "Invalid YouTube tokens, please reconnect" });
+        return;
+      }
+
+      const channelInfo = await YoutubeService.getChannelInfo({
+        accessToken: user.youtubeTokens.accessToken,
+        refreshToken: user.youtubeTokens.refreshToken,
+        expiresAt: user.youtubeTokens.expiresAt,
+      });
+
+      res.json({ channel: channelInfo });
+    } catch (error) {
+      console.error("Get YouTube channel error:", error);
+      res.status(500).json({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to get channel information",
+      });
     }
-
-    // Validate tokens exist
-    if (!user.youtubeTokens.accessToken || !user.youtubeTokens.refreshToken) {
-      res.status(400).json({ message: "Invalid YouTube tokens, please reconnect" })
-      return
-    }
-
-    const channelInfo = await YoutubeService.getChannelInfo({
-      accessToken: user.youtubeTokens.accessToken,
-      refreshToken: user.youtubeTokens.refreshToken,
-      expiresAt: user.youtubeTokens.expiresAt,
-    })
-
-    res.json({ channel: channelInfo })
-  } catch (error) {
-    console.error("Get YouTube channel error:", error)
-    res.status(500).json({
-      message: error instanceof Error ? error.message : "Failed to get channel information",
-    })
   }
-})
+);
 
 // @route   GET /api/youtube/status
 // @desc    Check YouTube connection status
 // @access  Private (Creator only)
-router.get("/status", authenticate, authorize(["creator"]), async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { userId } = req.user!
+router.get(
+  "/status",
+  authenticate,
+  authorize(["creator"]),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.user!;
 
-    const user = await User.findById(userId)
-    const isConnected = !!(
-      user?.youtubeTokens?.accessToken &&
-      user?.youtubeTokens?.refreshToken &&
-      user?.youtubeChannelId
-    )
+      const user = await User.findById(userId);
+      const isConnected = !!(
+        user?.youtubeTokens?.accessToken &&
+        user?.youtubeTokens?.refreshToken &&
+        user?.youtubeChannelId
+      );
 
-    res.json({
-      connected: isConnected,
-      channelId: user?.youtubeChannelId || null,
-      channelName: user?.youtubeChannelName || null,
-    })
-  } catch (error) {
-    console.error("YouTube status error:", error)
-    res.status(500).json({ message: "Failed to check YouTube status" })
+      res.json({
+        connected: isConnected,
+        channelId: user?.youtubeChannelId || null,
+        channelName: user?.youtubeChannelName || null,
+      });
+    } catch (error) {
+      console.error("YouTube status error:", error);
+      res.status(500).json({ message: "Failed to check YouTube status" });
+    }
   }
-})
+);
 
 // @route   DELETE /api/youtube/disconnect
 // @desc    Disconnect YouTube account
@@ -142,22 +161,21 @@ router.delete(
   authorize(["creator"]),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { userId } = req.user!
+      const { userId } = req.user!;
 
       await User.findByIdAndUpdate(userId, {
         $unset: {
           youtubeTokens: 1,
-          youtubeChannelId: 1,
-          youtubeChannelName: 1,
+          youtubeChannel: 1,
         },
-      })
+      });
 
-      res.json({ success: true, message: "YouTube disconnected successfully" })
+      res.json({ success: true, message: "YouTube disconnected successfully" });
     } catch (error) {
-      console.error("YouTube disconnect error:", error)
-      res.status(500).json({ message: "Failed to disconnect YouTube account" })
+      console.error("YouTube disconnect error:", error);
+      res.status(500).json({ message: "Failed to disconnect YouTube account" });
     }
-  },
-)
+  }
+);
 
-export default router
+export default router;

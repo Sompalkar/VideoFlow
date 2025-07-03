@@ -1,15 +1,13 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -19,424 +17,455 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MainNav } from "@/components/main-nav"
-import { DashboardNav } from "@/components/dashboard-nav"
 import {
   Users,
-  Crown,
-  Edit,
-  SettingsIcon,
+  UserPlus,
   MoreHorizontal,
-  Mail,
-  Calendar,
+  Crown,
+  Shield,
+  Edit,
+  Eye,
+  Trash2,
+  Search,
   CheckCircle,
   Clock,
   AlertCircle,
-  UserPlus,
-  Shield,
-  Trash2,
-  Search,
 } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
-import { useTeamStore } from "@/lib/stores/team-store"
+import { ApiClient } from "@/lib/config/api"
+
+interface TeamMember {
+  _id: string
+  userId: {
+    _id: string
+    name: string
+    email: string
+    avatar?: string
+  }
+  role: "creator" | "manager" | "editor" | "viewer"
+  status: "active" | "pending" | "inactive"
+  joinedAt: string
+}
+
+interface TeamStats {
+  totalMembers: number
+  activeMembers: number
+  pendingMembers: number
+  roleDistribution: {
+    creator: number
+    manager: number
+    editor: number
+    viewer: number
+  }
+}
 
 export default function TeamPage() {
   const { user } = useAuthStore()
-  const { members, fetchTeamMembers, inviteMember, updateMemberRole, removeMember, isLoading, error, clearError } =
-    useTeamStore()
-  const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [team, setTeam] = useState<any>(null)
+  const [members, setMembers] = useState<TeamMember[]>([])
+  const [stats, setStats] = useState<TeamStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [inviteForm, setInviteForm] = useState({
-    email: "",
-    role: "editor" as "creator" | "editor" | "manager",
-  })
+  const [roleFilter, setRoleFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteRole, setInviteRole] = useState<string>("viewer")
+  const [isInviting, setIsInviting] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      fetchTeamMembers()
-    }
-  }, [user])
+    loadTeamData()
+  }, [])
 
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-
+  const loadTeamData = async () => {
     try {
-      await inviteMember(inviteForm.email, inviteForm.role)
-      setShowInviteDialog(false)
-      setInviteForm({ email: "", role: "editor" })
+      setIsLoading(true)
+      const [teamResponse, statsResponse] = await Promise.all([ApiClient.get("/team"), ApiClient.get("/team/stats")])
+
+      setTeam(teamResponse.team)
+      setMembers(teamResponse.team.members || [])
+      setStats(statsResponse.stats)
     } catch (error) {
-      // Error handled by store
+      console.error("Failed to load team data:", error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "creator":
-        return "bg-purple-100 text-purple-800 border-purple-200"
-      case "manager":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "editor":
-        return "bg-green-100 text-green-800 border-green-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+  const handleInviteMember = async () => {
+    try {
+      setIsInviting(true)
+      await ApiClient.post("/team/invite", {
+        email: inviteEmail,
+        role: inviteRole,
+      })
+
+      setIsInviteDialogOpen(false)
+      setInviteEmail("")
+      setInviteRole("viewer")
+      await loadTeamData()
+    } catch (error) {
+      console.error("Failed to invite member:", error)
+    } finally {
+      setIsInviting(false)
+    }
+  }
+
+  const handleUpdateRole = async (memberId: string, newRole: string) => {
+    try {
+      await ApiClient.put(`/team/members/${memberId}/role`, { role: newRole })
+      await loadTeamData()
+    } catch (error) {
+      console.error("Failed to update member role:", error)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      await ApiClient.delete(`/team/members/${memberId}`)
+      await loadTeamData()
+    } catch (error) {
+      console.error("Failed to remove member:", error)
     }
   }
 
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "creator":
-        return <Crown className="w-3 h-3" />
+        return <Crown className="w-4 h-4 text-yellow-600" />
       case "manager":
-        return <SettingsIcon className="w-3 h-3" />
+        return <Shield className="w-4 h-4 text-blue-600" />
       case "editor":
-        return <Edit className="w-3 h-3" />
+        return <Edit className="w-4 h-4 text-green-600" />
+      case "viewer":
+        return <Eye className="w-4 h-4 text-gray-600" />
       default:
-        return <Users className="w-3 h-3" />
+        return null
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800"
+        return <CheckCircle className="w-4 h-4 text-green-600" />
       case "pending":
-        return "bg-amber-100 text-amber-800"
+        return <Clock className="w-4 h-4 text-yellow-600" />
+      case "inactive":
+        return <AlertCircle className="w-4 h-4 text-red-600" />
       default:
-        return "bg-gray-100 text-gray-800"
+        return null
     }
   }
 
-  const filteredMembers = members.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const filteredMembers = members.filter((member) => {
+    const matchesSearch =
+      member.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.userId.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRole = roleFilter === "all" || member.role === roleFilter
+    const matchesStatus = statusFilter === "all" || member.status === statusFilter
 
-  if (!user) {
+    return matchesSearch && matchesRole && matchesStatus
+  })
+
+  const canManageMembers = user?.role === "creator" || user?.role === "manager"
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please log in to access team management</h1>
+      <div className="container mx-auto py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      <MainNav />
-      <DashboardNav />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
-              </div>
-              <p className="text-gray-600">Manage your team members, roles, and permissions</p>
-            </div>
-            {user.role === "creator" && (
-              <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-lg">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Invite Member
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="rounded-xl">
-                  <DialogHeader>
-                    <DialogTitle>Invite Team Member</DialogTitle>
-                    <DialogDescription>
-                      Send an invitation to a new team member. They'll receive an email with instructions to join.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleInvite}>
-                    <div className="space-y-4 py-4">
-                      <div>
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={inviteForm.email}
-                          onChange={(e) => setInviteForm((prev) => ({ ...prev, email: e.target.value }))}
-                          placeholder="Enter email address"
-                          required
-                          className="rounded-xl"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="role">Role</Label>
-                        <Select
-                          value={inviteForm.role}
-                          onValueChange={(value: any) => setInviteForm((prev) => ({ ...prev, role: value }))}
-                        >
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="editor">
-                              <div className="flex items-center space-x-2">
-                                <Edit className="w-4 h-4 text-green-600" />
-                                <div>
-                                  <div className="font-medium">Editor</div>
-                                  <div className="text-xs text-gray-500">Can upload and edit videos</div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="manager">
-                              <div className="flex items-center space-x-2">
-                                <SettingsIcon className="w-4 h-4 text-blue-600" />
-                                <div>
-                                  <div className="font-medium">Manager</div>
-                                  <div className="text-xs text-gray-500">Can manage team and analytics</div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    {error && (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setShowInviteDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={isLoading}>
-                        {isLoading ? "Sending..." : "Send Invitation"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
+    <div className="container mx-auto py-8 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
+          <p className="text-gray-600 mt-2">Manage your team members, roles, and permissions</p>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Team Stats */}
-          <div className="lg:col-span-1">
-            <div className="space-y-6">
-              <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg">Team Overview</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Total Members</span>
-                    <span className="font-semibold">{members.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Active</span>
-                    <span className="font-semibold text-green-600">
-                      {members.filter((m) => m.status === "active").length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Pending</span>
-                    <span className="font-semibold text-amber-600">
-                      {members.filter((m) => m.status === "pending").length}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg">Roles</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Crown className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm">Creators</span>
-                    </div>
-                    <span className="font-semibold">{members.filter((m) => m.role === "creator").length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <SettingsIcon className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm">Managers</span>
-                    </div>
-                    <span className="font-semibold">{members.filter((m) => m.role === "manager").length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Edit className="w-4 h-4 text-green-600" />
-                      <span className="text-sm">Editors</span>
-                    </div>
-                    <span className="font-semibold">{members.filter((m) => m.role === "editor").length}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg">Permissions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Shield className="w-4 h-4 text-green-600" />
-                    <span className="text-gray-600">Upload videos</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Shield className="w-4 h-4 text-blue-600" />
-                    <span className="text-gray-600">Manage team</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Shield className="w-4 h-4 text-purple-600" />
-                    <span className="text-gray-600">Approve content</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Team Members List */}
-          <div className="lg:col-span-3">
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Team Members</CardTitle>
-                    <CardDescription>Manage your team members and their roles</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Search members..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 rounded-xl"
-                      />
-                    </div>
-                  </div>
+        {canManageMembers && (
+          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Invite Member
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Invite Team Member</DialogTitle>
+                <DialogDescription>
+                  Send an invitation to join your team. They'll receive an email with instructions.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="colleague@example.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {isLoading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl animate-pulse">
-                          <div className="w-12 h-12 bg-gray-200 rounded-full" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-1/4" />
-                            <div className="h-3 bg-gray-200 rounded w-1/3" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : filteredMembers.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Users className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {searchTerm ? "No members found" : "No team members yet"}
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        {searchTerm
-                          ? "Try adjusting your search terms"
-                          : "Invite team members to start collaborating on your videos"}
-                      </p>
-                      {user.role === "creator" && !searchTerm && (
-                        <Button
-                          onClick={() => setShowInviteDialog(true)}
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl"
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Invite Your First Member
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    filteredMembers.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100 hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="w-12 h-12 ring-2 ring-white shadow-sm">
-                            <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                            <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                              {member.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3">
-                              <h3 className="font-semibold text-gray-900">{member.name}</h3>
-                              <Badge className={`${getRoleColor(member.role)} border rounded-full px-2 py-1`}>
-                                {getRoleIcon(member.role)}
-                                <span className="ml-1 capitalize text-xs font-medium">{member.role}</span>
-                              </Badge>
-                              <Badge className={`${getStatusColor(member.status)} rounded-full px-2 py-1`}>
-                                {member.status === "active" ? (
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                ) : (
-                                  <Clock className="w-3 h-3 mr-1" />
-                                )}
-                                <span className="capitalize text-xs font-medium">{member.status}</span>
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                              <span className="flex items-center">
-                                <Mail className="w-3 h-3 mr-1" />
-                                {member.email}
-                              </span>
-                              <span className="flex items-center">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                Joined {new Date(member.joinedAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={inviteRole} onValueChange={setInviteRole}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">Viewer - Can view content</SelectItem>
+                      <SelectItem value="editor">Editor - Can edit and upload</SelectItem>
+                      <SelectItem value="manager">Manager - Can manage team</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleInviteMember} disabled={isInviting || !inviteEmail}>
+                  {isInviting ? "Sending..." : "Send Invitation"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
 
-                        {user.role === "creator" && member.role !== "creator" && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="rounded-xl bg-transparent">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  updateMemberRole(member.id, member.role === "editor" ? "manager" : "editor")
-                                }
-                              >
-                                <SettingsIcon className="w-4 h-4 mr-2" />
-                                Change Role
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => removeMember(member.id)} className="text-red-600">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Remove Member
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+      {/* Team Stats */}
+      {stats && (
+        <div className="grid md:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.totalMembers}</p>
+                  <p className="text-sm text-gray-600">Total Members</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.activeMembers}</p>
+                  <p className="text-sm text-gray-600">Active</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.pendingMembers}</p>
+                  <p className="text-sm text-gray-600">Pending</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                  <Crown className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.roleDistribution.manager}</p>
+                  <p className="text-sm text-gray-600">Managers</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search members..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="creator">Creator</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="editor">Editor</SelectItem>
+                <SelectItem value="viewer">Viewer</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Team Members */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members ({filteredMembers.length})</CardTitle>
+          <CardDescription>Manage your team members and their permissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {filteredMembers.length > 0 ? (
+            <div className="space-y-4">
+              {filteredMembers.map((member) => (
+                <div key={member._id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={member.userId.avatar || "/placeholder.svg"} alt={member.userId.name} />
+                      <AvatarFallback>{member.userId.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium">{member.userId.name}</p>
+                        {getStatusIcon(member.status)}
                       </div>
-                    ))
+                      <p className="text-sm text-gray-600">{member.userId.email}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          <div className="flex items-center space-x-1">
+                            {getRoleIcon(member.role)}
+                            <span className="capitalize">{member.role}</span>
+                          </div>
+                        </Badge>
+                        <Badge variant={member.status === "active" ? "default" : "secondary"} className="text-xs">
+                          {member.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {canManageMembers && member.role !== "creator" && member.userId._id !== user?.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleUpdateRole(member.userId._id, "manager")}>
+                          <Shield className="w-4 h-4 mr-2" />
+                          Make Manager
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateRole(member.userId._id, "editor")}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Make Editor
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUpdateRole(member.userId._id, "viewer")}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Make Viewer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleRemoveMember(member.userId._id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Remove Member
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No team members found</p>
+              <p className="text-sm">Try adjusting your search or filters</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Role Permissions Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Permissions</CardTitle>
+          <CardDescription>Understanding what each role can do in your team</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <Crown className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="font-medium">Creator</p>
+                  <p className="text-sm text-gray-600">Full access to all features, team management, and billing</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="font-medium">Manager</p>
+                  <p className="text-sm text-gray-600">Can manage team members, upload content, and view analytics</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <Edit className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="font-medium">Editor</p>
+                  <p className="text-sm text-gray-600">Can upload and edit content, but cannot manage team</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <Eye className="w-5 h-5 text-gray-600 mt-0.5" />
+                <div>
+                  <p className="font-medium">Viewer</p>
+                  <p className="text-sm text-gray-600">Can only view content and basic analytics</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

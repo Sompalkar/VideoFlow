@@ -1,27 +1,28 @@
-import mongoose, { type Document, Schema } from "mongoose"
+import mongoose, { type Document, Schema } from "mongoose";
 
 export interface ITeam extends Document {
-  name: string
-  ownerId: mongoose.Types.ObjectId
+  name: string;
+  ownerId: mongoose.Types.ObjectId;
   members: Array<{
-    userId: mongoose.Types.ObjectId
-    role: "creator" | "editor" | "manager"
-    joinedAt: Date
-    status: "active" | "pending" | "inactive"
-  }>
+    userId: mongoose.Types.ObjectId;
+    role: "creator" | "editor" | "manager";
+    joinedAt: Date;
+    status: "active" | "pending" | "inactive";
+  }>;
+  description?: string;
   settings: {
-    autoApprove: boolean
-    allowedFileTypes: string[]
-    maxFileSize: number
-    requireApproval: boolean
-  }
+    autoApprove: boolean;
+    allowedFileTypes: string[];
+    maxFileSize: number;
+    requireApproval: boolean;
+  };
   subscription: {
-    plan: "starter" | "professional" | "enterprise"
-    status: "active" | "cancelled" | "expired"
-    expiresAt: Date
-  }
-  createdAt: Date
-  updatedAt: Date
+    plan: "starter" | "professional" | "enterprise";
+    status: "active" | "cancelled" | "expired";
+    expiresAt: Date;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const TeamSchema = new Schema<ITeam>(
@@ -31,6 +32,10 @@ const TeamSchema = new Schema<ITeam>(
       required: true,
       trim: true,
       maxlength: 100,
+    },
+    description: {
+      type: String,
+      default: "",
     },
     ownerId: {
       type: Schema.Types.ObjectId,
@@ -99,11 +104,11 @@ const TeamSchema = new Schema<ITeam>(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
 // Indexes
-TeamSchema.index({ ownerId: 1 })
-TeamSchema.index({ "members.userId": 1 })
+TeamSchema.index({ ownerId: 1 });
+TeamSchema.index({ "members.userId": 1 });
 
-export default mongoose.model<ITeam>("Team", TeamSchema)
+export default mongoose.model<ITeam>("Team", TeamSchema);

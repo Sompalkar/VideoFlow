@@ -8,7 +8,6 @@ import type { AuthRequest } from "../middleware/auth";
 import mongoose from "mongoose";
 
 export class VideoController {
-  
   static async getVideos(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { userId, teamId } = req.user!;
@@ -44,6 +43,9 @@ export class VideoController {
         duration: video.duration,
         cloudinaryVideoUrl: video.cloudinaryVideoUrl,
         cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
+        category: video.category,
+        privacy: video.privacy,
+        teamId: video.teamId,
       }));
 
       res.json({ videos: formattedVideos });
@@ -118,6 +120,10 @@ export class VideoController {
           fileSize: video.fileSize,
           duration: video.duration,
           cloudinaryVideoUrl: video.cloudinaryVideoUrl,
+          cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
+          category: video.category,
+          privacy: video.privacy,
+          teamId: video.teamId,
         },
       });
     } catch (error) {
@@ -170,19 +176,18 @@ export class VideoController {
       // Upload to YouTube
       try {
         const youtubeResult = await YoutubeService.uploadVideoFromCloudinary(
+          teamOwner._id.toString(),
           {
             title: video.title,
             description: video.description,
             tags: video.tags,
-            cloudinaryVideoUrl: video.cloudinaryVideoUrl,
-            cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
-            category: video.category,
-            privacy: video.privacy,
+            categoryId: video.category,
+            privacyStatus: video.privacy as "private" | "public" | "unlisted",
           },
-          teamOwner.youtubeTokens
+          video.cloudinaryVideoId
         );
 
-        // Update video with YouTube info
+        // Update video with YouTube info only if upload succeeded
         if (youtubeResult.id) {
           video.youtubeId = youtubeResult.id;
           video.youtubeUrl = `https://www.youtube.com/watch?v=${youtubeResult.id}`;
@@ -190,8 +195,9 @@ export class VideoController {
         }
         await video.save();
       } catch (youtubeError) {
+        // Do not set status to published if upload fails
         console.error("YouTube upload failed:", youtubeError);
-        // Keep video as approved but not published
+        // Keep video as approved so user can retry
       }
 
       await video.populate([
@@ -216,6 +222,10 @@ export class VideoController {
           fileSize: video.fileSize,
           duration: video.duration,
           cloudinaryVideoUrl: video.cloudinaryVideoUrl,
+          cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
+          category: video.category,
+          privacy: video.privacy,
+          teamId: video.teamId,
         },
       });
     } catch (error) {
@@ -279,6 +289,11 @@ export class VideoController {
           rejectionReason: video.rejectionReason,
           fileSize: video.fileSize,
           duration: video.duration,
+          cloudinaryVideoUrl: video.cloudinaryVideoUrl,
+          cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
+          category: video.category,
+          privacy: video.privacy,
+          teamId: video.teamId,
         },
       });
     } catch (error) {
@@ -371,6 +386,7 @@ export class VideoController {
           cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
           category: video.category,
           privacy: video.privacy,
+          teamId: video.teamId,
         },
       });
     } catch (error) {

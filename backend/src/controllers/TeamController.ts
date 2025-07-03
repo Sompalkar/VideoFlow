@@ -1,273 +1,355 @@
-import type { Response } from "express"
-import bcrypt from "bcryptjs"
-import Team from "../models/Team"
-import User from "../models/User"
-import { EmailService } from "../services/EmailService"
-import type { AuthRequest } from "../middleware/auth"
-
-// Generate random password
-const generateTempPassword = (): string => {
-  return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
-}
+import type { Response } from "express";
+import { validationResult } from "express-validator";
+import bcrypt from "bcryptjs";
+import Team from "../models/Team";
+import User from "../models/User";
+import { EmailService } from "../services/EmailService";
+import type { AuthRequest } from "../middleware/auth";
 
 export class TeamController {
-  // @desc    Get team details
-  static async getTeam(req: AuthRequest, res: Response): Promise<void> {
+  // @desc    Get team members (renamed from getTeam to match route)
+  static async getTeamMembers(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { teamId } = req.user!
+      const { userId } = req.user!;
 
-      if (!teamId) {
-        res.status(404).json({ message: "No team found" })
-        return
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
       }
 
-      const team = await Team.findById(teamId).populate("members", "name email role avatar isActive")
+      const team = await Team.findById(user.teamId).populate(
+        "members.userId",
+        "name email avatar"
+      );
 
       if (!team) {
-        res.status(404).json({ message: "Team not found" })
-        return
+        res.status(404).json({ message: "Team not found" });
+        return;
       }
 
-      res.json({ team })
+      res.json({ team });
     } catch (error) {
-      console.error("Get team error:", error)
-      res.status(500).json({ message: "Server error" })
+      console.error("Get team members error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
-  static async getTeamMembers(req: AuthRequest, res: Response): Promise<void> {
+  // @desc    Get team details
+  static async getTeam(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { teamId } = req.user!
+      const { userId } = req.user!;
 
-      if (!teamId) {
-        res.status(400).json({ message: "User not part of any team" })
-        return
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
       }
 
-      const team = await Team.findById(teamId).populate("members.userId", "name email avatar")
+      const team = await Team.findById(user.teamId).populate(
+        "members.userId",
+        "name email avatar"
+      );
 
       if (!team) {
-        res.status(404).json({ message: "Team not found" })
-        return
+        res.status(404).json({ message: "Team not found" });
+        return;
       }
 
-      const members = team.members.map((member: any) => ({
-        id: member.userId._id,
-        email: member.userId.email,
-        name: member.userId.name,
-        avatar: member.userId.avatar,
-        role: member.role,
-        status: member.status,
-        joinedAt: member.joinedAt,
-      }))
-
-      res.json({ members })
+      res.json({ team });
     } catch (error) {
-      console.error("Get team members error:", error)
-      res.status(500).json({ message: "Internal server error" })
+      console.error("Get team error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
   // @desc    Invite team member
   static async inviteMember(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { teamId, role: userRole } = req.user!
-      const { email, role, name } = req.body
-
-      // Validate input
-      if (!email || !role || !name) {
-        res.status(400).json({ message: "Email, role, and name are required" })
-        return
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res
+          .status(400)
+          .json({ message: "Validation errors", errors: errors.array() });
+        return;
       }
 
-      if (!["creator", "editor", "manager"].includes(role)) {
-        res.status(400).json({ message: "Invalid role" })
-        return
+      const { userId } = req.user!;
+      const { email, role } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
+      }
+
+      const team = await Team.findById(user.teamId);
+      if (!team) {
+        res.status(404).json({ message: "Team not found" });
+        return;
       }
 
       // Check if user has permission to invite
-      if (userRole !== "manager") {
-        res.status(403).json({ message: "Only managers can invite team members" })
-        return
+      const userMember = team.members.find(
+        (m) => m.userId.toString() === userId
+      );
+      if (!userMember || !["creator", "manager"].includes(userMember.role)) {
+        res.status(403).json({ message: "Insufficient permissions" });
+        return;
       }
 
       // Check if user already exists
-      const existingUser = await User.findOne({ email })
+      const existingUser = await User.findOne({ email });
       if (existingUser) {
-        res.status(400).json({ message: "User with this email already exists" })
-        return
-      }
+        // Check if already a team member
+        const isAlreadyMember = team.members.some(
+          (m) => m.userId.toString() === existingUser._id.toString()
+        );
+        if (isAlreadyMember) {
+          res.status(400).json({ message: "User is already a team member" });
+          return;
+        }
 
-      // Get team info
-      const team = await Team.findById(teamId)
-      if (!team) {
-        res.status(404).json({ message: "Team not found" })
-        return
-      }
+        // Add existing user to team
+        team.members.push({
+          userId: existingUser._id,
+          role,
+          status: "active",
+          joinedAt: new Date(),
+        });
 
-      // Get inviter info
-      const inviter = await User.findById(req.user!.userId)
-      if (!inviter) {
-        res.status(404).json({ message: "Inviter not found" })
-        return
-      }
+        existingUser.teamId = team._id;
+        await existingUser.save();
+        await team.save();
 
-      // Generate temporary password
-      const tempPassword = generateTempPassword()
-      const hashedPassword = await bcrypt.hash(tempPassword, 12)
-
-      // Create new user
-      const newUser = new User({
-        name,
-        email,
-        password: hashedPassword,
-        role,
-        teamId,
-        isActive: true,
-      })
-
-      await newUser.save()
-
-      // Add user to team
-      team.members.push(newUser._id)
-      await team.save()
-
-      // Send invitation email
-      try {
+        // Send notification email using the correct method name
         await EmailService.sendInvitation(email, {
           teamName: team.name,
-          inviterName: inviter.name,
+          inviterName: user.name,
+          role,
+          tempPassword: "Please use your existing password",
+          loginUrl: `${process.env.FRONTEND_URL}/auth/login`,
+        });
+      } else {
+        // Create new user with temporary password
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+        const newUser = new User({
+          email,
+          password: hashedPassword,
+          name: email.split("@")[0],
+          role: "member",
+          teamId: team._id,
+          isActive: false, // Will be activated when they first login
+        });
+
+        await newUser.save();
+
+        // Add to team
+        team.members.push({
+          userId: newUser._id,
+          role,
+          status: "pending",
+          joinedAt: new Date(),
+        });
+
+        await team.save();
+
+        // Send invitation email with temporary password
+        await EmailService.sendInvitation(email, {
+          teamName: team.name,
+          inviterName: user.name,
           role,
           tempPassword,
-          loginUrl: `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/login`,
-        })
-      } catch (emailError) {
-        console.error("Failed to send invitation email:", emailError)
-        // Don't fail the invitation if email fails
+          loginUrl: `${process.env.FRONTEND_URL}/auth/login`,
+        });
       }
 
-      res.status(201).json({
-        message: "Team member invited successfully",
-        user: {
-          id: newUser._id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-        },
-      })
+      res.json({ message: "Invitation sent successfully" });
     } catch (error) {
-      console.error("Invite member error:", error)
-      res.status(500).json({ message: "Server error" })
+      console.error("Invite member error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
   // @desc    Update team member role
-  static async updateMemberRole(req: AuthRequest, res: Response): Promise<void> {
+  static async updateMemberRole(
+    req: AuthRequest,
+    res: Response
+  ): Promise<void> {
     try {
-      const { teamId, role: userRole } = req.user!
-      const { memberId } = req.params
-      const { role } = req.body
+      const { userId } = req.user!;
+      const { memberId } = req.params;
+      const { role } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
+      }
+
+      const team = await Team.findById(user.teamId);
+      if (!team) {
+        res.status(404).json({ message: "Team not found" });
+        return;
+      }
 
       // Check permissions
-      if (userRole !== "manager") {
-        res.status(403).json({ message: "Only managers can update member roles" })
-        return
+      const userMember = team.members.find(
+        (m) => m.userId.toString() === userId
+      );
+      if (!userMember || userMember.role !== "creator") {
+        res
+          .status(403)
+          .json({ message: "Only team creators can update member roles" });
+        return;
       }
 
-      if (!["creator", "editor", "manager"].includes(role)) {
-        res.status(400).json({ message: "Invalid role" })
-        return
+      // Find and update member
+      const memberIndex = team.members.findIndex(
+        (m) => m.userId.toString() === memberId
+      );
+      if (memberIndex === -1) {
+        res.status(404).json({ message: "Member not found" });
+        return;
       }
 
-      // Update member
-      const member = await User.findOneAndUpdate(
-        { _id: memberId, teamId },
-        { role },
-        { new: true, select: "name email role avatar isActive" },
-      )
+      team.members[memberIndex].role = role;
+      await team.save();
 
-      if (!member) {
-        res.status(404).json({ message: "Team member not found" })
-        return
-      }
-
-      res.json({
-        message: "Member role updated successfully",
-        member,
-      })
+      res.json({ message: "Member role updated successfully" });
     } catch (error) {
-      console.error("Update member role error:", error)
-      res.status(500).json({ message: "Server error" })
+      console.error("Update member role error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
   // @desc    Remove team member
   static async removeMember(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { teamId, role: userRole } = req.user!
-      const { memberId } = req.params
+      const { userId } = req.user!;
+      const { memberId } = req.params;
+
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
+      }
+
+      const team = await Team.findById(user.teamId);
+      if (!team) {
+        res.status(404).json({ message: "Team not found" });
+        return;
+      }
 
       // Check permissions
-      if (userRole !== "manager") {
-        res.status(403).json({ message: "Only managers can remove team members" })
-        return
+      const userMember = team.members.find(
+        (m) => m.userId.toString() === userId
+      );
+      if (!userMember || !["creator", "manager"].includes(userMember.role)) {
+        res.status(403).json({ message: "Insufficient permissions" });
+        return;
       }
 
-      // Find and remove member
-      const member = await User.findOneAndDelete({ _id: memberId, teamId })
-
-      if (!member) {
-        res.status(404).json({ message: "Team member not found" })
-        return
+      // Can't remove creator
+      const memberToRemove = team.members.find(
+        (m) => m.userId.toString() === memberId
+      );
+      if (memberToRemove?.role === "creator") {
+        res.status(400).json({ message: "Cannot remove team creator" });
+        return;
       }
 
-      // Remove from team
-      await Team.findByIdAndUpdate(teamId, {
-        $pull: { members: memberId },
-      })
+      // Remove member from team
+      team.members = team.members.filter(
+        (m) => m.userId.toString() !== memberId
+      );
+      await team.save();
 
-      res.json({ message: "Team member removed successfully" })
+      // Remove team reference from user
+      await User.findByIdAndUpdate(memberId, { $unset: { teamId: 1 } });
+
+      res.json({ message: "Member removed successfully" });
     } catch (error) {
-      console.error("Remove member error:", error)
-      res.status(500).json({ message: "Server error" })
+      console.error("Remove member error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  // @desc    Update team details
+  static async updateTeam(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { userId } = req.user!;
+      const { name, description } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
+      }
+
+      const team = await Team.findById(user.teamId);
+      if (!team) {
+        res.status(404).json({ message: "Team not found" });
+        return;
+      }
+
+      // Check permissions
+      const userMember = team.members.find(
+        (m) => m.userId.toString() === userId
+      );
+      if (!userMember || userMember.role !== "creator") {
+        res
+          .status(403)
+          .json({ message: "Only team creators can update team details" });
+        return;
+      }
+
+      team.name = name || team.name;
+      team.description = description || team.description;
+      await team.save();
+
+      res.json({ team });
+    } catch (error) {
+      console.error("Update team error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
   // @desc    Get team stats
   static async getTeamStats(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { teamId } = req.user!
+      const { userId } = req.user!;
 
-      if (!teamId) {
-        res.status(404).json({ message: "No team found" })
-        return
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
       }
 
-      // Get team member count by role
-      const memberStats = await User.aggregate([
-        { $match: { teamId: teamId, isActive: true } },
-        { $group: { _id: "$role", count: { $sum: 1 } } },
-      ])
-
-      // Get total video count (you'll need to implement this based on your Video model)
-      // const videoCount = await Video.countDocuments({ teamId })
+      const team = await Team.findById(user.teamId);
+      if (!team) {
+        res.status(404).json({ message: "Team not found" });
+        return;
+      }
 
       const stats = {
-        totalMembers: await User.countDocuments({ teamId, isActive: true }),
-        membersByRole: memberStats.reduce(
-          (acc, stat) => {
-            acc[stat._id] = stat.count
-            return acc
-          },
-          {} as Record<string, number>,
-        ),
-        // totalVideos: videoCount,
-      }
+        totalMembers: team.members.length,
+        activeMembers: team.members.filter((m) => m.status === "active").length,
+        pendingMembers: team.members.filter((m) => m.status === "pending")
+          .length,
+        roleDistribution: {
+          creator: team.members.filter((m) => m.role === "creator").length,
+          manager: team.members.filter((m) => m.role === "manager").length,
+          editor: team.members.filter((m) => m.role === "editor").length,
+        },
+      };
 
-      res.json({ stats })
+      res.json({ stats });
     } catch (error) {
-      console.error("Get team stats error:", error)
-      res.status(500).json({ message: "Server error" })
+      console.error("Get team stats error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 }

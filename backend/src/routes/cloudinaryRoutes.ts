@@ -6,8 +6,18 @@ import fs from "fs";
 import { authenticate } from "../middleware/auth";
 import { CloudinaryService } from "../services/CloudinaryService";
 import type { AuthRequest } from "../middleware/auth";
+import type { Request } from "express";
 
 const router = Router();
+
+// Extend Express Request to include resourceType
+declare global {
+  namespace Express {
+    interface Request {
+      resourceType?: "video" | "image";
+    }
+  }
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -30,29 +40,50 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB limit
+    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit for large video files
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = {
-      video: [".mp4", ".avi", ".mov", ".wmv", ".flv", ".webm", ".mkv"],
-      image: [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"],
+      video: [
+        ".mp4",
+        ".avi",
+        ".mov",
+        ".wmv",
+        ".flv",
+        ".webm",
+        ".mkv",
+        ".m4v",
+        ".3gp",
+        ".ogv",
+      ],
+      image: [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"],
     };
 
     const ext = path.extname(file.originalname).toLowerCase();
-    const resourceType = req.body.resourceType || "video";
+    // Determine resourceType by extension
+    let resourceType: "video" | "image" | undefined;
+    if (allowedTypes.video.includes(ext)) {
+      resourceType = "video";
+    } else if (allowedTypes.image.includes(ext)) {
+      resourceType = "image";
+    }
 
-    if (resourceType === "video" && allowedTypes.video.includes(ext)) {
-      cb(null, true);
-    } else if (resourceType === "image" && allowedTypes.image.includes(ext)) {
+    // Set resourceType on req for use in route handler
+    req.resourceType = resourceType;
+
+    // Log the file upload attempt for debugging
+    console.log(
+      `File upload attempt: ${file.originalname}, Extension: ${ext}, Determined Resource Type: ${resourceType}`
+    );
+
+    if (resourceType) {
       cb(null, true);
     } else {
-      cb(
-        new Error(
-          `Invalid file type. Allowed types for ${resourceType}: ${allowedTypes[
-            resourceType as keyof typeof allowedTypes
-          ].join(", ")}`
-        )
-      );
+      // Provide a user-friendly error message
+      const errorMsg =
+        "Invalid file type. Please upload a supported video (e.g., .mp4, .avi) or image (e.g., .jpg, .png) format.";
+      console.error("File filter error:", errorMsg);
+      cb(new Error(errorMsg));
     }
   },
 });
@@ -66,13 +97,27 @@ router.post(
   upload.single("file"),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
+      console.log("Upload request received:", {
+        file: req.file ? req.file.originalname : "No file",
+        body: req.body,
+      });
+
       if (!req.file) {
         res.status(400).json({ message: "No file uploaded" });
         return;
       }
 
-      const { resourceType = "video" } = req.body;
+      // Use resourceType determined by fileFilter
+      const resourceType = req.resourceType;
+      if (!resourceType) {
+        res.status(400).json({ message: "Invalid or unsupported file type." });
+        return;
+      }
+
       const filePath = req.file.path;
+      console.log(
+        `Processing ${resourceType} upload: ${req.file.originalname}`
+      );
 
       let result;
       if (resourceType === "video") {
@@ -80,14 +125,19 @@ router.post(
           folder: "videoflow/videos",
           resourceType: "video",
         });
-      } else {
+      } else if (resourceType === "image") {
         result = await CloudinaryService.uploadImage(filePath, {
           folder: "videoflow/images",
         });
+      } else {
+        res.status(400).json({ message: "Unsupported resource type." });
+        return;
       }
 
       // Clean up temporary file
       fs.unlinkSync(filePath);
+
+      console.log("Upload successful:", result.public_id);
 
       res.json({
         success: true,
@@ -130,6 +180,7 @@ router.post(
         timestamp,
         folder: `videoflow/${resourceType}s`,
         resource_type: resourceType,
+        chunk_size: 6000000,
       };
 
       const signature = await CloudinaryService.generateSignature(params);
@@ -138,7 +189,7 @@ router.post(
         signature,
         timestamp,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-        apiKey: process.env.CLOUDINARY_API_KEY,
+        apiKey: 529336143214579,
         folder: params.folder,
       });
     } catch (error) {
