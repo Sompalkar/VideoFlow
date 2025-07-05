@@ -2,9 +2,10 @@ import { v2 as cloudinary } from "cloudinary";
 
 // Configure Cloudinary
 cloudinary.config({
-  cloud_name: "sommmmn",
-  api_key: "529336143214579",
-  api_secret: "IrKFGAzXqOsPDit6XlGDsjJ-H_s",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "sommmmn",
+  api_key: process.env.CLOUDINARY_API_KEY || "529336143214579",
+  api_secret:
+    process.env.CLOUDINARY_API_SECRET || "IrKFGAzXqOsPDit6XlGDsjJ-H_s",
 });
 
 export class CloudinaryService {
@@ -12,7 +13,7 @@ export class CloudinaryService {
     try {
       const signature = cloudinary.utils.api_sign_request(
         params,
-        "IrKFGAzXqOsPDit6XlGDsjJ-H_s"
+        process.env.CLOUDINARY_API_SECRET || "IrKFGAzXqOsPDit6XlGDsjJ-H_s"
       );
       return signature;
     } catch (error) {
@@ -30,6 +31,22 @@ export class CloudinaryService {
     } = {}
   ): Promise<any> {
     try {
+      // Check file size before upload
+      const fs = require("fs");
+      const stats = fs.statSync(filePath);
+      const fileSizeInMB = stats.size / (1024 * 1024);
+
+      console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
+
+      // Cloudinary has a 100MB limit for free accounts, 10GB for paid
+      if (fileSizeInMB > 100) {
+        throw new Error(
+          `File size (${fileSizeInMB.toFixed(
+            2
+          )} MB) exceeds Cloudinary's 100MB limit for free accounts. Please upgrade your Cloudinary plan or compress the video.`
+        );
+      }
+
       const result = await cloudinary.uploader.upload(filePath, {
         resource_type: options.resourceType || "video",
         folder: options.folder || "videoflow",
@@ -37,11 +54,40 @@ export class CloudinaryService {
         use_filename: true,
         unique_filename: true,
         overwrite: false,
+        chunk_size: 6000000, // 6MB chunks for better upload handling
+        eager: [
+          { width: 1280, height: 720, crop: "scale" },
+          { width: 854, height: 480, crop: "scale" },
+        ],
+        eager_async: true,
+        eager_notification_url: process.env.CLOUDINARY_NOTIFICATION_URL,
       });
 
       return result;
     } catch (error) {
       console.error("Cloudinary upload error:", error);
+
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes("413")) {
+          throw new Error(
+            "File too large for upload. Please compress your video or upgrade your Cloudinary plan."
+          );
+        } else if (error.message.includes("400")) {
+          throw new Error(
+            "Invalid file format or corrupted file. Please check your video file."
+          );
+        } else if (error.message.includes("401")) {
+          throw new Error(
+            "Cloudinary authentication failed. Please check your API credentials."
+          );
+        } else if (error.message.includes("429")) {
+          throw new Error(
+            "Upload rate limit exceeded. Please try again later."
+          );
+        }
+      }
+
       throw new Error("Failed to upload to Cloudinary");
     }
   }
@@ -139,5 +185,39 @@ export class CloudinaryService {
       resource_type: "video",
       secure: true,
     });
+  }
+
+  static async uploadImageFromDataUrl(
+    dataUrl: string,
+    options: {
+      folder?: string;
+      publicId?: string;
+      transformation?: {
+        width?: number;
+        height?: number;
+        crop?: string;
+        quality?: string;
+        format?: string;
+      };
+    } = {}
+  ): Promise<any> {
+    try {
+      const result = await cloudinary.uploader.upload(dataUrl, {
+        resource_type: "image",
+        folder: options.folder || "videoflow",
+        public_id: options.publicId,
+        use_filename: true,
+        unique_filename: true,
+        overwrite: false,
+        transformation: options.transformation
+          ? [options.transformation]
+          : undefined,
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Cloudinary data URL upload error:", error);
+      throw new Error("Failed to upload data URL to Cloudinary");
+    }
   }
 }

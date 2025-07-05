@@ -168,6 +168,7 @@ export class YoutubeService {
       tags?: string[];
       categoryId?: string;
       privacyStatus?: "private" | "public" | "unlisted";
+      thumbnailUrl?: string;
     },
     cloudinaryPublicId: string
   ): Promise<{
@@ -225,6 +226,38 @@ export class YoutubeService {
         throw new Error("No video ID returned from YouTube");
       }
 
+      // Upload custom thumbnail if provided
+      if (videoData.thumbnailUrl) {
+        try {
+          console.log("YouTube Service: Uploading custom thumbnail");
+
+          // Download thumbnail from Cloudinary
+          const thumbnailResponse = await fetch(videoData.thumbnailUrl);
+          if (thumbnailResponse.ok) {
+            const thumbnailBuffer = await thumbnailResponse.arrayBuffer();
+            const thumbnailStream = Readable.from(Buffer.from(thumbnailBuffer));
+
+            await youtube.thumbnails.set({
+              auth: oauth2Client,
+              videoId: videoId,
+              media: {
+                body: thumbnailStream,
+              },
+            });
+
+            console.log(
+              "YouTube Service: Custom thumbnail uploaded successfully"
+            );
+          }
+        } catch (thumbnailError) {
+          console.error(
+            "YouTube Service: Error uploading thumbnail:",
+            thumbnailError
+          );
+          // Don't fail the entire upload if thumbnail fails
+        }
+      }
+
       return {
         id: videoId,
         url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -245,6 +278,7 @@ export class YoutubeService {
       tags?: string[];
       categoryId?: string;
       privacyStatus?: "private" | "public" | "unlisted";
+      thumbnailUrl?: string;
     },
     cloudinaryPublicId: string
   ): Promise<{

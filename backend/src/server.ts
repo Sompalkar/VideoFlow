@@ -22,6 +22,7 @@ import userRoutes from "./routes/userRoutes";
 import youtubeRoutes from "./routes/youtubeRoutes";
 import cloudinaryRoutes from "./routes/cloudinaryRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
+import aiThumbnailRoutes from "./routes/aiThumbnailRoutes";
 
 // import commentRoutes from "routes/commentRoutes";
 import commentRouter from "./routes/commentRoutes";
@@ -89,6 +90,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/youtube", youtubeRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/ai-thumbnails", aiThumbnailRoutes);
 
 app.use("/api/comments", commentRouter); // Use comment routes
 // Error handling middleware

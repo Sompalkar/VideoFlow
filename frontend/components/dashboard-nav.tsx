@@ -1,18 +1,25 @@
-"use client"
+"use client";
 
-import { usePathname } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { BarChart3, Video, Upload, TrendingUp, Plus } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useVideoStore } from "@/lib/stores/video-store"
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  BarChart3,
+  Video,
+  Upload,
+  TrendingUp,
+  Plus,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useVideoStore } from "@/lib/stores/video-store";
 
 export function DashboardNav() {
-  const pathname = usePathname()
-  const { videos } = useVideoStore()
+  const pathname = usePathname();
+  const { videos } = useVideoStore();
 
-  const pendingCount = videos.filter((v) => v.status === "pending").length
+  const pendingCount = videos.filter((v) => v.status === "pending").length;
 
   const navigation = [
     {
@@ -33,14 +40,19 @@ export function DashboardNav() {
       icon: Upload,
     },
     {
+      name: "AI Thumbnails",
+      href: "/dashboard/thumbnail-generator",
+      icon: Sparkles,
+    },
+    {
       name: "Analytics",
       href: "/dashboard/analytics",
       icon: TrendingUp,
     },
-  ]
+  ];
 
   // Only show on dashboard routes
-  if (!pathname.startsWith("/dashboard")) return null
+  if (!pathname.startsWith("/dashboard")) return null;
 
   return (
     <div className="bg-gray-50 border-b border-gray-200">
@@ -50,8 +62,8 @@ export function DashboardNav() {
             {navigation.map((item) => {
               const isActive = item.exact
                 ? pathname === item.href
-                : pathname.startsWith(item.href) && pathname !== "/dashboard"
-              const Icon = item.icon
+                : pathname.startsWith(item.href) && pathname !== "/dashboard";
+              const Icon = item.icon;
 
               return (
                 <Link
@@ -59,18 +71,23 @@ export function DashboardNav() {
                   href={item.href}
                   className={cn(
                     "flex items-center text-sm font-medium transition-colors",
-                    isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900",
+                    isActive
+                      ? "text-blue-600"
+                      : "text-gray-600 hover:text-gray-900"
                   )}
                 >
                   <Icon className="w-4 h-4 mr-2" />
                   {item.name}
                   {item.badge && (
-                    <Badge variant="secondary" className="ml-2 h-5 px-2 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 h-5 px-2 text-xs"
+                    >
                       {item.badge}
                     </Badge>
                   )}
                 </Link>
-              )
+              );
             })}
           </div>
 
@@ -91,5 +108,5 @@ export function DashboardNav() {
         </div>
       </div>
     </div>
-  )
+  );
 }

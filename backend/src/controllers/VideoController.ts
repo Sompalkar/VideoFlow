@@ -267,6 +267,7 @@ export class VideoController {
             tags: video.tags,
             categoryId: video.category,
             privacyStatus: video.privacy as "private" | "public" | "unlisted",
+            thumbnailUrl: video.cloudinaryThumbnailUrl, // Add thumbnail support
           },
           video.cloudinaryVideoId
         );

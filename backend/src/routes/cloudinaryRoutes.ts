@@ -40,7 +40,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit for large video files
+    fileSize: 200 * 1024 * 1024, // 100MB limit to match Cloudinary free tier
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = {
@@ -119,6 +119,23 @@ router.post(
         `Processing ${resourceType} upload: ${req.file.originalname}`
       );
 
+      // Check file size before attempting upload
+      const fileSizeInMB = req.file.size / (1024 * 1024);
+      console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
+
+      if (fileSizeInMB > 100) {
+        // Clean up temporary file
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+        res.status(413).json({
+          message: `File size (${fileSizeInMB.toFixed(
+            2
+          )} MB) exceeds the 100MB limit. Please compress your video or upgrade your Cloudinary plan.`,
+        });
+        return;
+      }
+
       let result;
       if (resourceType === "video") {
         result = await CloudinaryService.uploadVideo(filePath, {
@@ -158,9 +175,37 @@ router.post(
       }
 
       console.error("Cloudinary upload error:", error);
-      res.status(500).json({
-        message: error instanceof Error ? error.message : "Upload failed",
-      });
+
+      // Provide more specific error responses
+      if (error instanceof Error) {
+        if (
+          error.message.includes("413") ||
+          error.message.includes("too large")
+        ) {
+          res.status(413).json({
+            message:
+              error.message ||
+              "File too large for upload. Please compress your video or upgrade your Cloudinary plan.",
+          });
+        } else if (error.message.includes("401")) {
+          res.status(401).json({
+            message:
+              "Cloudinary authentication failed. Please check your API credentials.",
+          });
+        } else if (error.message.includes("429")) {
+          res.status(429).json({
+            message: "Upload rate limit exceeded. Please try again later.",
+          });
+        } else {
+          res.status(500).json({
+            message: error.message || "Upload failed",
+          });
+        }
+      } else {
+        res.status(500).json({
+          message: "Upload failed",
+        });
+      }
     }
   }
 );
