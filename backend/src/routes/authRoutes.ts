@@ -28,4 +28,14 @@ router.get("/profile", authenticate, AuthController.getProfile);
 // @access  Private
 router.put("/profile", authenticate, AuthController.updateProfile);
 
+// @route   POST /api/auth/refresh
+// @desc    Refresh user token with updated team role
+// @access  Private
+router.post("/refresh", authenticate, AuthController.refreshToken);
+
+// @route   POST /api/auth/change-password
+// @desc    Change user password
+// @access  Private
+router.post("/change-password", authenticate, AuthController.changePassword);
+
 export default router;

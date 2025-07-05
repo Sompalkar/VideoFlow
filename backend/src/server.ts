@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import path from "path";
+import { createServer } from "http";
 
 // import { connectDB } from "@/config/database"
 import { connectDB } from "./config/database";
@@ -22,14 +23,22 @@ import youtubeRoutes from "./routes/youtubeRoutes";
 import cloudinaryRoutes from "./routes/cloudinaryRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 
+// import commentRoutes from "routes/commentRoutes";
+import commentRouter from "./routes/commentRoutes";
+import { socketService } from "./services/socket-service";
+
 // Load environment variables
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize Socket.IO
+socketService.initialize(server);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -81,17 +90,19 @@ app.use("/api/youtube", youtubeRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
+app.use("/api/comments", commentRouter); // Use comment routes
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(
     `🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:3000"}`
   );
+  console.log(`🔌 Socket.IO initialized`);
 });
 
 export default app;

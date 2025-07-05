@@ -58,7 +58,7 @@ export const validateUserRegistration = [
     .withMessage("Password must be at least 6 characters long"),
   body("role")
     .optional()
-    .isIn(["creator", "member"])
+    .isIn(["creator", "editor", "manager"])
     .withMessage("Valid role is required"),
 ];
 

@@ -27,8 +27,7 @@ export function MainNav() {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: null },
     { name: "YouTube", href: "/dashboard/youtube", icon: Youtube },
-    { name: "Team", href: "/dashboard/team", icon: Users },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+    { name: "Team", href: "/dashboard/team", icon: Users }, 
   ]
 
   const handleLogout = () => {
@@ -104,17 +103,12 @@ export function MainNav() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">   
+                  <Link href="/dashboard/profile">
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
+                 
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />

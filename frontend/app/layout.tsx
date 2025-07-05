@@ -2,14 +2,15 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { MainNav } from "@/components/main-nav"
+import { DashboardNav } from "@/components/dashboard-nav"
+ 
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "VideoFlow - Streamline Your Video Workflow",
-  description:
-    "Empower your team with seamless video uploads, collaborative workflows, and secure credential management for YouTube.",
-    generator: 'v0.dev'
+  title: "VideoFlow - Video Management Platform",
+  description: "Streamline your video workflow from upload to YouTube publishing",
 }
 
 export default function RootLayout({
@@ -18,8 +19,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+ 
+         
+          <main>{children}</main>
+    
+      </body>
     </html>
   )
 }

@@ -1,22 +1,32 @@
-import mongoose, { type Document, Schema } from "mongoose"
+import mongoose, { type Document, Schema } from "mongoose";
 
 export interface IUser extends Document {
-  name: string
-  email: string
-  password: string
-  role: "creator" | "editor" | "manager"
-  avatar?: string
-  teamId?: mongoose.Types.ObjectId
-  isActive: boolean
+  name: string;
+  email: string;
+  password: string;
+  role: "creator" | "editor" | "manager";
+  avatar?: string;
+  teamId?: mongoose.Types.ObjectId;
+  isActive: boolean;
+  needsPasswordChange: boolean;
   youtubeTokens?: {
-    accessToken: string
-    refreshToken: string
-    expiresAt: Date
-  }
-  youtubeChannelId?: string
-  youtubeChannelName?: string
-  createdAt: Date
-  updatedAt: Date
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+  };
+  youtubeChannelId?: string;
+  youtubeChannelName?: string;
+  youtubeChannel?: {
+    id: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    subscriberCount: number;
+    videoCount: number;
+    viewCount: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -54,6 +64,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    needsPasswordChange: {
+      type: Boolean,
+      default: false,
+    },
     youtubeTokens: {
       accessToken: String,
       refreshToken: String,
@@ -65,14 +79,23 @@ const userSchema = new Schema<IUser>(
     youtubeChannelName: {
       type: String,
     },
+    youtubeChannel: {
+      id: String,
+      title: String,
+      description: String,
+      thumbnail: String,
+      subscriberCount: Number,
+      videoCount: Number,
+      viewCount: Number,
+    },
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
 // Index for better query performance
-userSchema.index({ email: 1 })
-userSchema.index({ teamId: 1 })
+userSchema.index({ email: 1 });
+userSchema.index({ teamId: 1 });
 
-export default mongoose.model<IUser>("User", userSchema)
+export default mongoose.model<IUser>("User", userSchema);

@@ -5,6 +5,7 @@ import Team from "../models/Team";
 import User from "../models/User";
 import { EmailService } from "../services/EmailService";
 import type { AuthRequest } from "../middleware/auth";
+import { cloudasset } from "googleapis/build/src/apis/cloudasset";
 
 export class TeamController {
   // @desc    Get team members (renamed from getTeam to match route)
@@ -64,8 +65,13 @@ export class TeamController {
   }
 
   // @desc    Invite team member
+  /**
+   * Invite a new member to the team
+   * Only creators and managers can invite new members
+   */
   static async inviteMember(req: AuthRequest, res: Response): Promise<void> {
     try {
+      // Validate request data
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         res
@@ -90,15 +96,25 @@ export class TeamController {
       }
 
       // Check if user has permission to invite
+      // Note: userId from JWT is ObjectId, but team members store userId as string
+      // So we convert both to strings for comparison
       const userMember = team.members.find(
-        (m) => m.userId.toString() === userId
+        (m) => m.userId.toString() === userId.toString()
       );
+
+      // Auto-promote single editor members to creator
+      if (team.members.length === 1 && userMember?.role === "editor") {
+        userMember.role = "creator";
+        await team.save();
+      }
+
+      // Verify user has permission to invite (creator or manager)
       if (!userMember || !["creator", "manager"].includes(userMember.role)) {
         res.status(403).json({ message: "Insufficient permissions" });
         return;
       }
 
-      // Check if user already exists
+      // Check if user already exists in the system
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         // Check if already a team member
@@ -123,25 +139,36 @@ export class TeamController {
         await team.save();
 
         // Send notification email using the correct method name
-        await EmailService.sendInvitation(email, {
-          teamName: team.name,
-          inviterName: user.name,
-          role,
-          tempPassword: "Please use your existing password",
-          loginUrl: `${process.env.FRONTEND_URL}/auth/login`,
-        });
+        try {
+          await EmailService.sendInvitation(email, {
+            teamName: team.name,
+            inviterName: user.name,
+            role,
+            tempPassword: "Please use your existing password",
+            loginUrl: `${process.env.FRONTEND_URL}/auth/login`,
+          });
+        } catch (emailError) {
+          console.log(
+            "Email sending failed, but user was added to team:",
+            emailError
+          );
+          // Continue even if email fails
+        }
       } else {
         // Create new user with temporary password
         const tempPassword = Math.random().toString(36).slice(-8);
         const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
+        // Create new user with "editor" role (valid enum value)
+        // The team member role can be different from the user's individual role
         const newUser = new User({
           email,
           password: hashedPassword,
           name: email.split("@")[0],
-          role: "member",
+          role: "editor", // Default individual role for new team members
           teamId: team._id,
-          isActive: false, // Will be activated when they first login
+          isActive: true, // Allow immediate login for invited team members
+          needsPasswordChange: true, // Require password change on first login
         });
 
         await newUser.save();
@@ -157,18 +184,43 @@ export class TeamController {
         await team.save();
 
         // Send invitation email with temporary password
-        await EmailService.sendInvitation(email, {
-          teamName: team.name,
-          inviterName: user.name,
-          role,
-          tempPassword,
-          loginUrl: `${process.env.FRONTEND_URL}/auth/login`,
-        });
+        try {
+          await EmailService.sendInvitation(email, {
+            teamName: team.name,
+            inviterName: user.name,
+            role,
+            tempPassword,
+            loginUrl: `${
+              process.env.FRONTEND_URL || "http://localhost:3000"
+            }/auth/login`,
+          });
+        } catch (emailError) {
+          console.log(
+            "Email sending failed, but user was created and added to team:",
+            emailError
+          );
+          // Continue even if email fails
+        }
       }
 
       res.json({ message: "Invitation sent successfully" });
     } catch (error) {
       console.error("Invite member error:", error);
+
+      // Provide more specific error messages based on the error type
+      if (error instanceof Error) {
+        if (error.message.includes("validation failed")) {
+          res.status(400).json({ message: "Invalid data provided" });
+          return;
+        }
+        if (error.message.includes("duplicate key")) {
+          res
+            .status(400)
+            .json({ message: "User already exists with this email" });
+          return;
+        }
+      }
+
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -197,7 +249,7 @@ export class TeamController {
 
       // Check permissions
       const userMember = team.members.find(
-        (m) => m.userId.toString() === userId
+        (m) => m.userId.toString() === userId.toString()
       );
       if (!userMember || userMember.role !== "creator") {
         res
@@ -245,7 +297,7 @@ export class TeamController {
 
       // Check permissions
       const userMember = team.members.find(
-        (m) => m.userId.toString() === userId
+        (m) => m.userId.toString() === userId.toString()
       );
       if (!userMember || !["creator", "manager"].includes(userMember.role)) {
         res.status(403).json({ message: "Insufficient permissions" });
@@ -297,7 +349,7 @@ export class TeamController {
 
       // Check permissions
       const userMember = team.members.find(
-        (m) => m.userId.toString() === userId
+        (m) => m.userId.toString() === userId.toString()
       );
       if (!userMember || userMember.role !== "creator") {
         res
@@ -349,6 +401,60 @@ export class TeamController {
       res.json({ stats });
     } catch (error) {
       console.error("Get team stats error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  // @desc    Promote user to creator if they're the only team member
+  static async promoteToCreator(
+    req: AuthRequest,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { userId } = req.user!;
+
+      const user = await User.findById(userId);
+      if (!user?.teamId) {
+        res.status(404).json({ message: "No team found" });
+        return;
+      }
+
+      const team = await Team.findById(user.teamId);
+      if (!team) {
+        res.status(404).json({ message: "Team not found" });
+        return;
+      }
+
+      // Check if user is the only member
+      if (team.members.length !== 1) {
+        res
+          .status(400)
+          .json({ message: "Can only promote if you're the only team member" });
+        return;
+      }
+
+      const userMember = team.members.find(
+        (m) => m.userId.toString() === userId.toString()
+      );
+      if (!userMember) {
+        res.status(404).json({ message: "User not found in team" });
+        return;
+      }
+
+      // Promote to creator
+      userMember.role = "creator";
+      await team.save();
+
+      // Update user's individual role as well
+      user.role = "creator";
+      await user.save();
+
+      res.json({
+        message: "Successfully promoted to creator",
+        role: "creator",
+      });
+    } catch (error) {
+      console.error("Promote to creator error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   }

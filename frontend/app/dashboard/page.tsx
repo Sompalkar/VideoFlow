@@ -1,12 +1,19 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { MainNav } from "@/components/main-nav"
-import { DashboardNav } from "@/components/dashboard-nav"
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { MainNav } from "@/components/main-nav";
+import { DashboardNav } from "@/components/dashboard-nav";
+import { PasswordChangeModal } from "@/components/password-change-modal";
 import {
   Play,
   Upload,
@@ -24,61 +31,75 @@ import {
   MessageSquare,
   ThumbsUp,
   BarChart3,
-} from "lucide-react"
-import { useAuthStore } from "@/lib/stores/auth-store"
-import { useVideoStore } from "@/lib/stores/video-store"
-import { useDashboardStore } from "@/lib/stores/dashboard-store"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+} from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useVideoStore } from "@/lib/stores/video-store";
+import { useDashboardStore } from "@/lib/stores/dashboard-store";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const { user } = useAuthStore()
-  const { videos, fetchVideos, isLoading: videosLoading } = useVideoStore()
-  const { analytics, fetchAnalytics, isLoading: analyticsLoading } = useDashboardStore()
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const { videos, fetchVideos, isLoading: videosLoading } = useVideoStore();
+  const {
+    analytics,
+    fetchAnalytics,
+    isLoading: analyticsLoading,
+  } = useDashboardStore();
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     if (user) {
-      fetchVideos()
-      fetchAnalytics()
+      fetchVideos();
+      fetchAnalytics();
+
+      // Show password change modal if user needs to change password
+      if (user.needsPasswordChange) {
+        setShowPasswordModal(true);
+      }
     }
-  }, [user])
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "published":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200"
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
       case "approved":
-        return "bg-blue-50 text-blue-700 border-blue-200"
+        return "bg-blue-50 text-blue-700 border-blue-200";
       case "pending":
-        return "bg-amber-50 text-amber-700 border-amber-200"
+        return "bg-amber-50 text-amber-700 border-amber-200";
       case "rejected":
-        return "bg-red-50 text-red-700 border-red-200"
+        return "bg-red-50 text-red-700 border-red-200";
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200"
+        return "bg-gray-50 text-gray-700 border-gray-200";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "published":
-        return <Youtube className="w-3 h-3" />
+        return <Youtube className="w-3 h-3" />;
       case "approved":
-        return <CheckCircle className="w-3 h-3" />
+        return <CheckCircle className="w-3 h-3" />;
       case "pending":
-        return <Clock className="w-3 h-3" />
+        return <Clock className="w-3 h-3" />;
       case "rejected":
-        return <XCircle className="w-3 h-3" />
+        return <XCircle className="w-3 h-3" />;
       default:
-        return <Video className="w-3 h-3" />
+        return <Video className="w-3 h-3" />;
     }
-  }
+  };
 
   const stats = [
     {
       title: "Total Videos",
       value: videos.length,
-      change: videos.filter((v) => new Date(v.uploadedAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
+      change: videos.filter(
+        (v) =>
+          new Date(v.uploadedAt) >
+          new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      ).length,
       changeText: "this month",
       icon: Video,
       color: "from-blue-500 to-cyan-500",
@@ -87,7 +108,11 @@ export default function DashboardPage() {
     {
       title: "Published",
       value: videos.filter((v) => v.status === "published").length,
-      change: Math.round((videos.filter((v) => v.status === "published").length / Math.max(videos.length, 1)) * 100),
+      change: Math.round(
+        (videos.filter((v) => v.status === "published").length /
+          Math.max(videos.length, 1)) *
+          100
+      ),
       changeText: "of total",
       icon: Youtube,
       color: "from-emerald-500 to-green-500",
@@ -112,7 +137,7 @@ export default function DashboardPage() {
       bgColor: "from-purple-50 to-pink-50",
       format: "number",
     },
-  ]
+  ];
 
   if (!user) {
     return (
@@ -122,7 +147,9 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Play className="w-8 h-8 text-white fill-white" />
             </div>
-            <h1 className="text-2xl font-bold mb-4">Please log in to access dashboard</h1>
+            <h1 className="text-2xl font-bold mb-4">
+              Please log in to access dashboard
+            </h1>
             <Link href="/auth/login">
               <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
                 Go to Login
@@ -131,7 +158,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -144,8 +171,12 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user.name.split(" ")[0]}! 👋</h1>
-              <p className="text-gray-600 mt-1">Here's what's happening with your videos today.</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {user.name.split(" ")[0]}! 👋
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Here's what's happening with your videos today.
+              </p>
             </div>
             <div className="hidden sm:flex items-center space-x-3">
               <Link href="/dashboard/upload">
@@ -168,9 +199,13 @@ export default function DashboardPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      {stat.title}
+                    </p>
                     <p className="text-3xl font-bold text-gray-900">
-                      {stat.format === "number" ? stat.value.toLocaleString() : stat.value}
+                      {stat.format === "number"
+                        ? stat.value.toLocaleString()
+                        : stat.value}
                     </p>
                     <div className="flex items-center mt-2">
                       {stat.change > 0 ? (
@@ -179,11 +214,18 @@ export default function DashboardPage() {
                         <ArrowDownRight className="w-4 h-4 text-red-600 mr-1" />
                       ) : null}
                       <span
-                        className={`text-sm ${stat.change > 0 ? "text-green-600" : stat.change < 0 ? "text-red-600" : "text-gray-600"}`}
+                        className={`text-sm ${
+                          stat.change > 0
+                            ? "text-green-600"
+                            : stat.change < 0
+                            ? "text-red-600"
+                            : "text-gray-600"
+                        }`}
                       >
                         {stat.change > 0 ? "+" : ""}
                         {stat.change}
-                        {stat.title === "Published" ? "%" : ""} {stat.changeText}
+                        {stat.title === "Published" ? "%" : ""}{" "}
+                        {stat.changeText}
                       </span>
                     </div>
                   </div>
@@ -209,10 +251,16 @@ export default function DashboardPage() {
                       <Video className="w-5 h-5 mr-2 text-indigo-600" />
                       Recent Videos
                     </CardTitle>
-                    <CardDescription>Your latest video uploads and their status</CardDescription>
+                    <CardDescription>
+                      Your latest video uploads and their status
+                    </CardDescription>
                   </div>
                   <Link href="/dashboard/videos">
-                    <Button variant="outline" size="sm" className="rounded-xl bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl bg-transparent"
+                    >
                       View All
                       <ArrowUpRight className="w-4 h-4 ml-1" />
                     </Button>
@@ -224,7 +272,10 @@ export default function DashboardPage() {
                   {videosLoading ? (
                     <div className="space-y-4">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl animate-pulse">
+                        <div
+                          key={i}
+                          className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl animate-pulse"
+                        >
                           <div className="w-20 h-12 bg-gray-200 rounded-lg" />
                           <div className="flex-1 space-y-2">
                             <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -238,8 +289,12 @@ export default function DashboardPage() {
                       <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <Video className="w-8 h-8 text-indigo-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No videos yet</h3>
-                      <p className="text-gray-500 mb-6">Upload your first video to get started with VideoFlow</p>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        No videos yet
+                      </h3>
+                      <p className="text-gray-500 mb-6">
+                        Upload your first video to get started with VideoFlow
+                      </p>
                       <Link href="/dashboard/upload">
                         <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl">
                           <Upload className="w-4 h-4 mr-2" />
@@ -256,7 +311,10 @@ export default function DashboardPage() {
                         <div className="flex items-center space-x-4">
                           <div className="relative">
                             <img
-                              src={video.cloudinaryThumbnailUrl || "/placeholder.svg?height=48&width=80"}
+                              src={
+                                video.cloudinaryThumbnailUrl ||
+                                "/placeholder.svg?height=48&width=80"
+                              }
                               alt={video.title}
                               className="w-20 h-12 object-cover rounded-lg shadow-sm"
                             />
@@ -265,23 +323,36 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">{video.title}</h3>
+                            <h3 className="font-semibold text-gray-900 truncate">
+                              {video.title}
+                            </h3>
                             <div className="flex items-center space-x-3 mt-1 text-sm text-gray-500">
                               <span className="flex items-center">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                {new Date(video.uploadedAt).toLocaleDateString()}
+                                {new Date(
+                                  video.uploadedAt
+                                ).toLocaleDateString()}
                               </span>
                               <span>•</span>
                               <span>
-                                {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, "0")}
+                                {Math.floor(video.duration / 60)}:
+                                {(video.duration % 60)
+                                  .toString()
+                                  .padStart(2, "0")}
                               </span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <Badge className={`${getStatusColor(video.status)} border rounded-full px-3 py-1`}>
+                          <Badge
+                            className={`${getStatusColor(
+                              video.status
+                            )} border rounded-full px-3 py-1`}
+                          >
                             {getStatusIcon(video.status)}
-                            <span className="ml-1 capitalize text-xs font-medium">{video.status}</span>
+                            <span className="ml-1 capitalize text-xs font-medium">
+                              {video.status}
+                            </span>
                           </Badge>
                           <Link href={`/dashboard/videos/${video.id}`}>
                             <Button
@@ -319,13 +390,19 @@ export default function DashboardPage() {
                   </Button>
                 </Link>
                 <Link href="/dashboard/team">
-                  <Button variant="outline" className="w-full justify-start rounded-xl bg-transparent">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start rounded-xl bg-transparent"
+                  >
                     <Users className="w-4 h-4 mr-3" />
                     Manage Team
                   </Button>
                 </Link>
                 <Link href="/dashboard/youtube">
-                  <Button variant="outline" className="w-full justify-start rounded-xl bg-transparent">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start rounded-xl bg-transparent"
+                  >
                     <Youtube className="w-4 h-4 mr-3" />
                     YouTube Settings
                   </Button>
@@ -349,27 +426,37 @@ export default function DashboardPage() {
                         <Eye className="w-4 h-4 text-blue-600" />
                         <span className="text-sm text-gray-600">Views</span>
                       </div>
-                      <span className="font-semibold">{analytics.totalViews.toLocaleString()}</span>
+                      <span className="font-semibold">
+                        {analytics.totalViews.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <ThumbsUp className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-600">Likes</span>
                       </div>
-                      <span className="font-semibold">{analytics.totalLikes.toLocaleString()}</span>
+                      <span className="font-semibold">
+                        {analytics.totalLikes.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <MessageSquare className="w-4 h-4 text-purple-600" />
                         <span className="text-sm text-gray-600">Comments</span>
                       </div>
-                      <span className="font-semibold">{analytics.totalComments.toLocaleString()}</span>
+                      <span className="font-semibold">
+                        {analytics.totalComments.toLocaleString()}
+                      </span>
                     </div>
                   </div>
                   <div className="pt-3 border-t">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Avg. Watch Time</span>
-                      <span className="font-semibold">{analytics.avgWatchTime}</span>
+                      <span className="text-sm text-gray-600">
+                        Avg. Watch Time
+                      </span>
+                      <span className="font-semibold">
+                        {analytics.avgWatchTime}
+                      </span>
                     </div>
                     <Progress value={75} className="h-2" />
                   </div>
@@ -390,8 +477,12 @@ export default function DashboardPage() {
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Connected</p>
-                      <p className="text-xs text-gray-500">Ready to publish videos</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        Connected
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Ready to publish videos
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -399,12 +490,20 @@ export default function DashboardPage() {
                     <div className="flex items-center space-x-3 mb-3">
                       <div className="w-3 h-3 bg-amber-500 rounded-full" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Not Connected</p>
-                        <p className="text-xs text-gray-500">Connect to publish videos</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          Not Connected
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Connect to publish videos
+                        </p>
                       </div>
                     </div>
                     <Link href="/dashboard/youtube">
-                      <Button size="sm" variant="outline" className="w-full rounded-xl bg-transparent">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full rounded-xl bg-transparent"
+                      >
                         Connect YouTube
                       </Button>
                     </Link>
@@ -415,6 +514,12 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
-  )
+  );
 }

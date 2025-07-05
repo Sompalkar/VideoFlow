@@ -58,6 +58,8 @@ router.post(
       // Update user with YouTube tokens and channel info
       await User.findByIdAndUpdate(userId, {
         youtubeTokens: tokens,
+        youtubeChannelId: channelInfo.id,
+        youtubeChannelName: channelInfo.title,
         youtubeChannel: channelInfo,
       });
 
@@ -103,10 +105,24 @@ router.get(
         return;
       }
 
+      // First try to get stored channel info
+      if (user.youtubeChannel) {
+        res.json({ channel: user.youtubeChannel });
+        return;
+      }
+
+      // If no stored info, fetch from YouTube API
       const channelInfo = await YoutubeService.getChannelInfo({
         accessToken: user.youtubeTokens.accessToken,
         refreshToken: user.youtubeTokens.refreshToken,
         expiresAt: user.youtubeTokens.expiresAt,
+      });
+
+      // Store the fetched info for future use
+      await User.findByIdAndUpdate(userId, {
+        youtubeChannelId: channelInfo.id,
+        youtubeChannelName: channelInfo.title,
+        youtubeChannel: channelInfo,
       });
 
       res.json({ channel: channelInfo });
@@ -152,6 +168,58 @@ router.get(
   }
 );
 
+// @route   POST /api/youtube/refresh-channel
+// @desc    Refresh YouTube channel info from API
+// @access  Private (Creator only)
+router.post(
+  "/refresh-channel",
+  authenticate,
+  authorize(["creator"]),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.user!;
+
+      const user = await User.findById(userId);
+      if (!user || !user.youtubeTokens) {
+        res.status(400).json({ message: "YouTube not connected" });
+        return;
+      }
+
+      // Validate tokens exist
+      if (!user.youtubeTokens.accessToken || !user.youtubeTokens.refreshToken) {
+        res
+          .status(400)
+          .json({ message: "Invalid YouTube tokens, please reconnect" });
+        return;
+      }
+
+      // Fetch fresh channel info from YouTube API
+      const channelInfo = await YoutubeService.getChannelInfo({
+        accessToken: user.youtubeTokens.accessToken,
+        refreshToken: user.youtubeTokens.refreshToken,
+        expiresAt: user.youtubeTokens.expiresAt,
+      });
+
+      // Update stored channel info
+      await User.findByIdAndUpdate(userId, {
+        youtubeChannelId: channelInfo.id,
+        youtubeChannelName: channelInfo.title,
+        youtubeChannel: channelInfo,
+      });
+
+      res.json({ channel: channelInfo });
+    } catch (error) {
+      console.error("Refresh YouTube channel error:", error);
+      res.status(500).json({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to refresh channel information",
+      });
+    }
+  }
+);
+
 // @route   DELETE /api/youtube/disconnect
 // @desc    Disconnect YouTube account
 // @access  Private (Creator only)
@@ -166,6 +234,8 @@ router.delete(
       await User.findByIdAndUpdate(userId, {
         $unset: {
           youtubeTokens: 1,
+          youtubeChannelId: 1,
+          youtubeChannelName: 1,
           youtubeChannel: 1,
         },
       });

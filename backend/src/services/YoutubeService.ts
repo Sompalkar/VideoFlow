@@ -134,6 +134,8 @@ export class YoutubeService {
       // Update user with tokens and channel info
       await User.findByIdAndUpdate(userId, {
         youtubeTokens: tokens,
+        youtubeChannelId: channelInfo.id,
+        youtubeChannelName: channelInfo.title,
         youtubeChannel: channelInfo,
       });
     } catch (error) {
@@ -147,6 +149,8 @@ export class YoutubeService {
       await User.findByIdAndUpdate(userId, {
         $unset: {
           youtubeTokens: 1,
+          youtubeChannelId: 1,
+          youtubeChannelName: 1,
           youtubeChannel: 1,
         },
       });
