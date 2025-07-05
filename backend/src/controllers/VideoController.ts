@@ -61,6 +61,8 @@ export class VideoController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.error("Validation errors:", errors.array());
+        console.error("Request body:", req.body);
         res
           .status(400)
           .json({ message: "Validation errors", errors: errors.array() });
@@ -87,6 +89,22 @@ export class VideoController {
         category = "22",
         privacy = "private",
       } = req.body;
+
+      console.log("Creating video with data:", {
+        title,
+        description,
+        tags,
+        cloudinaryVideoId,
+        cloudinaryVideoUrl,
+        cloudinaryThumbnailId,
+        cloudinaryThumbnailUrl,
+        fileSize,
+        duration,
+        category,
+        privacy,
+        uploadedBy: userId,
+        teamId,
+      });
 
       const video = new Video({
         title,

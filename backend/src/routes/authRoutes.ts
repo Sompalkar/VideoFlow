@@ -18,6 +18,11 @@ router.post("/register", validateUserRegistration, AuthController.register);
 // @access  Public
 router.post("/login", validateUserLogin, AuthController.login);
 
+// @route   POST /api/auth/logout
+// @desc    Logout user
+// @access  Private
+router.post("/logout", authenticate, AuthController.logout);
+
 // @route   GET /api/auth/profile
 // @desc    Get user profile
 // @access  Private

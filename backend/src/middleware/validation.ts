@@ -9,15 +9,28 @@ export const validateVideoUpload = [
     .trim()
     .isLength({ min: 1, max: 2000 })
     .withMessage("Description must be between 1 and 2000 characters"),
-  body("cloudinaryVideoId")
+  body("cloudinaryVideoUrl")
     .trim()
     .isLength({ min: 1 })
-    .withMessage("Cloudinary Video ID is required for video upload"),
+    .withMessage("Cloudinary Video URL is required for video upload"),
+  body("cloudinaryVideoId")
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Cloudinary Video ID must not be empty if provided"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
-  body("thumbnail")
+  body("cloudinaryThumbnailUrl")
     .optional()
     .isURL()
     .withMessage("Thumbnail must be a valid URL"),
+  body("fileSize")
+    .optional()
+    .isNumeric()
+    .withMessage("File size must be a number"),
+  body("duration")
+    .optional()
+    .isNumeric()
+    .withMessage("Duration must be a number"),
 ];
 
 export const validateVideoApproval = [

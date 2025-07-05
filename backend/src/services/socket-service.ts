@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
 import jwt from "jsonwebtoken";
+import User from "../models/User";
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -26,11 +27,33 @@ interface TypingData {
   isTyping: boolean;
 }
 
+// Helper function to parse cookies
+function parseCookies(cookieString: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  if (!cookieString) return cookies;
+
+  cookieString.split(";").forEach((cookie) => {
+    const [name, value] = cookie.trim().split("=");
+    if (name && value) {
+      cookies[name] = value;
+    }
+  });
+
+  return cookies;
+}
+
 class SocketService {
   private io: SocketIOServer | null = null;
   private videoRooms: Map<string, VideoRoom> = new Map();
 
   initialize(server: HTTPServer) {
+    console.log("Initializing Socket.IO service...");
+
+    // Check for JWT secret
+    const jwtSecret = process.env.JWT_SECRET || "your-secret-key";
+    console.log("JWT Secret available:", !!jwtSecret);
+    console.log("Using JWT secret:", jwtSecret.substring(0, 10) + "...");
+
     this.io = new SocketIOServer(server, {
       cors: {
         origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -41,17 +64,56 @@ class SocketService {
 
     this.io.use(async (socket: Socket, next) => {
       try {
-        const token = (socket as any).handshake.auth.token;
+        console.log("Socket authentication attempt...");
+
+        // Try to get token from auth object first (for backward compatibility)
+        let token = (socket as any).handshake.auth.token;
+
+        // If not in auth, try to get from cookies
         if (!token) {
+          const cookies = (socket as any).handshake.headers.cookie;
+          console.log("Cookies from handshake:", cookies);
+
+          if (cookies) {
+            const parsedCookies = parseCookies(cookies);
+            console.log("Parsed cookies:", Object.keys(parsedCookies));
+
+            token = parsedCookies["auth-token"];
+            if (token) {
+              console.log(
+                "Found auth token in cookie:",
+                token.substring(0, 20) + "..."
+              );
+            } else {
+              console.log("No auth-token found in cookies");
+            }
+          }
+        }
+
+        if (!token) {
+          console.log("No token found in auth or cookies");
           return next(new Error("Authentication error"));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        console.log("Verifying JWT token...");
+        const decoded = jwt.verify(token, jwtSecret) as any;
+        console.log("JWT decoded successfully for user:", decoded.userId);
+
+        // Fetch user data from database
+        const user = await User.findById(decoded.userId).select("name teamId");
+        if (!user) {
+          console.log("User not found in database:", decoded.userId);
+          return next(new Error("User not found"));
+        }
+
+        console.log("User found:", user.name);
+
         (socket as AuthenticatedSocket).userId = decoded.userId;
-        (socket as AuthenticatedSocket).userName = decoded.name;
-        (socket as AuthenticatedSocket).teamId = decoded.teamId;
+        (socket as AuthenticatedSocket).userName = user.name;
+        (socket as AuthenticatedSocket).teamId = user.teamId?.toString();
         next();
       } catch (error) {
+        console.error("Socket authentication error:", error);
         next(new Error("Authentication error"));
       }
     });
@@ -61,6 +123,7 @@ class SocketService {
       console.log(
         `User connected: ${authSocket.userName} (${authSocket.userId})`
       );
+      console.log(`Socket ID: ${socket.id}`);
 
       // Join video room
       socket.on("join-video-room", (data: JoinVideoRoomData) => {

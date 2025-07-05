@@ -89,22 +89,8 @@ export function VideoComments({
     if (videoId) {
       fetchComments(videoId);
 
-      // Initialize real-time functionality
-      const authStorage = localStorage.getItem("auth-storage");
-      let token: string | undefined;
-
-      if (authStorage) {
-        try {
-          const parsed = JSON.parse(authStorage);
-          token = parsed.state?.token || parsed.token;
-        } catch (error) {
-          console.error("Error parsing auth storage:", error);
-        }
-      }
-
-      if (token) {
-        initializeRealtime(videoId, token as string);
-      }
+      // Initialize real-time functionality (cookies will be automatically sent)
+      initializeRealtime(videoId);
     }
 
     // Cleanup on unmount

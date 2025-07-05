@@ -16,14 +16,21 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    // Try to get token from cookie first, then fallback to Authorization header
+    let token = req.cookies["auth-token"];
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
+    }
+
+    if (!token) {
       res.status(401).json({ message: "Authorization token required" });
       return;
     }
 
-    const token = authHeader.split(" ")[1];
     const user = await AuthController.verifyToken(token);
 
     req.user = {

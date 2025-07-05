@@ -6,26 +6,33 @@ class SocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
 
-  connect(token: string) {
+  connect() {
     if (this.socket?.connected) {
+      console.log("Socket already connected, skipping...");
       return;
     }
+
+    console.log("Connecting to socket with cookies...");
+    console.log(
+      "Backend URL:",
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
+    );
 
     this.socket = io(
       process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000",
       {
-        auth: {
-          token,
-        },
         transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
+        withCredentials: true,
+        timeout: 20000, // 20 second timeout
       }
     );
 
     this.socket.on("connect", () => {
-      console.log("Socket connected");
+      console.log("Socket connected successfully");
+      console.log("Socket ID:", this.socket?.id);
       this.isConnected = true;
       this.reconnectAttempts = 0;
     });
@@ -37,6 +44,9 @@ class SocketService {
 
     this.socket.on("connect_error", (error) => {
       console.error("Socket connection error:", error);
+      console.error("Error details:", error.message);
+      console.error("Error data:", error.data);
+      console.error("Error type:", error.type);
       this.reconnectAttempts++;
     });
 
@@ -47,6 +57,10 @@ class SocketService {
 
     this.socket.on("reconnect_failed", () => {
       console.error("Socket reconnection failed");
+    });
+
+    this.socket.on("error", (error) => {
+      console.error("Socket error event:", error);
     });
   }
 

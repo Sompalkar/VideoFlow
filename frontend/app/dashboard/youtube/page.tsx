@@ -67,16 +67,11 @@ export default function YouTubePage() {
   }, [user]);
 
   const checkYouTubeStatus = async () => {
-    const token = localStorage.getItem("auth-storage")
-      ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-      : null;
-
-    if (!token) return;
-
     try {
       const response = await apiClient.get<YouTubeStatus>(
         "/youtube/status",
-        token
+        undefined,
+        { withCredentials: true }
       );
       setYoutubeStatus(response);
 
@@ -89,17 +84,12 @@ export default function YouTubePage() {
   };
 
   const fetchChannelInfo = async () => {
-    const token = localStorage.getItem("auth-storage")
-      ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-      : null;
-
-    if (!token) return;
-
     setIsLoading(true);
     try {
       const response = await apiClient.get<{ channel: ChannelInfo }>(
         "/youtube/channel",
-        token
+        undefined,
+        { withCredentials: true }
       );
       setChannelInfo(response.channel);
       setError("");
@@ -113,18 +103,13 @@ export default function YouTubePage() {
   };
 
   const refreshChannelInfo = async () => {
-    const token = localStorage.getItem("auth-storage")
-      ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-      : null;
-
-    if (!token) return;
-
     setIsLoading(true);
     try {
       const response = await apiClient.post<{ channel: ChannelInfo }>(
         "/youtube/refresh-channel",
         {},
-        token
+        undefined,
+        { withCredentials: true }
       );
       setChannelInfo(response.channel);
       setError("");
@@ -140,19 +125,14 @@ export default function YouTubePage() {
   };
 
   const connectYouTube = async () => {
-    const token = localStorage.getItem("auth-storage")
-      ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-      : null;
-
-    if (!token) return;
-
     setIsConnecting(true);
     setError("");
 
     try {
       const response = await apiClient.get<{ authUrl: string }>(
         "/youtube/auth-url",
-        token
+        undefined,
+        { withCredentials: true }
       );
       window.location.href = response.authUrl;
     } catch (error) {
@@ -164,15 +144,11 @@ export default function YouTubePage() {
   };
 
   const disconnectYouTube = async () => {
-    const token = localStorage.getItem("auth-storage")
-      ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-      : null;
-
-    if (!token) return;
-
     setIsLoading(true);
     try {
-      await apiClient.delete("/youtube/disconnect", token);
+      await apiClient.delete("/youtube/disconnect", undefined, {
+        withCredentials: true,
+      });
       setChannelInfo(null);
       setYoutubeStatus({
         connected: false,

@@ -1,37 +1,37 @@
-import { create } from "zustand"
-import { apiClient } from "@/lib/config/api"
+import { create } from "zustand";
+import { apiClient } from "@/lib/config/api";
 
 interface Analytics {
-  totalViews: number
-  totalLikes: number
-  totalComments: number
-  avgWatchTime: string
-  viewsGrowth: number
-  likesGrowth: number
-  commentsGrowth: number
-  watchTimeGrowth: number
+  totalViews: number;
+  totalLikes: number;
+  totalComments: number;
+  avgWatchTime: string;
+  viewsGrowth: number;
+  likesGrowth: number;
+  commentsGrowth: number;
+  watchTimeGrowth: number;
   topVideos: Array<{
-    id: string
-    title: string
-    views: number
-    likes: number
-    publishedAt: string
-  }>
+    id: string;
+    title: string;
+    views: number;
+    likes: number;
+    publishedAt: string;
+  }>;
   recentActivity: Array<{
-    id: string
-    type: string
-    message: string
-    timestamp: string
-    user: string
-  }>
+    id: string;
+    type: string;
+    message: string;
+    timestamp: string;
+    user: string;
+  }>;
 }
 
 interface DashboardState {
-  analytics: Analytics | null
-  isLoading: boolean
-  error: string | null
-  fetchAnalytics: () => Promise<void>
-  clearError: () => void
+  analytics: Analytics | null;
+  isLoading: boolean;
+  error: string | null;
+  fetchAnalytics: () => Promise<void>;
+  clearError: () => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set) => ({
@@ -40,25 +40,24 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   error: null,
 
   fetchAnalytics: async () => {
-    const token = localStorage.getItem("auth-storage")
-      ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-      : null
-
-    if (!token) return
-
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, error: null });
     try {
-      const response = await apiClient.get<{ analytics: Analytics }>("/analytics", token)
-      set({ analytics: response.analytics, isLoading: false })
+      const response = await apiClient.get<{ analytics: Analytics }>(
+        "/analytics",
+        undefined,
+        { withCredentials: true }
+      );
+      set({ analytics: response.analytics, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : "Failed to fetch analytics",
+        error:
+          error instanceof Error ? error.message : "Failed to fetch analytics",
         isLoading: false,
-      })
+      });
     }
   },
 
   clearError: () => {
-    set({ error: null })
+    set({ error: null });
   },
-}))
+}));

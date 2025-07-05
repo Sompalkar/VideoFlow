@@ -96,16 +96,11 @@ export default function TeamPage() {
       setIsLoading(true);
       setError(null);
 
-      const token = localStorage.getItem("auth-storage")
-        ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-        : null;
-
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
-
-      const teamResponse = await apiClient.get<{ team: Team }>("/team", token);
+      const teamResponse = await apiClient.get<{ team: Team }>(
+        "/team",
+        undefined,
+        { withCredentials: true }
+      );
       setTeam(teamResponse.team);
     } catch (error) {
       console.error("Failed to load team data:", error);
@@ -124,22 +119,14 @@ export default function TeamPage() {
       setIsInviting(true);
       setError(null);
 
-      const token = localStorage.getItem("auth-storage")
-        ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-        : null;
-
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
-
       await apiClient.post(
         "/team/invite",
         {
           email: inviteEmail,
           role: inviteRole,
         },
-        token
+        undefined,
+        { withCredentials: true }
       );
 
       setIsInviteDialogOpen(false);
@@ -159,19 +146,12 @@ export default function TeamPage() {
   const handleUpdateRole = async (memberId: string, newRole: string) => {
     try {
       setError(null);
-      const token = localStorage.getItem("auth-storage")
-        ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-        : null;
-
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
 
       await apiClient.put(
         `/team/members/${memberId}/role`,
         { role: newRole },
-        token
+        undefined,
+        { withCredentials: true }
       );
       await loadTeamData();
     } catch (error) {
@@ -185,16 +165,10 @@ export default function TeamPage() {
   const handleRemoveMember = async (memberId: string) => {
     try {
       setError(null);
-      const token = localStorage.getItem("auth-storage")
-        ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-        : null;
 
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
-
-      await apiClient.delete(`/team/members/${memberId}`, token);
+      await apiClient.delete(`/team/members/${memberId}`, undefined, {
+        withCredentials: true,
+      });
       await loadTeamData();
     } catch (error) {
       console.error("Failed to remove member:", error);
@@ -207,16 +181,10 @@ export default function TeamPage() {
   const handlePromoteToCreator = async () => {
     try {
       setError(null);
-      const token = localStorage.getItem("auth-storage")
-        ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-        : null;
 
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
-
-      await apiClient.post("/team/promote", {}, token);
+      await apiClient.post("/team/promote", {}, undefined, {
+        withCredentials: true,
+      });
       await loadTeamData();
       await refreshToken(); // Refresh token to get updated role
     } catch (error) {

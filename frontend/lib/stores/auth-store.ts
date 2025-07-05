@@ -14,9 +14,9 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   error: string | null;
+  initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: {
     name: string;
@@ -24,7 +24,7 @@ interface AuthState {
     password: string;
     role: "creator" | "editor" | "manager";
   }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
   updateProfile: (data: { name: string; avatar?: string }) => Promise<void>;
   refreshToken: () => Promise<void>;
@@ -38,24 +38,36 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
       isLoading: false,
       error: null,
+
+      // Initialize auth state on app startup
+      initialize: async () => {
+        try {
+          // Try to refresh token to validate current session
+          await get().refreshToken();
+        } catch (error) {
+          console.log("No valid session found, user needs to login");
+          // Clear any stale user data
+          set({ user: null });
+        }
+      },
 
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await apiClient.post<{ user: User; token: string }>(
+          const response = await apiClient.post<{ user: User }>(
             "/auth/login",
             {
               email,
               password,
-            }
+            },
+            undefined,
+            { withCredentials: true }
           );
 
           set({
             user: response.user,
-            token: response.token,
             isLoading: false,
           });
         } catch (error) {
@@ -70,14 +82,15 @@ export const useAuthStore = create<AuthState>()(
       register: async (userData) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await apiClient.post<{ user: User; token: string }>(
+          const response = await apiClient.post<{ user: User }>(
             "/auth/register",
-            userData
+            userData,
+            undefined,
+            { withCredentials: true }
           );
 
           set({
             user: response.user,
-            token: response.token,
             isLoading: false,
           });
         } catch (error) {
@@ -90,8 +103,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        set({ user: null, token: null, error: null });
+      logout: async () => {
+        try {
+          await apiClient.post("/auth/logout", {}, undefined, {
+            withCredentials: true,
+          });
+        } catch (error) {
+          console.error("Logout error:", error);
+        } finally {
+          set({ user: null, error: null });
+        }
       },
 
       clearError: () => {
@@ -99,15 +120,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateProfile: async (data) => {
-        const { token } = get();
-        if (!token) throw new Error("Not authenticated");
-
         set({ isLoading: true, error: null });
         try {
           const response = await apiClient.put<{ user: User }>(
             "/auth/profile",
             data,
-            token
+            undefined,
+            { withCredentials: true }
           );
 
           set({
@@ -125,19 +144,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refreshToken: async () => {
-        const { token } = get();
-        if (!token) return;
-
         try {
-          const response = await apiClient.post<{ user: User; token: string }>(
+          const response = await apiClient.post<{ user: User }>(
             "/auth/refresh",
             {},
-            token
+            undefined,
+            { withCredentials: true }
           );
 
           set({
             user: response.user,
-            token: response.token,
           });
         } catch (error) {
           console.error("Token refresh failed:", error);
@@ -145,9 +161,6 @@ export const useAuthStore = create<AuthState>()(
       },
 
       changePassword: async (currentPassword: string, newPassword: string) => {
-        const { token } = get();
-        if (!token) throw new Error("Not authenticated");
-
         set({ isLoading: true, error: null });
         try {
           await apiClient.post(
@@ -156,7 +169,8 @@ export const useAuthStore = create<AuthState>()(
               currentPassword,
               newPassword,
             },
-            token
+            undefined,
+            { withCredentials: true }
           );
 
           // Refresh user data to update needsPasswordChange flag
@@ -176,7 +190,6 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
       }),
     }
   )

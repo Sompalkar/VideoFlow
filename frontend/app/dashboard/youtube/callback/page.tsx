@@ -34,20 +34,11 @@ export default function YouTubeCallbackPage() {
       }
 
       try {
-        const token = localStorage.getItem("auth-storage")
-          ? JSON.parse(localStorage.getItem("auth-storage")!).state.token
-          : null;
-
-        if (!token) {
-          setStatus("error");
-          setMessage("Please log in to connect YouTube");
-          return;
-        }
-
         const response = await apiClient.post(
           "/youtube/callback",
           { code },
-          token
+          undefined,
+          { withCredentials: true }
         );
 
         if (response.success) {

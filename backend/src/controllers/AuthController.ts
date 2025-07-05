@@ -88,6 +88,16 @@ export class AuthController {
         { expiresIn: "7d" }
       );
 
+      // Set HTTP-only cookie
+      res.cookie("auth-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+        // Don't set domain to allow cross-port cookies on localhost
+      });
+
       res.status(201).json({
         user: {
           id: user._id,
@@ -98,7 +108,6 @@ export class AuthController {
           youtubeConnected: !!user.youtubeTokens,
           needsPasswordChange: user.needsPasswordChange,
         },
-        token,
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -153,6 +162,16 @@ export class AuthController {
         { expiresIn: "7d" }
       );
 
+      // Set HTTP-only cookie
+      res.cookie("auth-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+        // Don't set domain to allow cross-port cookies on localhost
+      });
+
       res.json({
         user: {
           id: user._id,
@@ -163,7 +182,6 @@ export class AuthController {
           youtubeConnected: !!user.youtubeTokens,
           needsPasswordChange: user.needsPasswordChange,
         },
-        token,
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -314,6 +332,16 @@ export class AuthController {
         { expiresIn: "7d" }
       );
 
+      // Set new HTTP-only cookie
+      res.cookie("auth-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+        // Don't set domain to allow cross-port cookies on localhost
+      });
+
       res.json({
         user: {
           id: user._id,
@@ -324,7 +352,6 @@ export class AuthController {
           youtubeConnected: !!user.youtubeTokens,
           needsPasswordChange: user.needsPasswordChange,
         },
-        token,
       });
     } catch (error) {
       console.error("Refresh token error:", error);
@@ -381,6 +408,23 @@ export class AuthController {
       res.json({ message: "Password changed successfully" });
     } catch (error) {
       console.error("Change password error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  static async logout(req: Request, res: Response): Promise<void> {
+    try {
+      // Clear the auth cookie
+      res.clearCookie("auth-token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Logout error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   }

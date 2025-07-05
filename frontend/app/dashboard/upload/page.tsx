@@ -185,23 +185,35 @@ export default function UploadPage() {
 
       // Upload video to Cloudinary
       const videoResourceType = getResourceType(videoFile.file);
+      console.log("Uploading video with resource type:", videoResourceType);
+
       const videoResult = await uploadToCloudinary(
         videoFile.file,
         videoResourceType
       );
+
+      console.log("Video upload result:", videoResult);
+
       let thumbnailResult: any = null;
 
       // Upload thumbnail if provided
       if (thumbnailFile) {
         const thumbResourceType = getResourceType(thumbnailFile.file);
+        console.log(
+          "Uploading thumbnail with resource type:",
+          thumbResourceType
+        );
+
         thumbnailResult = await uploadToCloudinary(
           thumbnailFile.file,
           thumbResourceType
         );
+
+        console.log("Thumbnail upload result:", thumbnailResult);
       }
 
       // Prepare video upload payload for backend
-      await uploadVideo({
+      const uploadPayload = {
         title: videoDetails.title,
         description: videoDetails.description,
         tags: videoDetails.tags.split(",").map((tag) => tag.trim()),
@@ -234,11 +246,16 @@ export default function UploadPage() {
         fileSize:
           videoResult?.data?.bytes || videoResult?.bytes || videoFile.file.size,
         duration: videoResult?.data?.duration || videoResult?.duration || 0,
-      });
+      };
+
+      console.log("Upload payload to backend:", uploadPayload);
+
+      await uploadVideo(uploadPayload);
 
       setUploadSuccess(true);
       setCurrentStep(5);
     } catch (error) {
+      console.error("Upload error:", error);
       // Show user-friendly error for file type issues
       if (
         error instanceof Error &&

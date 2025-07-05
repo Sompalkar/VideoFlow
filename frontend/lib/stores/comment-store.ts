@@ -2,21 +2,6 @@ import { create } from "zustand";
 import { apiClient } from "@/lib/config/api";
 import { socketService } from "@/lib/services/socket-service";
 
-// Helper function to get token from localStorage
-const getAuthToken = (): string | null => {
-  const authStorage = localStorage.getItem("auth-storage");
-  if (authStorage) {
-    try {
-      const parsed = JSON.parse(authStorage);
-      return parsed.state?.token || parsed.token;
-    } catch (error) {
-      console.error("Error parsing auth storage:", error);
-      return null;
-    }
-  }
-  return null;
-};
-
 interface Comment {
   _id: string;
   videoId: string;
@@ -60,7 +45,7 @@ interface CommentState {
     type: "like" | "dislike" | "heart" | "laugh"
   ) => Promise<void>;
   clearError: () => void;
-  initializeRealtime: (videoId: string, token?: string) => void;
+  initializeRealtime: (videoId: string) => void;
   cleanupRealtime: () => void;
   emitTyping: (videoId: string, isTyping: boolean) => void;
 }
@@ -75,15 +60,10 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
       const response = await apiClient.get<{ comments: Comment[] }>(
         `/comments/${videoId}`,
-        token
+        undefined,
+        { withCredentials: true }
       );
       set({ comments: response.comments, isLoading: false });
     } catch (error) {
@@ -104,12 +84,6 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     try {
       set({ error: null });
 
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
       const response = await apiClient.post<{ comment: Comment }>(
         `/comments/${videoId}`,
         {
@@ -117,7 +91,8 @@ export const useCommentStore = create<CommentState>((set, get) => ({
           timestamp,
           parentId,
         },
-        token
+        undefined,
+        { withCredentials: true }
       );
 
       const { comments } = get();
@@ -148,16 +123,11 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     try {
       set({ error: null });
 
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
       const response = await apiClient.put<{ comment: Comment }>(
         `/comments/${commentId}`,
         { content },
-        token
+        undefined,
+        { withCredentials: true }
       );
 
       const { comments } = get();
@@ -187,13 +157,9 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     try {
       set({ error: null });
 
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
-      await apiClient.delete(`/comments/${commentId}`, token);
+      await apiClient.delete(`/comments/${commentId}`, undefined, {
+        withCredentials: true,
+      });
 
       const { comments } = get();
       const updatedComments = comments
@@ -219,16 +185,11 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     try {
       set({ error: null });
 
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
       const response = await apiClient.post<{ comment: Comment }>(
         `/comments/${commentId}/reaction`,
         { type },
-        token
+        undefined,
+        { withCredentials: true }
       );
 
       const { comments } = get();
@@ -256,14 +217,9 @@ export const useCommentStore = create<CommentState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  initializeRealtime: (videoId: string, token?: string) => {
-    if (!token) {
-      console.warn("No token provided for real-time initialization");
-      return;
-    }
-
-    // Connect to socket
-    socketService.connect(token);
+  initializeRealtime: (videoId: string) => {
+    // Connect to socket (cookies will be automatically sent)
+    socketService.connect();
 
     // Join video room
     socketService.joinVideoRoom(videoId);
