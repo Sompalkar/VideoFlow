@@ -1,26 +1,26 @@
-import mongoose, { type Document, Schema } from "mongoose"
+import mongoose, { type Document, Schema } from "mongoose";
 
 export interface IVideoComment extends Document {
-  videoId: mongoose.Types.ObjectId
-  userId: mongoose.Types.ObjectId
-  content: string
-  timestamp?: number // Video timestamp in seconds
-  parentId?: mongoose.Types.ObjectId // For replies
-  mentions: mongoose.Types.ObjectId[] // Mentioned users
+  videoId: mongoose.Types.ObjectId | string;
+  userId: mongoose.Types.ObjectId;
+  content: string;
+  timestamp?: number; // Video timestamp in seconds
+  parentId?: mongoose.Types.ObjectId | string; // For replies
+  mentions: mongoose.Types.ObjectId[]; // Mentioned users
   reactions: Array<{
-    userId: mongoose.Types.ObjectId
-    type: "like" | "dislike" | "heart" | "laugh"
-  }>
-  isEdited: boolean
-  editedAt?: Date
-  createdAt: Date
-  updatedAt: Date
+    userId: mongoose.Types.ObjectId;
+    type: "like" | "dislike" | "heart" | "laugh";
+  }>;
+  isEdited: boolean;
+  editedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const VideoCommentSchema = new Schema<IVideoComment>(
   {
     videoId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed, // Allow both ObjectId and String
       ref: "Video",
       required: true,
     },
@@ -40,7 +40,7 @@ const VideoCommentSchema = new Schema<IVideoComment>(
       min: 0,
     },
     parentId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed, // Allow both ObjectId and String
       ref: "VideoComment",
     },
     mentions: [
@@ -73,12 +73,15 @@ const VideoCommentSchema = new Schema<IVideoComment>(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
 // Indexes
-VideoCommentSchema.index({ videoId: 1, createdAt: -1 })
-VideoCommentSchema.index({ userId: 1 })
-VideoCommentSchema.index({ parentId: 1 })
+VideoCommentSchema.index({ videoId: 1, createdAt: -1 });
+VideoCommentSchema.index({ userId: 1 });
+VideoCommentSchema.index({ parentId: 1 });
 
-export default mongoose.model<IVideoComment>("VideoComment", VideoCommentSchema)
+export default mongoose.model<IVideoComment>(
+  "VideoComment",
+  VideoCommentSchema
+);

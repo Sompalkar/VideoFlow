@@ -5,8 +5,16 @@ class SocketService {
   private isConnected = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private pendingRoomJoins: string[] = [];
 
   connect() {
+    console.log("Frontend: SocketService.connect() called");
+    console.log("Frontend: Current socket state:", {
+      socketExists: !!this.socket,
+      isConnected: this.isConnected,
+      socketConnected: this.socket?.connected
+    });
+    
     if (this.socket?.connected) {
       console.log("Socket already connected, skipping...");
       return;
@@ -30,11 +38,21 @@ class SocketService {
       }
     );
 
+    console.log("Frontend: Socket instance created:", !!this.socket);
+
     this.socket.on("connect", () => {
       console.log("Socket connected successfully");
       console.log("Socket ID:", this.socket?.id);
+      console.log("Socket connected:", this.socket?.connected);
       this.isConnected = true;
       this.reconnectAttempts = 0;
+
+      // Join any pending rooms
+      this.pendingRoomJoins.forEach((videoId) => {
+        console.log("Frontend: Joining pending room:", videoId);
+        this.socket?.emit("join-video-room", { videoId });
+      });
+      this.pendingRoomJoins = [];
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -74,7 +92,20 @@ class SocketService {
 
   joinVideoRoom(videoId: string) {
     if (this.socket?.connected) {
+      console.log("Frontend: Joining video room:", videoId);
       this.socket.emit("join-video-room", { videoId });
+    } else {
+      console.log(
+        "Frontend: Socket not connected, queuing room join for:",
+        videoId
+      );
+      if (!this.pendingRoomJoins.includes(videoId)) {
+        this.pendingRoomJoins.push(videoId);
+      }
+      // Try to connect if not already connecting
+      if (!this.socket) {
+        this.connect();
+      }
     }
   }
 
@@ -86,19 +117,31 @@ class SocketService {
 
   onCommentAdded(callback: (comment: any) => void) {
     if (this.socket) {
-      this.socket.on("comment-added", callback);
+      console.log("Frontend: Setting up comment-added listener");
+      this.socket.on("comment-added", (comment) => {
+        console.log("Frontend: Received comment-added event:", comment);
+        callback(comment);
+      });
     }
   }
 
   onCommentUpdated(callback: (comment: any) => void) {
     if (this.socket) {
-      this.socket.on("comment-updated", callback);
+      console.log("Frontend: Setting up comment-updated listener");
+      this.socket.on("comment-updated", (comment) => {
+        console.log("Frontend: Received comment-updated event:", comment);
+        callback(comment);
+      });
     }
   }
 
   onCommentDeleted(callback: (commentId: string) => void) {
     if (this.socket) {
-      this.socket.on("comment-deleted", callback);
+      console.log("Frontend: Setting up comment-deleted listener");
+      this.socket.on("comment-deleted", (commentId) => {
+        console.log("Frontend: Received comment-deleted event:", commentId);
+        callback(commentId);
+      });
     }
   }
 
@@ -134,6 +177,33 @@ class SocketService {
 
   isSocketConnected() {
     return this.isConnected;
+  }
+
+  async waitForConnection(timeout: number = 5000): Promise<boolean> {
+    if (this.isConnected) {
+      return true;
+    }
+
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+
+      const checkConnection = () => {
+        if (this.isConnected) {
+          resolve(true);
+          return;
+        }
+
+        if (Date.now() - startTime > timeout) {
+          console.error("Frontend: Socket connection timeout");
+          resolve(false);
+          return;
+        }
+
+        setTimeout(checkConnection, 100);
+      };
+
+      checkConnection();
+    });
   }
 }
 

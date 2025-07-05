@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,17 +58,17 @@ export function VideoComments({
   const {
     comments,
     isLoading,
+    isLoadingMore,
     error,
-    typingUsers,
+    pagination,
     fetchComments,
+    loadMoreComments,
     addComment,
     updateComment,
     deleteComment,
     toggleReaction,
     clearError,
-    initializeRealtime,
-    cleanupRealtime,
-    emitTyping,
+    refreshComments,
   } = useCommentStore();
 
   const [newComment, setNewComment] = useState("");
@@ -84,33 +84,72 @@ export function VideoComments({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !isLoadingMore && pagination?.hasMore) {
+          console.log(
+            "VideoComments: Loading more comments via intersection observer"
+          );
+          loadMoreComments(videoId);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loadMoreComments, videoId, isLoadingMore, pagination?.hasMore]);
 
   useEffect(() => {
     if (videoId) {
+      console.log("VideoComments: Initializing for video:", videoId);
       fetchComments(videoId);
-
-      // Initialize real-time functionality (cookies will be automatically sent)
-      initializeRealtime(videoId);
     }
-
-    // Cleanup on unmount
-    return () => {
-      cleanupRealtime();
-    };
-  }, [videoId, fetchComments, initializeRealtime, cleanupRealtime]);
+  }, [videoId, fetchComments]);
 
   useEffect(() => {
-    // Auto-scroll to bottom when new comments are added
-    if (commentsContainerRef.current) {
+    // Auto-scroll to bottom when new comments are added (only for first page)
+    if (commentsContainerRef.current && pagination?.page === 1) {
       commentsContainerRef.current.scrollTop =
         commentsContainerRef.current.scrollHeight;
     }
-  }, [comments]);
+  }, [comments, pagination?.page]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log("VideoComments: Comments state updated:", {
+      commentsCount: comments.length,
+      isLoading,
+      isLoadingMore,
+      pagination,
+      comments: comments.map((c) => ({
+        id: c._id,
+        content: c.content.substring(0, 20) + "...",
+      })),
+    });
+  }, [comments, isLoading, isLoadingMore, pagination]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
     try {
+      console.log("VideoComments: Submitting comment:", {
+        videoId,
+        content: newComment,
+        timestamp: includeTimestamp
+          ? customTimestamp || currentTime
+          : undefined,
+        parentId: replyingTo,
+      });
+
       setIsSubmitting(true);
       const timestamp = includeTimestamp
         ? customTimestamp || currentTime
@@ -120,9 +159,9 @@ export function VideoComments({
       setReplyingTo(null);
       setIncludeTimestamp(false);
       setCustomTimestamp(0);
-      emitTyping(videoId, false);
+      console.log("VideoComments: Comment submitted successfully");
     } catch (error) {
-      console.error("Failed to add comment:", error);
+      console.error("VideoComments: Failed to add comment:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -209,10 +248,10 @@ export function VideoComments({
 
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewComment(e.target.value);
-    emitTyping(videoId, e.target.value.length > 0);
   };
 
   const handleRefresh = () => {
+    console.log("VideoComments: Manual refresh requested");
     fetchComments(videoId);
   };
 
@@ -222,7 +261,12 @@ export function VideoComments({
       <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
-          Live Chat ({comments.length})
+          Live Chat ({pagination?.total || comments.length})
+          {pagination?.hasMore && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              (showing {comments.length} of {pagination.total})
+            </span>
+          )}
         </h3>
         <Button
           variant="ghost"
@@ -251,270 +295,268 @@ export function VideoComments({
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
+        ) : comments.length === 0 ? (
+          <div className="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+            <MessageSquare className="w-6 h-6 mr-2" />
+            No comments yet. Be the first to comment!
+          </div>
         ) : (
-          comments.map((comment) => (
-            <div key={comment._id} className="space-y-2">
-              {/* Main Comment */}
-              <div
-                className={cn(
-                  "flex gap-3 p-3 rounded-lg transition-all duration-200",
-                  comment.timestamp !== undefined
-                    ? "bg-blue-50 dark:bg-blue-950/20 border-l-4 border-l-blue-500"
-                    : "bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800"
-                )}
-              >
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage
-                    src={comment.userId?.avatar || "/placeholder.svg"}
-                    alt={comment.userId?.name || "User"}
-                  />
-                  <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm">
-                    {comment.userId?.name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+          <>
+            {comments.map((comment) => (
+              <div key={comment._id} className="space-y-2">
+                {/* Main Comment */}
+                <div
+                  className={cn(
+                    "flex gap-3 p-3 rounded-lg transition-all duration-200",
+                    comment.timestamp !== undefined
+                      ? "bg-blue-50 dark:bg-blue-950/20 border-l-4 border-l-blue-500"
+                      : "bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  )}
+                >
+                  <Avatar className="w-8 h-8 flex-shrink-0">
+                    <AvatarImage
+                      src={comment.userId?.avatar || "/placeholder.svg"}
+                      alt={comment.userId?.name || "User"}
+                    />
+                    <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm">
+                      {comment.userId?.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                      {comment.userId?.name || "Unknown User"}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(comment.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    {comment.timestamp !== undefined && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs h-auto p-1 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
-                        onClick={() => handleTimestampClick(comment.timestamp!)}
-                      >
-                        <Clock className="w-3 h-3 mr-1" />
-                        {formatTimestamp(comment.timestamp)}
-                      </Button>
-                    )}
-                    {comment.isEdited && (
-                      <Badge variant="secondary" className="text-xs">
-                        Edited
-                      </Badge>
-                    )}
-                  </div>
-
-                  {editingComment === comment._id ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="min-h-[60px] resize-none"
-                      />
-                      <div className="flex gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                        {comment.userId?.name || "Unknown User"}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(comment.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      {comment.timestamp !== undefined && (
                         <Button
+                          variant="ghost"
                           size="sm"
-                          onClick={() => handleEditComment(comment._id)}
-                          disabled={!editContent.trim()}
+                          className="text-xs h-auto p-1 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
+                          onClick={() =>
+                            handleTimestampClick(comment.timestamp!)
+                          }
                         >
-                          Save
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatTimestamp(comment.timestamp)}
                         </Button>
+                      )}
+                      {comment.isEdited && (
+                        <Badge variant="secondary" className="text-xs">
+                          Edited
+                        </Badge>
+                      )}
+                    </div>
+
+                    {editingComment === comment._id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="min-h-[60px] resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleEditComment(comment._id)}
+                            disabled={!editContent.trim()}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingComment(null);
+                              setEditContent("");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap mb-2">
+                        {comment.content}
+                      </p>
+                    )}
+
+                    {/* Reactions and Actions */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        {["like", "dislike", "heart", "laugh"].map((type) => {
+                          const count = getReactionCount(comment, type);
+                          const userReacted = getUserReaction(comment) === type;
+
+                          return (
+                            <Button
+                              key={type}
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "h-7 px-2 text-xs transition-colors",
+                                userReacted && "bg-primary/10 text-primary"
+                              )}
+                              onClick={() =>
+                                handleReaction(comment._id, type as any)
+                              }
+                            >
+                              {getReactionIcon(type)}
+                              {count > 0 && (
+                                <span className="ml-1">{count}</span>
+                              )}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setEditingComment(null);
-                            setEditContent("");
+                            setReplyingTo(comment._id);
+                            textareaRef.current?.focus();
                           }}
+                          className="text-xs h-7"
                         >
-                          Cancel
+                          <Reply className="w-3 h-3 mr-1" />
+                          Reply
                         </Button>
+
+                        {comment.userId?._id === user?.id && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEditingComment(comment._id);
+                                  setEditContent(comment.content);
+                                }}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeleteConfirmId(comment._id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap mb-2">
-                      {comment.content}
-                    </p>
-                  )}
-
-                  {/* Reactions and Actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      {["like", "dislike", "heart", "laugh"].map((type) => {
-                        const count = getReactionCount(comment, type);
-                        const userReacted = getUserReaction(comment) === type;
-
-                        return (
-                          <Button
-                            key={type}
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                              "h-7 px-2 text-xs transition-colors",
-                              userReacted && "bg-primary/10 text-primary"
-                            )}
-                            onClick={() =>
-                              handleReaction(comment._id, type as any)
-                            }
-                          >
-                            {getReactionIcon(type)}
-                            {count > 0 && <span className="ml-1">{count}</span>}
-                          </Button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setReplyingTo(comment._id);
-                          textareaRef.current?.focus();
-                        }}
-                        className="text-xs h-7"
-                      >
-                        <Reply className="w-3 h-3 mr-1" />
-                        Reply
-                      </Button>
-
-                      {comment.userId?._id === user?.id && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingComment(comment._id);
-                                setEditContent(comment.content);
-                              }}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setDeleteConfirmId(comment._id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Replies */}
-              {comment.replies && comment.replies.length > 0 && (
-                <div className="ml-11 space-y-2">
-                  {comment.replies.map((reply) => (
-                    <div
-                      key={reply._id}
-                      className="flex gap-3 p-2 rounded-lg bg-gray-50/50 dark:bg-gray-800/30"
-                    >
-                      <Avatar className="w-6 h-6 flex-shrink-0">
-                        <AvatarImage
-                          src={reply.userId?.avatar || "/placeholder.svg"}
-                          alt={reply.userId?.name || "User"}
-                        />
-                        <AvatarFallback className="bg-gradient-to-r from-green-600 to-blue-600 text-white text-xs">
-                          {reply.userId?.name?.charAt(0).toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                {/* Replies */}
+                {comment.replies && comment.replies.length > 0 && (
+                  <div className="ml-11 space-y-2">
+                    {comment.replies.map((reply) => (
+                      <div
+                        key={reply._id}
+                        className="flex gap-3 p-2 rounded-lg bg-gray-50/50 dark:bg-gray-800/30"
+                      >
+                        <Avatar className="w-6 h-6 flex-shrink-0">
+                          <AvatarImage
+                            src={reply.userId?.avatar || "/placeholder.svg"}
+                            alt={reply.userId?.name || "User"}
+                          />
+                          <AvatarFallback className="bg-gradient-to-r from-green-600 to-blue-600 text-white text-xs">
+                            {reply.userId?.name?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-xs text-gray-900 dark:text-gray-100">
-                            {reply.userId?.name || "Unknown User"}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(reply.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                          {reply.timestamp !== undefined && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs h-auto p-1 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
-                              onClick={() =>
-                                handleTimestampClick(reply.timestamp!)
-                              }
-                            >
-                              <Clock className="w-3 h-3 mr-1" />
-                              {formatTimestamp(reply.timestamp)}
-                            </Button>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap mb-1">
-                          {reply.content}
-                        </p>
-
-                        {/* Reply reactions */}
-                        <div className="flex items-center gap-1">
-                          {["like", "heart"].map((type) => {
-                            const count = getReactionCount(reply, type);
-                            const userReacted = getUserReaction(reply) === type;
-
-                            return (
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-xs text-gray-900 dark:text-gray-100">
+                              {reply.userId?.name || "Unknown User"}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {new Date(reply.createdAt).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </span>
+                            {reply.timestamp !== undefined && (
                               <Button
-                                key={type}
                                 variant="ghost"
                                 size="sm"
-                                className={cn(
-                                  "h-5 px-1 text-xs",
-                                  userReacted && "bg-primary/10 text-primary"
-                                )}
+                                className="text-xs h-auto p-1 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
                                 onClick={() =>
-                                  handleReaction(reply._id, type as any)
+                                  handleTimestampClick(reply.timestamp!)
                                 }
                               >
-                                {getReactionIcon(type)}
-                                {count > 0 && (
-                                  <span className="ml-1">{count}</span>
-                                )}
+                                <Clock className="w-3 h-3 mr-1" />
+                                {formatTimestamp(reply.timestamp)}
                               </Button>
-                            );
-                          })}
+                            )}
+                            {reply.isEdited && (
+                              <Badge variant="secondary" className="text-xs">
+                                Edited
+                              </Badge>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                            {reply.content}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
-        )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
 
-        {comments.length === 0 && !isLoading && (
-          <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No comments yet</h3>
-            <p className="text-muted-foreground">
-              Be the first to share your thoughts!
-            </p>
-          </div>
-        )}
+            {/* Infinite Scroll Trigger */}
+            {pagination?.hasMore && (
+              <div
+                ref={loadMoreRef}
+                className="flex items-center justify-center py-4"
+              >
+                {isLoadingMore ? (
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Loading more comments...</span>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => loadMoreComments(videoId)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    Load More Comments
+                  </Button>
+                )}
+              </div>
+            )}
 
-        <div ref={commentsEndRef} />
+            <div ref={commentsEndRef} />
+          </>
+        )}
       </div>
-
-      {/* Typing Indicator */}
-      {typingUsers.length > 0 && (
-        <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 italic">
-          {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"}{" "}
-          typing...
-        </div>
-      )}
 
       {/* Add Comment - Fixed at Bottom */}
       <div className="border-t border-gray-200 dark:border-gray-700 p-2 bg-white dark:bg-gray-900">

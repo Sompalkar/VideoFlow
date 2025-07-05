@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/config/api";
-import { socketService } from "@/lib/services/socket-service";
 
 interface Comment {
   _id: string;
@@ -26,12 +25,22 @@ interface Comment {
   replies?: Comment[];
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+  hasMore: boolean;
+}
+
 interface CommentState {
   comments: Comment[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
-  typingUsers: string[];
-  fetchComments: (videoId: string) => Promise<void>;
+  pagination: PaginationInfo | null;
+  fetchComments: (videoId: string, page?: number) => Promise<void>;
+  loadMoreComments: (videoId: string) => Promise<void>;
   addComment: (
     videoId: string,
     content: string,
@@ -45,32 +54,125 @@ interface CommentState {
     type: "like" | "dislike" | "heart" | "laugh"
   ) => Promise<void>;
   clearError: () => void;
-  initializeRealtime: (videoId: string) => void;
-  cleanupRealtime: () => void;
-  emitTyping: (videoId: string, isTyping: boolean) => void;
+  refreshComments: (videoId: string) => Promise<void>;
 }
 
 export const useCommentStore = create<CommentState>((set, get) => ({
   comments: [],
   isLoading: false,
+  isLoadingMore: false,
   error: null,
-  typingUsers: [],
+  pagination: null,
 
-  fetchComments: async (videoId: string) => {
+  fetchComments: async (videoId: string, page = 1) => {
     try {
+      console.log(
+        "Comment store: Fetching comments for video:",
+        videoId,
+        "page:",
+        page
+      );
       set({ isLoading: true, error: null });
 
-      const response = await apiClient.get<{ comments: Comment[] }>(
-        `/comments/${videoId}`,
-        undefined,
-        { withCredentials: true }
+      const response = await apiClient.get<{
+        comments: Comment[];
+        pagination: PaginationInfo;
+      }>(`/comments/${videoId}?page=${page}&limit=50`, undefined, {
+        withCredentials: true,
+      });
+
+      console.log("Comment store: Raw API response:", response);
+      console.log(
+        "Comment store: Fetched comments from API:",
+        response.comments
       );
-      set({ comments: response.comments, isLoading: false });
+      console.log("Comment store: Comments count:", response.comments.length);
+      console.log("Comment store: Pagination info:", response.pagination);
+
+      // Ensure we have a valid response
+      if (response && response.comments) {
+        if (page === 1) {
+          // First page - replace all comments
+          set({
+            comments: response.comments,
+            pagination: response.pagination,
+            isLoading: false,
+          });
+        } else {
+          // Subsequent pages - append to existing comments
+          const { comments: existingComments } = get();
+          const newComments = [...existingComments, ...response.comments];
+          set({
+            comments: newComments,
+            pagination: response.pagination,
+            isLoading: false,
+          });
+        }
+        console.log("Comment store: Successfully set comments in state");
+      } else {
+        console.error("Comment store: Invalid response structure:", response);
+        set({ comments: [], pagination: null, isLoading: false });
+      }
     } catch (error) {
+      console.error("Comment store: Error fetching comments:", error);
+      console.error("Comment store: Error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       set({
         error:
           error instanceof Error ? error.message : "Failed to fetch comments",
         isLoading: false,
+        comments: [], // Clear comments on error
+        pagination: null,
+      });
+    }
+  },
+
+  loadMoreComments: async (videoId: string) => {
+    try {
+      const { pagination } = get();
+      if (!pagination || !pagination.hasMore) {
+        console.log("Comment store: No more comments to load");
+        return;
+      }
+
+      console.log(
+        "Comment store: Loading more comments, page:",
+        pagination.page + 1
+      );
+      set({ isLoadingMore: true });
+
+      const response = await apiClient.get<{
+        comments: Comment[];
+        pagination: PaginationInfo;
+      }>(
+        `/comments/${videoId}?page=${pagination.page + 1}&limit=50`,
+        undefined,
+        { withCredentials: true }
+      );
+
+      if (response && response.comments) {
+        const { comments: existingComments } = get();
+        const newComments = [...existingComments, ...response.comments];
+        set({
+          comments: newComments,
+          pagination: response.pagination,
+          isLoadingMore: false,
+        });
+        console.log(
+          "Comment store: Loaded more comments, total:",
+          newComments.length
+        );
+      }
+    } catch (error) {
+      console.error("Comment store: Error loading more comments:", error);
+      set({
+        isLoadingMore: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load more comments",
       });
     }
   },
@@ -82,6 +184,12 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     parentId?: string
   ) => {
     try {
+      console.log("Comment store: Adding comment via API:", {
+        videoId,
+        content,
+        timestamp,
+        parentId,
+      });
       set({ error: null });
 
       const response = await apiClient.post<{ comment: Comment }>(
@@ -95,24 +203,71 @@ export const useCommentStore = create<CommentState>((set, get) => ({
         { withCredentials: true }
       );
 
+      console.log("Comment store: API response:", response.comment);
+      console.log("Comment store: API response structure:", {
+        hasId: !!response.comment._id,
+        hasContent: !!response.comment.content,
+        hasUserId: !!response.comment.userId,
+        hasCreatedAt: !!response.comment.createdAt,
+      });
+
+      // Add the new comment to the local state immediately for better UX
       const { comments } = get();
+      const newComment = response.comment;
+
+      console.log(
+        "Comment store: Current comments before adding:",
+        comments.length
+      );
+      console.log("Comment store: New comment to add:", {
+        id: newComment._id,
+        content: newComment.content,
+        userId: newComment.userId,
+      });
+
+      // Ensure the comment has all required fields
+      if (!newComment._id || !newComment.content || !newComment.userId) {
+        console.error("Comment store: Invalid comment structure:", newComment);
+        throw new Error("Invalid comment structure received from server");
+      }
+
       if (parentId) {
         // Add as reply
         const updatedComments = comments.map((comment) => {
           if (comment._id === parentId) {
             return {
               ...comment,
-              replies: [...(comment.replies || []), response.comment],
+              replies: [...(comment.replies || []), newComment],
             };
           }
           return comment;
         });
         set({ comments: updatedComments });
+        console.log(
+          "Comment store: Added reply, new count:",
+          updatedComments.length
+        );
       } else {
-        // Add as new comment
-        set({ comments: [response.comment, ...comments] });
+        // Add as new comment to the bottom of the list
+        const newComments = [...comments, newComment];
+        set({ comments: newComments });
+        console.log(
+          "Comment store: Added new comment to bottom, new count:",
+          newComments.length
+        );
+        console.log(
+          "Comment store: New comments array:",
+          newComments.map((c) => ({
+            id: c._id,
+            content: c.content.substring(0, 20),
+          }))
+        );
       }
+
+      // Don't refresh automatically - let the user refresh manually if needed
+      // This prevents the comment from disappearing
     } catch (error) {
+      console.error("Comment store: Error adding comment:", error);
       set({
         error: error instanceof Error ? error.message : "Failed to add comment",
       });
@@ -217,100 +372,14 @@ export const useCommentStore = create<CommentState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  initializeRealtime: (videoId: string) => {
-    // Connect to socket (cookies will be automatically sent)
-    socketService.connect();
-
-    // Join video room
-    socketService.joinVideoRoom(videoId);
-
-    // Set up real-time listeners
-    socketService.onCommentAdded((comment) => {
-      const { comments } = get();
-      if (comment.parentId) {
-        // Add as reply
-        const updatedComments = comments.map((c) => {
-          if (c._id === comment.parentId) {
-            return {
-              ...c,
-              replies: [...(c.replies || []), comment],
-            };
-          }
-          return c;
-        });
-        set({ comments: updatedComments });
-      } else {
-        // Add as new comment
-        set({ comments: [comment, ...comments] });
-      }
-    });
-
-    socketService.onCommentUpdated((comment) => {
-      const { comments } = get();
-      const updatedComments = comments.map((c) => {
-        if (c._id === comment._id) {
-          return comment;
-        }
-        // Check replies
-        if (c.replies) {
-          const updatedReplies = c.replies.map((reply) =>
-            reply._id === comment._id ? comment : reply
-          );
-          return { ...c, replies: updatedReplies };
-        }
-        return c;
-      });
-      set({ comments: updatedComments });
-    });
-
-    socketService.onCommentDeleted((commentId) => {
-      const { comments } = get();
-      const updatedComments = comments
-        .filter((comment) => comment._id !== commentId)
-        .map((comment) => ({
-          ...comment,
-          replies:
-            comment.replies?.filter((reply) => reply._id !== commentId) || [],
-        }));
-      set({ comments: updatedComments });
-    });
-
-    socketService.onReactionUpdated(({ commentId, reactions }) => {
-      const { comments } = get();
-      const updatedComments = comments.map((comment) => {
-        if (comment._id === commentId) {
-          return { ...comment, reactions };
-        }
-        // Check replies
-        if (comment.replies) {
-          const updatedReplies = comment.replies.map((reply) =>
-            reply._id === commentId ? { ...reply, reactions } : reply
-          );
-          return { ...comment, replies: updatedReplies };
-        }
-        return comment;
-      });
-      set({ comments: updatedComments });
-    });
-
-    socketService.onUserTyping(({ userId, userName, isTyping }) => {
-      const { typingUsers } = get();
-      if (isTyping) {
-        if (!typingUsers.includes(userName)) {
-          set({ typingUsers: [...typingUsers, userName] });
-        }
-      } else {
-        set({ typingUsers: typingUsers.filter((name) => name !== userName) });
-      }
-    });
-  },
-
-  cleanupRealtime: () => {
-    socketService.disconnect();
-    set({ typingUsers: [] });
-  },
-
-  emitTyping: (videoId: string, isTyping: boolean) => {
-    socketService.emitTyping(videoId, isTyping);
+  refreshComments: async (videoId: string) => {
+    try {
+      console.log("Comment store: Refreshing comments for video:", videoId);
+      // Reset to first page when refreshing
+      await get().fetchComments(videoId, 1);
+    } catch (error) {
+      console.error("Comment store: Error refreshing comments:", error);
+      set({ isLoading: false });
+    }
   },
 }));

@@ -8,6 +8,9 @@ const router = Router()
 // All routes require authentication
 router.use(authenticate)
 
+// Test route to check if comments are working
+router.get("/test", CommentController.testComments)
+
 const validateComment = [
   body("content").trim().isLength({ min: 1, max: 1000 }).withMessage("Content must be between 1 and 1000 characters"),
   body("timestamp").optional().isNumeric().withMessage("Timestamp must be a number"),

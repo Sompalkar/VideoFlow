@@ -4,13 +4,43 @@ import VideoComment from "../models/VideoComment";
 import Video from "../models/Video";
 import type { AuthRequest } from "../middleware/auth";
 import mongoose from "mongoose";
-import { socketService } from "../services/socket-service";
 
 export class CommentController {
+  static async testComments(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      console.log("Comment controller test endpoint called");
+
+      // Test database connection
+      const commentCount = await VideoComment.countDocuments();
+      console.log(`Total comments in database: ${commentCount}`);
+
+      // Test finding a comment
+      const sampleComment = await VideoComment.findOne();
+      console.log("Sample comment:", sampleComment);
+
+      res.json({
+        message: "Comment controller is working",
+        totalComments: commentCount,
+        sampleComment: sampleComment ? "Found" : "None",
+      });
+    } catch (error) {
+      console.error("Comment controller test error:", error);
+      res.status(500).json({
+        message: "Test failed",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   static async getComments(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { videoId } = req.params;
-      const { page = 1, limit = 20 } = req.query;
+      const { page = 1, limit = 50 } = req.query; // Increased default limit for infinite scroll
+
+      console.log(
+        `Getting comments for video ${videoId}, page ${page}, limit ${limit}`
+      );
+      console.log(`VideoId type: ${typeof videoId}, value: ${videoId}`);
 
       const video = await Video.findById(videoId);
       if (!video) {
@@ -18,56 +48,80 @@ export class CommentController {
         return;
       }
 
+      console.log(`Found video: ${video._id}, title: ${video.title}`);
+
       // Check if user has access to this video
       if (req.user!.teamId?.toString() !== video.teamId.toString()) {
         res.status(403).json({ message: "Access denied" });
         return;
       }
 
-      const comments = await VideoComment.find({
-        videoId,
-        parentId: { $exists: false },
-      })
-        .populate("userId", "name email avatar")
-        .populate("mentions", "name email")
-        .populate({
-          path: "replies",
-          populate: {
-            path: "userId",
-            select: "name email avatar",
-          },
-        })
-        .sort({ createdAt: -1 })
-        .limit(Number(limit))
-        .skip((Number(page) - 1) * Number(limit));
+      // Debug: Check all comments in database
+      const allComments = await VideoComment.find({});
+      console.log(`Total comments in database: ${allComments.length}`);
 
-      // Get replies for each comment
-      const commentsWithReplies = await Promise.all(
-        comments.map(async (comment) => {
-          const replies = await VideoComment.find({ parentId: comment._id })
-            .populate("userId", "name email avatar")
-            .populate("mentions", "name email")
-            .sort({ createdAt: 1 });
+      // Find comments that match this videoId (handle both string and ObjectId types)
+      const matchingComments = allComments.filter((comment) => {
+        const commentVideoId = comment.videoId.toString();
+        const queryVideoId = videoId.toString();
+        return commentVideoId === queryVideoId;
+      });
+
+      console.log(
+        `Found ${matchingComments.length} comments matching videoId ${videoId}`
+      );
+
+      // Filter for main comments (no parentId)
+      const mainComments = matchingComments.filter(
+        (comment) => !comment.parentId
+      );
+      console.log(
+        `Found ${mainComments.length} main comments for video ${videoId}`
+      );
+
+      // Sort by creation date (oldest first)
+      mainComments.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      );
+
+      // For infinite scroll, we'll return all comments but still support pagination
+      // Apply pagination
+      const startIndex = (Number(page) - 1) * Number(limit);
+      const endIndex = startIndex + Number(limit);
+      const paginatedComments = mainComments.slice(startIndex, endIndex);
+
+      // Populate user data for each comment
+      const populatedComments = await Promise.all(
+        paginatedComments.map(async (comment) => {
+          await comment.populate("userId", "name email avatar");
+          await comment.populate("mentions", "name email");
+
+          // Get replies for this comment
+          const replies = await VideoComment.find({
+            parentId: comment._id.toString(),
+          }).populate("userId", "name email avatar");
 
           return {
             ...comment.toObject(),
-            replies,
+            replies: replies.sort(
+              (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+            ),
           };
         })
       );
 
-      const total = await VideoComment.countDocuments({
-        videoId,
-        parentId: { $exists: false },
-      });
+      console.log(
+        `Returning ${populatedComments.length} comments with replies for video ${videoId}`
+      );
 
       res.json({
-        comments: commentsWithReplies,
+        comments: populatedComments,
         pagination: {
           page: Number(page),
           limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit)),
+          total: mainComments.length,
+          pages: Math.ceil(mainComments.length / Number(limit)),
+          hasMore: endIndex < mainComments.length,
         },
       });
     } catch (error) {
@@ -90,11 +144,19 @@ export class CommentController {
       const { content, timestamp, parentId, mentions } = req.body;
       const { userId } = req.user!;
 
+      console.log(`Adding comment to video ${videoId} by user ${userId}`);
+      console.log(`Comment content: ${content}`);
+      console.log(`Timestamp: ${timestamp}`);
+      console.log(`Parent ID: ${parentId}`);
+      console.log(`VideoId type: ${typeof videoId}, value: ${videoId}`);
+
       const video = await Video.findById(videoId);
       if (!video) {
         res.status(404).json({ message: "Video not found" });
         return;
       }
+
+      console.log(`Found video: ${video._id}, title: ${video.title}`);
 
       // Check if user has access to this video
       if (req.user!.teamId?.toString() !== video.teamId.toString()) {
@@ -102,8 +164,9 @@ export class CommentController {
         return;
       }
 
+      // Create comment with videoId as string to match existing data
       const comment = new VideoComment({
-        videoId,
+        videoId: videoId, // Store as string to match existing comments
         userId,
         content,
         timestamp,
@@ -111,14 +174,23 @@ export class CommentController {
         mentions: mentions || [],
       });
 
+      console.log(`Saving comment with videoId: ${comment.videoId}`);
+
       await comment.save();
+      console.log(
+        `Comment saved with ID: ${comment._id}, videoId: ${comment.videoId}`
+      );
+
+      // Populate the comment with user data
       await comment.populate("userId", "name email avatar");
       await comment.populate("mentions", "name email");
 
-      // Emit real-time event
-      socketService.emitCommentAdded(videoId, comment);
+      // Convert to plain object for response
+      const commentData = comment.toObject();
+      console.log(`Comment created successfully for video ${videoId}`);
+      console.log(`Comment data:`, JSON.stringify(commentData, null, 2));
 
-      res.status(201).json({ comment });
+      res.status(201).json({ comment: commentData });
     } catch (error) {
       console.error("Add comment error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -149,9 +221,6 @@ export class CommentController {
 
       await comment.populate("userId", "name email avatar");
 
-      // Emit real-time event
-      socketService.emitCommentUpdated(comment.videoId.toString(), comment);
-
       res.json({ comment });
     } catch (error) {
       console.error("Update comment error:", error);
@@ -181,10 +250,7 @@ export class CommentController {
         $or: [{ _id: commentId }, { parentId: commentId }],
       });
 
-      // Emit real-time event
-      socketService.emitCommentDeleted(comment.videoId.toString(), commentId);
-
-      res.json({ success: true });
+      res.json({ message: "Comment deleted successfully" });
     } catch (error) {
       console.error("Delete comment error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -203,20 +269,13 @@ export class CommentController {
         return;
       }
 
-      const existingReaction = comment.reactions.find(
-        (r) => r.userId.toString() === userId
+      const existingReactionIndex = comment.reactions.findIndex(
+        (reaction) => reaction.userId.toString() === userId
       );
 
-      if (existingReaction) {
-        if (existingReaction.type === type) {
-          // Remove reaction
-          comment.reactions = comment.reactions.filter(
-            (r) => r.userId.toString() !== userId
-          );
-        } else {
-          // Update reaction type
-          existingReaction.type = type;
-        }
+      if (existingReactionIndex > -1) {
+        // Remove existing reaction
+        comment.reactions.splice(existingReactionIndex, 1);
       } else {
         // Add new reaction
         comment.reactions.push({
@@ -227,13 +286,6 @@ export class CommentController {
 
       await comment.save();
       await comment.populate("userId", "name email avatar");
-
-      // Emit real-time event
-      socketService.emitReactionUpdated(
-        comment.videoId.toString(),
-        comment._id.toString(),
-        comment.reactions
-      );
 
       res.json({ comment });
     } catch (error) {

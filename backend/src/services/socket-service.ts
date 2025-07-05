@@ -151,6 +151,10 @@ class SocketService {
   }
 
   private joinVideoRoom(socket: AuthenticatedSocket, videoId: string) {
+    console.log(
+      `Socket: User ${socket.userName} (${socket.userId}) joining video room: ${videoId}`
+    );
+
     socket.join(`video-${videoId}`);
 
     if (!this.videoRooms.has(videoId)) {
@@ -161,6 +165,19 @@ class SocketService {
     room.users.add(socket.userId!);
 
     console.log(`User ${socket.userName} joined video room: ${videoId}`);
+    console.log(`Total users in room ${videoId}: ${room.users.size}`);
+    console.log(`Users in room:`, Array.from(room.users));
+
+    // Verify the user is actually in the socket room
+    if (this.io) {
+      const socketRoom = this.io.sockets.adapter.rooms.get(`video-${videoId}`);
+      if (socketRoom) {
+        console.log(`Socket room ${videoId} has ${socketRoom.size} sockets`);
+        console.log(
+          `Socket ${socket.id} is in room: ${socketRoom.has(socket.id)}`
+        );
+      }
+    }
   }
 
   private leaveVideoRoom(socket: AuthenticatedSocket, videoId: string) {
@@ -204,7 +221,25 @@ class SocketService {
   // Emit comment events
   emitCommentAdded(videoId: string, comment: any) {
     if (this.io) {
+      console.log(
+        `Socket: Emitting comment-added to video room: video-${videoId}`
+      );
+      console.log(`Socket: Comment data:`, JSON.stringify(comment, null, 2));
+
+      // Get the room and check who's in it
+      const room = this.io.sockets.adapter.rooms.get(`video-${videoId}`);
+      if (room) {
+        console.log(`Socket: Users in room video-${videoId}:`, room.size);
+        room.forEach((socketId) => {
+          console.log(`Socket: User in room: ${socketId}`);
+        });
+      } else {
+        console.log(`Socket: No users in room video-${videoId}`);
+      }
+
       this.io.to(`video-${videoId}`).emit("comment-added", comment);
+    } else {
+      console.error("Socket: IO not initialized, cannot emit comment-added");
     }
   }
 
