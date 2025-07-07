@@ -101,6 +101,9 @@ app.use("/api/comments", commentRouter); // Use comment routes
 app.use(notFound);
 app.use(errorHandler);
 
+
+
+
 // Start server
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
