@@ -162,6 +162,7 @@ export class CloudinaryService {
       quality?: string;
       format?: string;
       resourceType?: "image" | "video";
+      transformation?: any;
     } = {}
   ): string {
     try {
@@ -172,6 +173,7 @@ export class CloudinaryService {
         quality: options.quality || "auto",
         format: options.format || "auto",
         fetch_format: "auto",
+        transformation: options.transformation,
       });
     } catch (error) {
       console.error("Get optimized URL error:", error);
@@ -218,6 +220,80 @@ export class CloudinaryService {
     } catch (error) {
       console.error("Cloudinary data URL upload error:", error);
       throw new Error("Failed to upload data URL to Cloudinary");
+    }
+  }
+
+  static async uploadBuffer(
+    buffer: Buffer,
+    publicId: string,
+    resourceType: "image" | "video" = "image"
+  ): Promise<any> {
+    try {
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: resourceType,
+            folder: "videoflow",
+            public_id: publicId,
+            use_filename: true,
+            unique_filename: true,
+            overwrite: false,
+          },
+          (error, result) => {
+            if (error) {
+              console.error("Cloudinary buffer upload error:", error);
+              reject(new Error("Failed to upload buffer to Cloudinary"));
+            } else {
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(buffer);
+      });
+    } catch (error) {
+      console.error("Cloudinary buffer upload error:", error);
+      throw new Error("Failed to upload buffer to Cloudinary");
+    }
+  }
+
+  static async transformImage(
+    imageUrl: string,
+    transformations: {
+      brightness?: number;
+      contrast?: number;
+      saturation?: number;
+      quality?: string;
+      format?: string;
+    } = {}
+  ): Promise<string> {
+    try {
+      // Extract public ID from URL
+      const urlParts = imageUrl.split("/");
+      const publicIdWithExtension = urlParts[urlParts.length - 1];
+      const publicId = publicIdWithExtension.split(".")[0];
+
+      // Build transformation parameters
+      const transformParams: any = {};
+      if (transformations.brightness)
+        transformParams.brightness = transformations.brightness;
+      if (transformations.contrast)
+        transformParams.contrast = transformations.contrast;
+      if (transformations.saturation)
+        transformParams.saturation = transformations.saturation;
+      if (transformations.quality)
+        transformParams.quality = transformations.quality;
+      if (transformations.format)
+        transformParams.format = transformations.format;
+
+      return cloudinary.url(publicId, {
+        resource_type: "image",
+        secure: true,
+        transformation: [transformParams],
+      });
+    } catch (error) {
+      console.error("Cloudinary image transformation error:", error);
+      throw new Error("Failed to transform image");
     }
   }
 }

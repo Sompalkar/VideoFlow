@@ -585,7 +585,7 @@ export default function UploadPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="description">Description</Label>
+                      <Label htmlFor="description">Description * </Label>
                       <Textarea
                         id="description"
                         value={videoDetails.description}
@@ -602,7 +602,7 @@ export default function UploadPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="tags">Tags</Label>
+                      <Label htmlFor="tags">Tags * </Label>
                       <Input
                         id="tags"
                         value={videoDetails.tags}
@@ -669,7 +669,7 @@ export default function UploadPage() {
                           <SelectItem value="private">
                             <div className="flex items-center space-x-2">
                               <Lock className="w-4 h-4" />
-                              <span>Private</span>
+                              <span> Public</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="unlisted">
@@ -681,14 +681,14 @@ export default function UploadPage() {
                           <SelectItem value="public">
                             <div className="flex items-center space-x-2">
                               <Globe className="w-4 h-4" />
-                              <span>Public</span>
+                              <span>Private</span>
                             </div>
                           </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div>
+                    {/* <div>
                       <Label htmlFor="scheduledDate">Schedule (Optional)</Label>
                       <Input
                         id="scheduledDate"
@@ -702,11 +702,11 @@ export default function UploadPage() {
                         }
                         className="mt-1"
                       />
-                    </div>
+                    </div> */}
 
                     {thumbnailFile && (
                       <div>
-                        <Label>Thumbnail Preview</Label>
+                        <Label>Thumbnail Preview </Label>
                         <div className="mt-1">
                           <img
                             src={thumbnailFile.preview || "/placeholder.svg"}

@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Play, Youtube, Users, Settings, User, LogOut, Bell, Menu, X } from "lucide-react"
+import { Play, Youtube, Users, Settings, User, LogOut, Bell, Menu, X, Sparkles } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { cn } from "@/lib/utils"
 
@@ -28,6 +28,7 @@ export function MainNav() {
     { name: "Dashboard", href: "/dashboard", icon: null },
     { name: "YouTube", href: "/dashboard/youtube", icon: Youtube },
     { name: "Team", href: "/dashboard/team", icon: Users }, 
+    { name: "Ai Thumbnails", href: "/dashboard/thumbnail-generator", icon: Sparkles }, 
   ]
 
   const handleLogout = () => {
