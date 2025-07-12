@@ -376,7 +376,7 @@ export default function DashboardPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
+            <Card className="shadow-lg gap-5 bg-white/80 backdrop-blur-sm border-0">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center">
                   <BarChart3 className="w-5 h-5 mr-2 text-indigo-600" />

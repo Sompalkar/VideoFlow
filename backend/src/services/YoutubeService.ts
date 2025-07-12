@@ -208,8 +208,30 @@ export class YoutubeService {
         refresh_token: user.youtubeTokens.refreshToken,
       });
 
+      // Check Cloudinary configuration first
+      const cloudinaryStatus = CloudinaryService.getConfigurationStatus();
+      if (!cloudinaryStatus.configured) {
+        console.error(
+          "Cloudinary configuration missing:",
+          cloudinaryStatus.missing
+        );
+        throw new Error(
+          `Cloudinary not configured. Missing environment variables: ${cloudinaryStatus.missing.join(
+            ", "
+          )}. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.`
+        );
+      }
+
       // Use direct, secure Cloudinary video URL
-      const videoUrl = CloudinaryService.getVideoUrl(cloudinaryPublicId);
+      let videoUrl: string;
+      try {
+        videoUrl = CloudinaryService.getVideoUrl(cloudinaryPublicId);
+      } catch (cloudinaryError) {
+        console.error("Cloudinary configuration error:", cloudinaryError);
+        throw new Error(
+          "Failed to generate Cloudinary video URL. Please check your Cloudinary configuration."
+        );
+      }
 
       // Download video temporarily for upload
       const response = await fetch(videoUrl);

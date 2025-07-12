@@ -280,6 +280,37 @@ router.delete(
   }
 );
 
+// @route   GET /api/cloudinary/health
+// @desc    Check Cloudinary configuration status
+// @access  Private
+router.get(
+  "/health",
+  authenticate,
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const status = CloudinaryService.getConfigurationStatus();
+
+      res.json({
+        success: true,
+        configured: status.configured,
+        missing: status.missing,
+        message: status.configured
+          ? "Cloudinary is properly configured"
+          : `Cloudinary configuration missing: ${status.missing.join(", ")}`,
+      });
+    } catch (error) {
+      console.error("Cloudinary health check error:", error);
+      res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to check Cloudinary status",
+      });
+    }
+  }
+);
+
 // @route   GET /api/cloudinary/:publicId/info
 // @desc    Get file info from Cloudinary
 // @access  Private

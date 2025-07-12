@@ -30,6 +30,37 @@ const initializeCloudinary = () => {
 };
 
 export class CloudinaryService {
+  /**
+   * Check if Cloudinary is properly configured
+   */
+  static isConfigured(): boolean {
+    return !!(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
+  }
+
+  /**
+   * Get configuration status for debugging
+   */
+  static getConfigurationStatus(): {
+    configured: boolean;
+    missing: string[];
+  } {
+    const required = [
+      "CLOUDINARY_CLOUD_NAME",
+      "CLOUDINARY_API_KEY",
+      "CLOUDINARY_API_SECRET",
+    ];
+    const missing = required.filter((key) => !process.env[key]);
+
+    return {
+      configured: missing.length === 0,
+      missing,
+    };
+  }
+
   static async generateSignature(params: Record<string, any>): Promise<string> {
     try {
       validateCloudinaryConfig();
@@ -195,6 +226,13 @@ export class CloudinaryService {
     } = {}
   ): string {
     try {
+      // Check if Cloudinary is configured
+      if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        throw new Error(
+          "Cloudinary not configured - missing CLOUDINARY_CLOUD_NAME"
+        );
+      }
+
       return cloudinary.url(publicId, {
         resource_type: options.resourceType || "image",
         width: options.width,
@@ -206,16 +244,37 @@ export class CloudinaryService {
       });
     } catch (error) {
       console.error("Get optimized URL error:", error);
-      throw new Error("Failed to generate optimized URL");
+      throw new Error(
+        `Failed to generate optimized URL: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   // Get a direct, secure Cloudinary video URL for a given publicId
   static getVideoUrl(publicId: string): string {
-    return cloudinary.url(publicId, {
-      resource_type: "video",
-      secure: true,
-    });
+    try {
+      // Check if Cloudinary is configured
+      if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        throw new Error(
+          "Cloudinary not configured - missing CLOUDINARY_CLOUD_NAME"
+        );
+      }
+
+      return cloudinary.url(publicId, {
+        resource_type: "video",
+        secure: true,
+      });
+    } catch (error) {
+      console.error("Cloudinary getVideoUrl error:", error);
+      // Return a fallback URL or throw a more descriptive error
+      throw new Error(
+        `Failed to generate Cloudinary video URL: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
   static async uploadImageFromDataUrl(
@@ -299,6 +358,13 @@ export class CloudinaryService {
     } = {}
   ): Promise<string> {
     try {
+      // Check if Cloudinary is configured
+      if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        throw new Error(
+          "Cloudinary not configured - missing CLOUDINARY_CLOUD_NAME"
+        );
+      }
+
       // Extract public ID from URL
       const urlParts = imageUrl.split("/");
       const publicIdWithExtension = urlParts[urlParts.length - 1];
@@ -324,7 +390,11 @@ export class CloudinaryService {
       });
     } catch (error) {
       console.error("Cloudinary image transformation error:", error);
-      throw new Error("Failed to transform image");
+      throw new Error(
+        `Failed to transform image: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -345,29 +415,45 @@ export class CloudinaryService {
       height?: number;
     }
   ): string {
-    const transformation: any[] = [];
-    if (options.text) {
-      transformation.push({
-        overlay: {
-          font_family: options.fontFamily || "Arial",
-          font_size: options.fontSize || 60,
-          text: options.text,
-        },
-        color: options.fontColor || "#FFFFFF",
-        gravity: options.position?.gravity || "south",
-        x: options.position?.x || 0,
-        y: options.position?.y || 40,
-        opacity: options.opacity || 90,
-        background: options.background,
-        width: options.width,
-        height: options.height,
-        crop: "fit",
+    try {
+      // Check if Cloudinary is configured
+      if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        throw new Error(
+          "Cloudinary not configured - missing CLOUDINARY_CLOUD_NAME"
+        );
+      }
+
+      const transformation: any[] = [];
+      if (options.text) {
+        transformation.push({
+          overlay: {
+            font_family: options.fontFamily || "Arial",
+            font_size: options.fontSize || 60,
+            text: options.text,
+          },
+          color: options.fontColor || "#FFFFFF",
+          gravity: options.position?.gravity || "south",
+          x: options.position?.x || 0,
+          y: options.position?.y || 40,
+          opacity: options.opacity || 90,
+          background: options.background,
+          width: options.width,
+          height: options.height,
+          crop: "fit",
+        });
+      }
+      return cloudinary.url(publicId, {
+        resource_type: "image",
+        secure: true,
+        transformation,
       });
+    } catch (error) {
+      console.error("Cloudinary getOverlayedImageUrl error:", error);
+      throw new Error(
+        `Failed to generate overlay image URL: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
-    return cloudinary.url(publicId, {
-      resource_type: "image",
-      secure: true,
-      transformation,
-    });
   }
 }
