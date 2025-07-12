@@ -99,10 +99,11 @@ export class AuthController {
       res.cookie("auth-token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/",
-        // Don't set domain to allow cross-port cookies on localhost
+        domain:
+          process.env.NODE_ENV === "production" ? ".onrender.com" : undefined,
       });
 
       res.status(201).json({
@@ -173,10 +174,11 @@ export class AuthController {
       res.cookie("auth-token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/",
-        // Don't set domain to allow cross-port cookies on localhost
+        domain:
+          process.env.NODE_ENV === "production" ? ".onrender.com" : undefined,
       });
 
       res.json({
