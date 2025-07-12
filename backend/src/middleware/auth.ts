@@ -8,6 +8,14 @@ export interface AuthRequest extends Request {
     role: string;
     teamId?: string;
   };
+  body: any;
+  params: any;
+  query: any;
+  cookies: any;
+  headers: any;
+  file?: any;
+  files?: any;
+  resourceType?: string;
 }
 
 export const authenticate = async (

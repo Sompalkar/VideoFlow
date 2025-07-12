@@ -3,32 +3,21 @@ import type { Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { authenticate } from "../middleware/auth";
+import { authenticate, type AuthRequest } from "../middleware/auth";
 import { CloudinaryService } from "../services/CloudinaryService";
-import type { AuthRequest } from "../middleware/auth";
-import type { Request } from "express";
 
 const router = Router();
 
-// Extend Express Request to include resourceType
-declare global {
-  namespace Express {
-    interface Request {
-      resourceType?: "video" | "image";
-    }
-  }
-}
-
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: any, file: any, cb: any) => {
     const uploadDir = path.join(__dirname, "../../uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(
       null,
@@ -42,7 +31,7 @@ const upload = multer({
   limits: {
     fileSize: 200 * 1024 * 1024, // 100MB limit to match Cloudinary free tier
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     const allowedTypes = {
       video: [
         ".mp4",
@@ -69,7 +58,7 @@ const upload = multer({
     }
 
     // Set resourceType on req for use in route handler
-    req.resourceType = resourceType;
+    (req as any).resourceType = resourceType;
 
     // Log the file upload attempt for debugging
     console.log(
@@ -108,7 +97,7 @@ router.post(
       }
 
       // Use resourceType determined by fileFilter
-      const resourceType = req.resourceType;
+      const resourceType = (req as any).resourceType;
       if (!resourceType) {
         res.status(400).json({ message: "Invalid or unsupported file type." });
         return;

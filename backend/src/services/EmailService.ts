@@ -36,7 +36,7 @@ export class EmailService {
       });
 
       // Verify connection configuration
-      this.transporter.verify((error, success) => {
+      this.transporter.verify((error: any, success: any) => {
         if (error) {
           console.error("Email service configuration error:", error);
         } else {

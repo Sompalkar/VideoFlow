@@ -76,7 +76,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use("/uploads", express.static(uploadsDir));
 
 // Health check
-app.get("/health", (req, res) => {
+app.get("/health", (req: any, res: any) => {
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
