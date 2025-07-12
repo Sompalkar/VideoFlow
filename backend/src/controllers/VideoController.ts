@@ -267,7 +267,6 @@ export class VideoController {
             tags: video.tags,
             categoryId: video.category,
             privacyStatus: video.privacy as "private" | "public" | "unlisted",
-            thumbnailUrl: video.cloudinaryThumbnailUrl, // Add thumbnail support
           },
           video.cloudinaryVideoId
         );
@@ -483,28 +482,28 @@ export class VideoController {
       }
 
       const formattedVideo = {
-          id: video._id,
-          title: video.title,
-          description: video.description,
-          tags: video.tags,
+        id: video._id,
+        title: video.title,
+        description: video.description,
+        tags: video.tags,
         thumbnail: video.cloudinaryThumbnailUrl || video.thumbnail,
-          status: video.status,
-          uploadedBy: video.uploadedBy,
-          uploadedAt: video.uploadedAt,
-          approvedBy: video.approvedBy,
-          approvedAt: video.approvedAt,
-          rejectedBy: video.rejectedBy,
-          rejectedAt: video.rejectedAt,
-          rejectionReason: video.rejectionReason,
-          youtubeId: video.youtubeId,
-          youtubeUrl: video.youtubeUrl,
-          fileSize: video.fileSize,
-          duration: video.duration,
-          cloudinaryVideoUrl: video.cloudinaryVideoUrl,
-          cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
-          category: video.category,
-          privacy: video.privacy,
-          teamId: video.teamId,
+        status: video.status,
+        uploadedBy: video.uploadedBy,
+        uploadedAt: video.uploadedAt,
+        approvedBy: video.approvedBy,
+        approvedAt: video.approvedAt,
+        rejectedBy: video.rejectedBy,
+        rejectedAt: video.rejectedAt,
+        rejectionReason: video.rejectionReason,
+        youtubeId: video.youtubeId,
+        youtubeUrl: video.youtubeUrl,
+        fileSize: video.fileSize,
+        duration: video.duration,
+        cloudinaryVideoUrl: video.cloudinaryVideoUrl,
+        cloudinaryThumbnailUrl: video.cloudinaryThumbnailUrl,
+        category: video.category,
+        privacy: video.privacy,
+        teamId: video.teamId,
       };
 
       res.json({ video: formattedVideo });
@@ -518,7 +517,8 @@ export class VideoController {
     try {
       const { id } = req.params;
       const { userId, teamId } = req.user!;
-      const { cloudinaryThumbnailUrl, thumbnail, title, description, tags } = req.body;
+      const { cloudinaryThumbnailUrl, thumbnail, title, description, tags } =
+        req.body;
 
       if (!teamId) {
         res.status(400).json({ message: "User not part of any team" });
@@ -535,33 +535,31 @@ export class VideoController {
 
       // Update fields
       const updateData: any = {};
-      
+
       if (cloudinaryThumbnailUrl) {
         updateData.cloudinaryThumbnailUrl = cloudinaryThumbnailUrl;
       }
-      
+
       if (thumbnail) {
         updateData.thumbnail = thumbnail;
       }
-      
+
       if (title) {
         updateData.title = title;
       }
-      
+
       if (description) {
         updateData.description = description;
       }
-      
+
       if (tags) {
         updateData.tags = Array.isArray(tags) ? tags : [];
       }
 
       // Update the video
-      const updatedVideo = await Video.findByIdAndUpdate(
-        id,
-        updateData,
-        { new: true }
-      ).populate("uploadedBy", "name email avatar");
+      const updatedVideo = await Video.findByIdAndUpdate(id, updateData, {
+        new: true,
+      }).populate("uploadedBy", "name email avatar");
 
       if (!updatedVideo) {
         res.status(404).json({ message: "Video not found" });
@@ -573,7 +571,8 @@ export class VideoController {
         title: updatedVideo.title,
         description: updatedVideo.description,
         tags: updatedVideo.tags,
-        thumbnail: updatedVideo.cloudinaryThumbnailUrl || updatedVideo.thumbnail,
+        thumbnail:
+          updatedVideo.cloudinaryThumbnailUrl || updatedVideo.thumbnail,
         status: updatedVideo.status,
         uploadedBy: updatedVideo.uploadedBy,
         uploadedAt: updatedVideo.uploadedAt,
@@ -596,12 +595,12 @@ export class VideoController {
       console.log("Video updated successfully:", {
         videoId: id,
         updatedFields: Object.keys(updateData),
-        newThumbnail: updatedVideo.cloudinaryThumbnailUrl
+        newThumbnail: updatedVideo.cloudinaryThumbnailUrl,
       });
 
-      res.json({ 
+      res.json({
         message: "Video updated successfully",
-        video: formattedVideo 
+        video: formattedVideo,
       });
     } catch (error) {
       console.error("Update video error:", error);

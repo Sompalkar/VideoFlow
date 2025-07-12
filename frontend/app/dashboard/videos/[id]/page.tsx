@@ -366,8 +366,8 @@ export default function VideoReviewPage() {
               <Card className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="relative bg-black">
-                  <video
-                    ref={videoRef}
+                    <video
+                      ref={videoRef}
                       className="w-full h-auto max-h-[600px]"
                       onLoadedMetadata={handleLoadedMetadata}
                       onTimeUpdate={handleTimeUpdate}
@@ -376,15 +376,15 @@ export default function VideoReviewPage() {
                       onVolumeChange={handleVolumeChange}
                     >
                       <source
-                    src={currentVideo.cloudinaryVideoUrl}
+                        src={currentVideo.cloudinaryVideoUrl}
                         type="video/mp4"
-                  />
+                      />
                       Your browser does not support the video tag.
                     </video>
 
-                  {/* Video Controls Overlay */}
-                  <div
-                    className={cn(
+                    {/* Video Controls Overlay */}
+                    <div
+                      className={cn(
                         "absolute inset-0 bg-black bg-opacity-0 transition-opacity duration-300",
                         showControls && "bg-opacity-20"
                       )}
@@ -393,7 +393,7 @@ export default function VideoReviewPage() {
                     >
                       {/* Play/Pause Button */}
                       <button
-                          onClick={handlePlayPause}
+                        onClick={handlePlayPause}
                         className={cn(
                           "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white transition-opacity duration-300",
                           showControls ? "opacity-100" : "opacity-0"
@@ -406,7 +406,7 @@ export default function VideoReviewPage() {
                         )}
                       </button>
 
-                    {/* Bottom Controls */}
+                      {/* Bottom Controls */}
                       <div
                         className={cn(
                           "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 transition-opacity duration-300",
@@ -465,11 +465,11 @@ export default function VideoReviewPage() {
 
                           <div className="flex items-center space-x-2">
                             <button onClick={handleFullscreen}>
-                            {isFullscreen ? (
+                              {isFullscreen ? (
                                 <Minimize className="w-5 h-5" />
-                            ) : (
+                              ) : (
                                 <Maximize className="w-5 h-5" />
-                            )}
+                              )}
                             </button>
                           </div>
                         </div>
@@ -482,7 +482,7 @@ export default function VideoReviewPage() {
               {/* Video Actions */}
               <Card>
                 <CardContent className="p-4">
-                      <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {currentVideo.status === "pending" &&
                       user?.role === "creator" && (
                         <>
@@ -568,26 +568,26 @@ export default function VideoReviewPage() {
                       variant="outline"
                       className="flex-1 sm:flex-none bg-transparent text-sm"
                     >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share
-                      </Button>
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
 
                     <Button
                       variant="outline"
                       className="flex-1 sm:flex-none bg-transparent text-sm"
                     >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
 
-                      {currentVideo.youtubeUrl && (
-                        <Link href={currentVideo.youtubeUrl} target="_blank">
-                          <Button className="bg-red-600 hover:bg-red-700 text-sm">
-                            <Youtube className="w-4 h-4 mr-2" />
-                            YouTube
-                          </Button>
-                        </Link>
-                      )}
+                    {currentVideo.youtubeUrl && (
+                      <Link href={currentVideo.youtubeUrl} target="_blank">
+                        <Button className="bg-red-600 hover:bg-red-700 text-sm">
+                          <Youtube className="w-4 h-4 mr-2" />
+                          YouTube
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </CardContent>
               </Card>

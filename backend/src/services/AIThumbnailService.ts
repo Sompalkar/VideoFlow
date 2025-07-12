@@ -60,6 +60,22 @@ interface BasicTransformOptions {
 }
 
 export class AIThumbnailService {
+  // Validate required environment variables at startup
+  private static validateApiKeys() {
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn("OPENAI_API_KEY environment variable is not set");
+    }
+    if (!process.env.STABILITY_API_KEY) {
+      console.warn("STABILITY_API_KEY environment variable is not set");
+    }
+    if (!process.env.HUGGINGFACE_API_KEY) {
+      console.warn("HUGGINGFACE_API_KEY environment variable is not set");
+    }
+    if (!process.env.LEONARDO_API_KEY) {
+      console.warn("LEONARDO_API_KEY environment variable is not set");
+    }
+  }
+
   private static readonly OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
   private static readonly OPENAI_API_URL =
@@ -69,6 +85,11 @@ export class AIThumbnailService {
   private static readonly STABILITY_API_KEY = process.env.STABILITY_API_KEY;
   private static readonly STABILITY_API_URL =
     "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
+
+  // Initialize validation
+  static {
+    this.validateApiKeys();
+  }
 
   static getOpenAISize(aspectRatio: string): string {
     if (aspectRatio === "16:9" || aspectRatio === "landscape") {

@@ -1,18 +1,42 @@
 import { v2 as cloudinary } from "cloudinary";
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Validate required environment variables
+const validateCloudinaryConfig = () => {
+  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    throw new Error(
+      "CLOUDINARY_CLOUD_NAME environment variable is required. Please set it in your .env file."
+    );
+  }
+  if (!process.env.CLOUDINARY_API_KEY) {
+    throw new Error(
+      "CLOUDINARY_API_KEY environment variable is required. Please set it in your .env file."
+    );
+  }
+  if (!process.env.CLOUDINARY_API_SECRET) {
+    throw new Error(
+      "CLOUDINARY_API_SECRET environment variable is required. Please set it in your .env file."
+    );
+  }
+};
+
+// Initialize Cloudinary configuration
+const initializeCloudinary = () => {
+  validateCloudinaryConfig();
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+    api_key: process.env.CLOUDINARY_API_KEY!,
+    api_secret: process.env.CLOUDINARY_API_SECRET!,
+  });
+};
 
 export class CloudinaryService {
   static async generateSignature(params: Record<string, any>): Promise<string> {
     try {
+      validateCloudinaryConfig();
+
       const signature = cloudinary.utils.api_sign_request(
         params,
-        process.env.CLOUDINARY_API_SECRET
+        process.env.CLOUDINARY_API_SECRET!
       );
       return signature;
     } catch (error) {
@@ -30,6 +54,9 @@ export class CloudinaryService {
     } = {}
   ): Promise<any> {
     try {
+      // Initialize Cloudinary if not already done
+      initializeCloudinary();
+
       // Check file size before upload
       const fs = require("fs");
       const stats = fs.statSync(filePath);
@@ -99,6 +126,9 @@ export class CloudinaryService {
     } = {}
   ): Promise<any> {
     try {
+      // Initialize Cloudinary if not already done
+      initializeCloudinary();
+
       const result = await cloudinary.uploader.upload(filePath, {
         resource_type: "image",
         folder: options.folder || "videoflow",

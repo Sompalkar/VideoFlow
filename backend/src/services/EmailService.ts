@@ -10,13 +10,28 @@ interface EmailData {
 export class EmailService {
   private static transporter: nodemailer.Transporter;
 
+  private static validateEmailConfig() {
+    if (!process.env.EMAIL_USER) {
+      throw new Error(
+        "EMAIL_USER environment variable is required. Please set it in your .env file."
+      );
+    }
+    if (!process.env.EMAIL_PASS) {
+      throw new Error(
+        "EMAIL_PASS environment variable is required. Please set it in your .env file."
+      );
+    }
+  }
+
   private static getTransporter(): nodemailer.Transporter {
     if (!this.transporter) {
+      this.validateEmailConfig();
+
       this.transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+          user: process.env.EMAIL_USER!,
+          pass: process.env.EMAIL_PASS!,
         },
       });
 
@@ -34,9 +49,11 @@ export class EmailService {
 
   private static async sendEmail(emailData: EmailData): Promise<void> {
     try {
+      this.validateEmailConfig();
+
       const transporter = this.getTransporter();
       const mailOptions = {
-        from: `"VideoFlow" <${process.env.EMAIL_USER}>`,
+        from: `"VideoFlow" <${process.env.EMAIL_USER!}>`,
         to: emailData.to,
         subject: emailData.subject,
         html: emailData.html,
