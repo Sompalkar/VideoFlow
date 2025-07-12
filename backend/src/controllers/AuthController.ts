@@ -6,7 +6,7 @@ import User from "../models/User";
 import Team from "../models/Team";
 import type { AuthRequest } from "../middleware/auth";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export class AuthController {
   static async register(req: Request, res: Response): Promise<void> {
@@ -84,7 +84,7 @@ export class AuthController {
       // Generate JWT token with team member role
       const token = jwt.sign(
         { userId: user._id, email: user.email, role: teamMemberRole },
-        JWT_SECRET,
+        JWT_SECRET!,
         { expiresIn: "7d" }
       );
 
@@ -158,7 +158,7 @@ export class AuthController {
       // Generate JWT token with team member role
       const token = jwt.sign(
         { userId: user._id, email: user.email, role: teamMemberRole },
-        JWT_SECRET,
+        JWT_SECRET!,
         { expiresIn: "7d" }
       );
 
@@ -191,7 +191,7 @@ export class AuthController {
 
   static async verifyToken(token: string) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET!) as any;
       const user = await User.findById(decoded.userId).select("-password");
 
       if (!user || !user.isActive) {
@@ -328,7 +328,7 @@ export class AuthController {
       // Generate new JWT token with team member role
       const token = jwt.sign(
         { userId: user._id, email: user.email, role: teamMemberRole },
-        JWT_SECRET,
+        JWT_SECRET!,
         { expiresIn: "7d" }
       );
 

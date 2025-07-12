@@ -234,7 +234,7 @@ router.post(
         signature,
         timestamp,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-        apiKey: 529336143214579,
+        apiKey: process.env.CLOUDINARY_API_KEY,
         folder: params.folder,
       });
     } catch (error) {

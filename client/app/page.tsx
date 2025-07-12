@@ -346,7 +346,7 @@ export default function LandingPage() {
                     ))}
                   </div>
                   <p className="text-gray-700 mb-6 text-lg leading-relaxed">
-                  {`"${testimonial.content}"`}
+                    {`"${testimonial.content}"`}
                   </p>
                   <div className="flex items-center">
                     <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">

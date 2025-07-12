@@ -2,8 +2,11 @@ import mongoose from "mongoose";
 
 export const connectDB = async (): Promise<void> => {
   try {
-    const mongoURI =
-      process.env.MONGODB_URI || "mongodb://localhost:27017/videoflow";
+    const mongoURI = process.env.MONGODB_URI;
+
+    if (!mongoURI) {
+      throw new Error("MONGODB_URI environment variable is required");
+    }
 
     await mongoose.connect(mongoURI);
 

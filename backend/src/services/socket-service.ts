@@ -50,9 +50,9 @@ class SocketService {
     console.log("Initializing Socket.IO service...");
 
     // Check for JWT secret
-    const jwtSecret = process.env.JWT_SECRET || "your-secret-key";
+    const jwtSecret = process.env.JWT_SECRET;
     console.log("JWT Secret available:", !!jwtSecret);
-    console.log("Using JWT secret:", jwtSecret.substring(0, 10) + "...");
+    console.log("Using JWT secret:", jwtSecret?.substring(0, 10) + "...");
 
     this.io = new SocketIOServer(server, {
       cors: {
@@ -96,7 +96,7 @@ class SocketService {
         }
 
         console.log("Verifying JWT token...");
-        const decoded = jwt.verify(token, jwtSecret) as any;
+        const decoded = jwt.verify(token, jwtSecret!) as any;
         console.log("JWT decoded successfully for user:", decoded.userId);
 
         // Fetch user data from database
