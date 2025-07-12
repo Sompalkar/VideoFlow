@@ -385,7 +385,7 @@ export class VideoController {
       video.status = "rejected";
       video.rejectedBy = new mongoose.Types.ObjectId(userId);
       video.rejectedAt = new Date();
-      video.rejectionReason = reason;
+      video.rejectionReason = typeof reason === "string" ? reason : "";
       await video.save();
 
       await video.populate([

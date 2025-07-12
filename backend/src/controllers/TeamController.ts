@@ -64,24 +64,30 @@ export class TeamController {
     }
   }
 
-  // @desc    Invite team member
-  /**
-   * Invite a new member to the team
-   * Only creators and managers can invite new members
-   */
+  // @desc    Invite member to team
   static async inviteMember(req: AuthRequest, res: Response): Promise<void> {
     try {
-      // Validate request data
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res
-          .status(400)
-          .json({ message: "Validation errors", errors: errors.array() });
+      const { userId } = req.user!;
+      const { email, role } = req.body;
+
+      // Validate input
+      if (!email || !role) {
+        res.status(400).json({ message: "Email and role are required" });
         return;
       }
 
-      const { userId } = req.user!;
-      const { email, role } = req.body;
+      // Validate role
+      const validRoles = ["creator", "editor", "manager"];
+      if (typeof role !== "string" || !validRoles.includes(role)) {
+        res.status(400).json({ message: "Invalid role" });
+        return;
+      }
+
+      // Validate email
+      if (typeof email !== "string") {
+        res.status(400).json({ message: "Email must be a string" });
+        return;
+      }
 
       const user = await User.findById(userId);
       if (!user?.teamId) {
@@ -95,41 +101,28 @@ export class TeamController {
         return;
       }
 
-      // Check if user has permission to invite
-      // Note: userId from JWT is ObjectId, but team members store userId as string
-      // So we convert both to strings for comparison
-      const userMember = team.members.find(
-        (m) => m.userId.toString() === userId.toString()
+      // Check if user is already a member
+      const existingMember = team.members.find(
+        (m) => m.userId.toString() === email
       );
-
-      // Auto-promote single editor members to creator
-      if (team.members.length === 1 && userMember?.role === "editor") {
-        userMember.role = "creator";
-        await team.save();
-      }
-
-      // Verify user has permission to invite (creator or manager)
-      if (!userMember || !["creator", "manager"].includes(userMember.role)) {
-        res.status(403).json({ message: "Insufficient permissions" });
+      if (existingMember) {
+        res.status(400).json({ message: "User is already a team member" });
         return;
       }
 
-      // Check if user already exists in the system
+      // Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
-        // Check if already a team member
-        const isAlreadyMember = team.members.some(
-          (m) => m.userId.toString() === existingUser._id.toString()
-        );
-        if (isAlreadyMember) {
-          res.status(400).json({ message: "User is already a team member" });
+        // Check if user is already in a team
+        if (existingUser.teamId) {
+          res.status(400).json({ message: "User is already in a team" });
           return;
         }
 
         // Add existing user to team
         team.members.push({
           userId: existingUser._id,
-          role,
+          role: role as "creator" | "editor" | "manager",
           status: "active",
           joinedAt: new Date(),
         });
@@ -176,7 +169,7 @@ export class TeamController {
         // Add to team
         team.members.push({
           userId: newUser._id,
-          role,
+          role: role as "creator" | "editor" | "manager",
           status: "pending",
           joinedAt: new Date(),
         });
@@ -267,7 +260,7 @@ export class TeamController {
         return;
       }
 
-      team.members[memberIndex].role = role;
+      team.members[memberIndex].role = typeof role === "string" ? role as "creator" | "editor" | "manager" : "editor";
       await team.save();
 
       res.json({ message: "Member role updated successfully" });
@@ -358,8 +351,8 @@ export class TeamController {
         return;
       }
 
-      team.name = name || team.name;
-      team.description = description || team.description;
+      team.name = typeof name === "string" ? name : team.name;
+      team.description = typeof description === "string" ? description : team.description;
       await team.save();
 
       res.json({ team });

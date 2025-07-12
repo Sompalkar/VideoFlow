@@ -42,7 +42,9 @@ router.post(
         return;
       }
 
-      const tokens = await YoutubeService.exchangeCodeForTokens(code);
+      const tokens = await YoutubeService.exchangeCodeForTokens(
+        typeof code === "string" ? code : ""
+      );
 
       // Validate tokens before using them
       if (!tokens.accessToken || !tokens.refreshToken) {

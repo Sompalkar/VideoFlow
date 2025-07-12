@@ -21,6 +21,12 @@ export class AIThumbnailController {
       } = req.body;
       const { userId } = req.user!;
 
+      // Validate required parameters
+      if (!videoUrl || !title) {
+        res.status(400).json({ message: "videoUrl and title are required" });
+        return;
+      }
+
       console.log(
         "AI Thumbnail Controller: Generating thumbnails for user:",
         userId
@@ -36,9 +42,9 @@ export class AIThumbnailController {
       };
 
       const thumbnails = await AIThumbnailService.generateThumbnails(
-        videoUrl,
-        title,
-        description,
+        videoUrl as string,
+        title as string,
+        description || "",
         options
       );
 
@@ -85,6 +91,12 @@ export class AIThumbnailController {
         req.body;
       const { userId } = req.user!;
 
+      // Validate required parameter
+      if (!thumbnailUrl) {
+        res.status(400).json({ message: "thumbnailUrl is required" });
+        return;
+      }
+
       console.log(
         "AI Thumbnail Controller: Enhancing thumbnail for user:",
         userId
@@ -99,7 +111,7 @@ export class AIThumbnailController {
       };
 
       const enhancedThumbnail = await AIThumbnailService.enhanceThumbnail(
-        thumbnailUrl,
+        thumbnailUrl as string,
         enhancements
       );
 
@@ -125,9 +137,17 @@ export class AIThumbnailController {
       const { videoUrl } = req.body;
       const { userId } = req.user!;
 
+      // Validate required parameter
+      if (!videoUrl) {
+        res.status(400).json({ message: "videoUrl is required" });
+        return;
+      }
+
       console.log("AI Thumbnail Controller: Analyzing video for user:", userId);
 
-      const analysis = await AIThumbnailService.analyzeVideoContent(videoUrl);
+      const analysis = await AIThumbnailService.analyzeVideoContent(
+        videoUrl as string
+      );
 
       res.json({
         success: true,
@@ -240,7 +260,7 @@ export class AIThumbnailController {
       // Services that don't require API keys (use basic transformations)
       const noApiKeyServices = ["precise", "basic", "preservation", "mock"];
 
-      if (noApiKeyServices.includes(service)) {
+      if (service && noApiKeyServices.includes(service as string)) {
         console.log(
           "AI Thumbnail Controller: Service doesn't require API key:",
           service
@@ -266,8 +286,8 @@ export class AIThumbnailController {
       console.log("AI Thumbnail Controller: Service:", service);
 
       const result = await AIThumbnailService.enhanceFrameWithImg2Img(
-        frameUrl,
-        prompt,
+        frameUrl as string,
+        prompt as string,
         {
           style: style || "enhanced",
           aspectRatio: aspectRatio || "16:9",
@@ -315,7 +335,7 @@ export class AIThumbnailController {
         });
         return;
       }
-      const url = await AIThumbnailService.applyOverlay(publicId, {
+      const url = await AIThumbnailService.applyOverlay(publicId as string, {
         text,
         fontFamily,
         fontSize,
@@ -352,7 +372,7 @@ export class AIThumbnailController {
         });
         return;
       }
-      const result = await AIThumbnailService.generateWithAI(prompt, {
+      const result = await AIThumbnailService.generateWithAI(prompt as string, {
         aspectRatio,
         style,
         apiKey,

@@ -8,14 +8,23 @@ export interface AuthRequest extends Request {
     role: string;
     teamId?: string;
   };
-  body: any;
-  params: any;
-  query: any;
-  cookies: any;
-  headers: any;
-  file?: any;
-  files?: any;
-  resourceType?: string;
+  body: Request["body"];
+  params: Request["params"];
+  query: Request["query"];
+  cookies: Request["cookies"];
+  headers: Request["headers"];
+  file?: {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    destination: string;
+    filename: string;
+    path: string;
+  };
+  files?: Record<string, unknown>;
+  resourceType?: "video" | "image";
 }
 
 export const authenticate = async (
@@ -29,7 +38,11 @@ export const authenticate = async (
 
     if (!token) {
       const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith("Bearer ")) {
+      if (
+        authHeader &&
+        typeof authHeader === "string" &&
+        authHeader.startsWith("Bearer ")
+      ) {
         token = authHeader.split(" ")[1];
       }
     }

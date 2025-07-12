@@ -10,14 +10,22 @@ const router = Router();
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req: any, file: any, cb: any) => {
+  destination: (
+    req: AuthRequest,
+    file: multer.File,
+    cb: (error: Error | null, destination: string) => void
+  ) => {
     const uploadDir = path.join(__dirname, "../../uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
-  filename: (req: any, file: any, cb: any) => {
+  filename: (
+    req: AuthRequest,
+    file: multer.File,
+    cb: (error: Error | null, filename: string) => void
+  ) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(
       null,
@@ -31,7 +39,11 @@ const upload = multer({
   limits: {
     fileSize: 200 * 1024 * 1024, // 100MB limit to match Cloudinary free tier
   },
-  fileFilter: (req: any, file: any, cb: any) => {
+  fileFilter: (
+    req: AuthRequest,
+    file: multer.File,
+    cb: (error: Error | null, acceptFile: boolean) => void
+  ) => {
     const allowedTypes = {
       video: [
         ".mp4",
@@ -58,7 +70,7 @@ const upload = multer({
     }
 
     // Set resourceType on req for use in route handler
-    (req as any).resourceType = resourceType;
+    req.resourceType = resourceType;
 
     // Log the file upload attempt for debugging
     console.log(
@@ -72,7 +84,7 @@ const upload = multer({
       const errorMsg =
         "Invalid file type. Please upload a supported video (e.g., .mp4, .avi) or image (e.g., .jpg, .png) format.";
       console.error("File filter error:", errorMsg);
-      cb(new Error(errorMsg));
+      cb(new Error(errorMsg), false);
     }
   },
 });
@@ -97,7 +109,7 @@ router.post(
       }
 
       // Use resourceType determined by fileFilter
-      const resourceType = (req as any).resourceType;
+      const resourceType = req.resourceType;
       if (!resourceType) {
         res.status(400).json({ message: "Invalid or unsupported file type." });
         return;

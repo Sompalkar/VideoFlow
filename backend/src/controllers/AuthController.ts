@@ -322,7 +322,7 @@ export class AuthController {
         return;
       }
 
-      if (newPassword.length < 6) {
+      if (typeof newPassword !== "string" || newPassword.length < 6) {
         res
           .status(400)
           .json({ message: "New password must be at least 6 characters long" });

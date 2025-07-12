@@ -214,7 +214,7 @@ export class CommentController {
         return;
       }
 
-      comment.content = content;
+      comment.content = typeof content === "string" ? content : "";
       comment.isEdited = true;
       comment.editedAt = new Date();
       await comment.save();
@@ -269,6 +269,13 @@ export class CommentController {
         return;
       }
 
+      // Validate reaction type
+      const validTypes = ["like", "dislike", "heart", "laugh"];
+      if (typeof type !== "string" || !validTypes.includes(type)) {
+        res.status(400).json({ message: "Invalid reaction type" });
+        return;
+      }
+
       const existingReactionIndex = comment.reactions.findIndex(
         (reaction) => reaction.userId.toString() === userId
       );
@@ -280,7 +287,7 @@ export class CommentController {
         // Add new reaction
         comment.reactions.push({
           userId: new mongoose.Types.ObjectId(userId),
-          type,
+          type: type as "like" | "dislike" | "heart" | "laugh",
         });
       }
 
