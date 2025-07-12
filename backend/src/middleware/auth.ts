@@ -33,6 +33,11 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Debug logging
+    console.log("Auth middleware - Cookies:", req.cookies);
+    console.log("Auth middleware - Headers:", req.headers);
+    console.log("Auth middleware - Origin:", req.headers.origin);
+
     // Try to get token from cookie first, then fallback to Authorization header
     let token = req.cookies["auth-token"];
 
@@ -48,6 +53,7 @@ export const authenticate = async (
     }
 
     if (!token) {
+      console.log("Auth middleware - No token found");
       res.status(401).json({ message: "Authorization token required" });
       return;
     }

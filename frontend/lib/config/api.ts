@@ -1,6 +1,9 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+console.log("API Base URL:", API_BASE_URL);
+console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+
 class ApiClient {
   private baseURL: string;
 
@@ -32,8 +35,21 @@ class ApiClient {
       credentials: config?.withCredentials ? "include" : "same-origin",
     };
 
+    console.log("API Request:", {
+      url,
+      method: options.method || "GET",
+      withCredentials: config?.withCredentials,
+      hasToken: !!token,
+    });
+
     try {
       const response = await fetch(url, requestConfig);
+
+      console.log("API Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
