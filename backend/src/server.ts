@@ -35,6 +35,14 @@ const app = express();
 const server = createServer(app);
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy - important for rate limiting behind reverse proxies
+// In production, trust all proxies (Render, Vercel, etc.)
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", true);
+} else {
+  app.set("trust proxy", 1);
+}
+
 // Connect to MongoDB
 connectDB();
 
@@ -48,6 +56,8 @@ const limiter = rateLimit({
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
+  // Trust proxy for accurate IP detection
+  trustProxy: true,
 });
 
 // Middleware
