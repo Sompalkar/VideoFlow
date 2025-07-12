@@ -1,5 +1,8 @@
 import { CloudinaryService } from "./CloudinaryService";
 import { VideoAnalysisService } from "./VideoAnalysisService";
+import fetch from "node-fetch";
+import fs from "fs";
+import FormData from "form-data";
 
 interface ThumbnailGenerationOptions {
   style?: "modern" | "vintage" | "minimal" | "bold" | "professional";
@@ -37,6 +40,25 @@ interface StabilityAIResponse {
   }>;
 }
 
+interface OverlayOption {
+  type: "text" | "emoji" | "sticker";
+  content: string; // text, emoji, or Cloudinary publicId for sticker
+  position?: { gravity?: string; x?: number; y?: number };
+  fontSize?: number;
+  fontColor?: string;
+  opacity?: number;
+  width?: number;
+  height?: number;
+}
+
+interface BasicTransformOptions {
+  style?: string;
+  aspectRatio?: string;
+  videoTitle?: string;
+  videoDescription?: string;
+  overlays?: OverlayOption[];
+}
+
 export class AIThumbnailService {
   private static readonly OPENAI_API_KEY =
     "sk-ww99-wdXQ4esojHqVo4fBnC_nmt5Wg_5YIOAtD7K-aT3BlbkFJMiiUqRpTXyGYR0gSsLVmywV8l4zBrcLnhBrTcTYagA";
@@ -46,7 +68,7 @@ export class AIThumbnailService {
 
   // Alternative API (Stability AI) - you can add your key here
   private static readonly STABILITY_API_KEY =
-    "sk-Xq57r8dPzc7drhueorHsSGE3TpqnwCxaqdkZPjuHBxV0YGRG";
+    "sk-BRPZaKY5hk6n3eir67VhmERud92ThmT716GqCtcgAKEJ5DfM";
   private static readonly STABILITY_API_URL =
     "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
 
@@ -626,9 +648,9 @@ export class AIThumbnailService {
     return colorMap[hexColor] || "color";
   }
 
-  private static async generateWithAI(
+  public static async generateWithAI(
     prompt: string,
-    options: { aspectRatio: string; style: string }
+    options: { aspectRatio: string; style: string; apiKey?: string }
   ): Promise<GeneratedThumbnail> {
     try {
       console.log(
@@ -641,7 +663,7 @@ export class AIThumbnailService {
 
       // Try Stability AI first (more reliable for thumbnails)
       try {
-        return await this.generateWithStabilityAI(prompt, options);
+        return await this.generateWithStabilityAI("", prompt, options);
       } catch (stabilityError) {
         console.log(
           "AI Thumbnail Service: Stability AI failed, trying OpenAI..."
@@ -676,7 +698,7 @@ export class AIThumbnailService {
 
   private static async generateWithOpenAI(
     prompt: string,
-    options: { aspectRatio: string; style: string }
+    options: { aspectRatio: string; style: string; apiKey?: string }
   ): Promise<GeneratedThumbnail> {
     try {
       const openaiSize = this.getOpenAISize(options.aspectRatio);
@@ -688,7 +710,7 @@ export class AIThumbnailService {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${this.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${options.apiKey || this.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
           model: "dall-e-3",
@@ -740,102 +762,265 @@ export class AIThumbnailService {
   }
 
   private static async generateWithStabilityAI(
+    framePathOrUrl: string,
     prompt: string,
-    options: { aspectRatio: string; style: string }
+    options: {
+      aspectRatio: string;
+      style: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    }
   ): Promise<GeneratedThumbnail> {
     try {
-      const stabilitySize = this.getStabilityAISize(options.aspectRatio);
-
-      // Validate dimensions before making API call
-      if (
-        !this.validateStabilityAIDimensions(
-          stabilitySize.width,
-          stabilitySize.height
-        )
-      ) {
-        throw new Error(
-          `Unsupported dimensions for Stability AI: ${stabilitySize.width}x${stabilitySize.height}`
-        );
+      const apiKey = options.apiKey || process.env.STABILITY_API_KEY;
+      if (!apiKey) {
+        throw new Error("No Stability AI API key provided");
       }
 
       console.log(
-        `AI Thumbnail Service: Stability AI request - Size: ${stabilitySize.width}x${stabilitySize.height}`
+        "AI Thumbnail Service: Using Stability AI for image enhancement..."
       );
 
-      const requestBody = {
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Convert image to base64
+      const imageBase64 = imageBuffer.toString("base64");
+
+      // Create focused prompt for text overlay and color enhancement only
+      const enhancedPrompt = this.createFocusedPrompt(
+        prompt,
+        options.videoTitle,
+        options.videoDescription
+      );
+
+      console.log("AI Thumbnail Service: Enhanced prompt:", enhancedPrompt);
+
+      // Use Stability AI's image-to-image endpoint with correct model
+      const payload = {
         text_prompts: [
           {
-            text: prompt,
+            text: enhancedPrompt,
             weight: 1,
           },
         ],
-        cfg_scale: 7,
-        height: stabilitySize.height,
-        width: stabilitySize.width,
+        init_image: imageBase64,
+        init_image_mode: "IMAGE_STRENGTH",
+        image_strength: 0.03, // Extremely low strength (97% original content)
+        cfg_scale: 2, // Very low CFG for minimal changes
+        steps: 15, // Fewer steps for subtle changes
         samples: 1,
-        steps: 30,
-        style_preset: "cinematic",
-        seed: 0,
-        sampler: "K_DPMPP_2M",
       };
 
-      console.log(
-        "AI Thumbnail Service: Stability AI request body:",
-        JSON.stringify(requestBody, null, 2)
-      );
+      console.log("AI Thumbnail Service: Sending request to Stability AI...");
 
-      const response = await fetch(this.STABILITY_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.STABILITY_API_KEY}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          "AI Thumbnail Service: Stability AI error response:",
-          errorText
-        );
-        throw new Error(
-          `Stability AI API error: ${response.statusText} - ${errorText}`
-        );
-      }
-
-      const data = (await response.json()) as any;
-      const artifact = data.artifacts?.[0];
-
-      if (!artifact || !artifact.base64) {
-        throw new Error("No image data received from Stability AI");
-      }
-
-      console.log("AI Thumbnail Service: Stability AI generation successful");
-
-      // Convert base64 to buffer and upload to Cloudinary
-      const imageBuffer = Buffer.from(artifact.base64, "base64");
-
-      // Use uploadImageFromDataUrl instead of uploadBuffer for now
-      const dataUrl = `data:image/png;base64,${artifact.base64}`;
-      const uploadResult = await CloudinaryService.uploadImageFromDataUrl(
-        dataUrl,
+      // Try different Stability AI endpoints with proper dimensions
+      const endpoints = [
         {
-          folder: "thumbnails",
-          publicId: `stability-${Date.now()}`,
-        }
-      );
+          url: "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/image-to-image",
+          width: 768,
+          height: 768,
+        },
+        {
+          url: "https://api.stability.ai/v1/generation/stable-diffusion-v1-5/image-to-image",
+          width: 512,
+          height: 512,
+        },
+        {
+          url: "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image",
+          width: 1024,
+          height: 1024,
+        },
+      ];
 
-      return {
-        id: `stability-${Date.now()}`,
-        url: uploadResult.secure_url,
-        publicId: uploadResult.public_id,
-        style: options.style,
-        prompt: prompt,
-      };
+      let lastError: Error | null = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`AI Thumbnail Service: Trying endpoint: ${endpoint.url}`);
+
+          // Resize image to acceptable dimensions using Cloudinary
+          const resizedImageUrl = CloudinaryService.getOptimizedUrl(
+            framePathOrUrl,
+            {
+              transformation: {
+                width: endpoint.width,
+                height: endpoint.height,
+                crop: "fill",
+                quality: "auto",
+              },
+            }
+          );
+
+          // Download the resized image
+          const resizedResponse = await fetch(resizedImageUrl);
+          if (!resizedResponse.ok) {
+            throw new Error(
+              `Failed to download resized image: ${resizedResponse.statusText}`
+            );
+          }
+          const resizedBuffer = Buffer.from(
+            await resizedResponse.arrayBuffer()
+          );
+
+          // Create FormData for multipart/form-data
+          const form = new FormData();
+          form.append("text_prompts[0][text]", enhancedPrompt);
+          form.append("text_prompts[0][weight]", "1");
+          form.append("init_image", resizedBuffer, {
+            filename: "init_image.jpg",
+            contentType: "image/jpeg",
+          });
+          form.append("init_image_mode", "IMAGE_STRENGTH");
+          form.append("image_strength", "0.15"); // Very low strength
+          form.append("cfg_scale", "6"); // Lower CFG
+          form.append("steps", "30");
+          form.append("samples", "1");
+
+          const response = await fetch(endpoint.url, {
+            method: "POST",
+            headers: {
+              ...form.getHeaders(),
+              Accept: "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: form,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.log(
+              `AI Thumbnail Service: Endpoint ${endpoint.url} failed:`,
+              errorText
+            );
+            lastError = new Error(
+              `Stability AI error (${response.status}): ${errorText}`
+            );
+            continue; // Try next endpoint
+          }
+
+          console.log("AI Thumbnail Service: Stability AI API call successful");
+
+          const data = (await response.json()) as any;
+          const artifact = data.artifacts?.[0];
+
+          if (!artifact || !artifact.base64) {
+            throw new Error("No image data received from Stability AI");
+          }
+
+          console.log(
+            "AI Thumbnail Service: Stability AI generation successful"
+          );
+
+          // Convert base64 to buffer and upload to Cloudinary
+          const enhancedImageBuffer = Buffer.from(artifact.base64, "base64");
+
+          // Upload to Cloudinary
+          const uploadResult = await CloudinaryService.uploadBuffer(
+            enhancedImageBuffer,
+            {
+              folder: "ai-thumbnails",
+              public_id: `ai_${Date.now()}`, // Simplified naming
+              resource_type: "image",
+            }
+          );
+
+          // Add post-processing text overlay if video title exists
+          if (options.videoTitle) {
+            console.log(
+              "AI Thumbnail Service: Adding post-processing text overlay..."
+            );
+
+            const finalUrl = CloudinaryService.getOverlayedImageUrl(
+              uploadResult.public_id,
+              {
+                text: options.videoTitle,
+                fontFamily: "Impact",
+                fontSize: 85,
+                fontColor: "#FFFFFF",
+                position: { gravity: "south", x: 0, y: 35 },
+                background: "rgba(0,0,0,0.8)",
+                opacity: 0.9,
+                width: 1100,
+                height: 150,
+              }
+            );
+
+            console.log(
+              "AI Thumbnail Service: Post-processing text overlay added"
+            );
+
+            // Test if the complex URL is accessible, fallback to simple URL if not
+            const isAccessible = await this.testImageAccessibility(finalUrl);
+            const finalImageUrl = isAccessible
+              ? finalUrl
+              : this.getSimpleImageUrl(uploadResult.public_id);
+
+            return {
+              id: `stability-${Date.now()}`,
+              url: finalImageUrl,
+              publicId: uploadResult.public_id,
+              style: options.style || "enhanced",
+              prompt: prompt,
+            };
+          }
+
+          // Return the enhanced image without overlay
+          const optimizedUrl = CloudinaryService.getOptimizedUrl(
+            uploadResult.public_id,
+            {
+              transformation: {
+                quality: "auto",
+                format: "auto",
+              },
+            }
+          );
+
+          // Test if the optimized URL is accessible, fallback to simple URL if not
+          const isAccessible = await this.testImageAccessibility(optimizedUrl);
+          const finalImageUrl = isAccessible
+            ? optimizedUrl
+            : this.getSimpleImageUrl(uploadResult.public_id);
+
+          return {
+            id: `stability-${Date.now()}`,
+            url: finalImageUrl,
+            publicId: uploadResult.public_id,
+            style: options.style || "enhanced",
+            prompt: prompt,
+          };
+        } catch (error) {
+          console.log(
+            `AI Thumbnail Service: Endpoint ${endpoint.url} error:`,
+            error
+          );
+          lastError = error as Error;
+          continue; // Try next endpoint
+        }
+      }
+
+      // If all endpoints failed, throw the last error
+      if (lastError) {
+        throw lastError;
+      }
+
+      throw new Error("All Stability AI endpoints failed");
     } catch (error) {
       console.error(
-        "AI Thumbnail Service: Stability AI generation failed:",
+        "AI Thumbnail Service: Stability AI fallback error:",
         error
       );
       throw error;
@@ -951,5 +1136,1486 @@ export class AIThumbnailService {
       );
       throw new Error("Failed to analyze video content");
     }
+  }
+
+  /**
+   * Enhance a frame using AI (prioritizing Stability AI)
+   */
+  static async enhanceFrameWithImg2Img(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      strength?: number;
+      guidanceScale?: number;
+      videoTitle?: string;
+      videoDescription?: string;
+      service?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      console.log(
+        "AI Thumbnail Service: Starting frame enhancement with img2img..."
+      );
+      console.log("AI Thumbnail Service: Frame URL:", framePathOrUrl);
+      console.log("AI Thumbnail Service: Prompt:", prompt);
+      console.log("AI Thumbnail Service: Options:", options);
+
+      // Determine which service to use
+      const service = options.service || "stability"; // Default to Stability AI
+
+      let result: GeneratedThumbnail;
+
+      switch (service.toLowerCase()) {
+        case "stability":
+          console.log("AI Thumbnail Service: Using Stability AI...");
+          result = await this.enhanceFrameWithStabilityAI(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "huggingface":
+          console.log("AI Thumbnail Service: Using HuggingFace...");
+          result = await this.enhanceFrameWithHuggingFace(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "leonardo":
+          console.log("AI Thumbnail Service: Using Leonardo AI...");
+          result = await this.enhanceFrameWithLeonardoAI(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "dalle":
+          console.log("AI Thumbnail Service: Using DALL-E 3...");
+          result = await this.enhanceFrameWithDALLE3(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "dalle-hybrid":
+          console.log("AI Thumbnail Service: Using DALL-E 3 Hybrid...");
+          result = await this.enhanceFrameWithDALLE3Hybrid(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "precise":
+          console.log("AI Thumbnail Service: Using Precise Control...");
+          result = await this.enhanceFrameWithPreciseControl(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "preservation":
+          console.log("AI Thumbnail Service: Using Content Preservation...");
+          result = await this.enhanceFrameWithPreservation(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "mock":
+          console.log("AI Thumbnail Service: Using Mock AI...");
+          result = await this.enhanceFrameWithMockAI(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        case "basic":
+          console.log("AI Thumbnail Service: Using Basic Transformations...");
+          result = await this.enhanceFrameWithBasicTransformations(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+        default:
+          console.log("AI Thumbnail Service: Using Stability AI (default)...");
+          result = await this.enhanceFrameWithStabilityAI(
+            framePathOrUrl,
+            prompt,
+            options
+          );
+          break;
+      }
+
+      console.log(
+        "AI Thumbnail Service: Frame enhancement completed successfully"
+      );
+      return result;
+    } catch (error) {
+      console.error("AI Thumbnail Service: Frame enhancement error:", error);
+
+      // Fallback to basic transformations
+      console.log(
+        "AI Thumbnail Service: Falling back to basic transformations..."
+      );
+      try {
+        return await this.enhanceFrameWithBasicTransformations(
+          framePathOrUrl,
+          prompt,
+          options
+        );
+      } catch (fallbackError) {
+        console.error(
+          "AI Thumbnail Service: Fallback also failed:",
+          fallbackError
+        );
+        throw new Error("All enhancement methods failed");
+      }
+    }
+  }
+
+  /**
+   * HuggingFace img2img enhancement (kept as fallback)
+   */
+  private static async enhanceFrameWithHuggingFace(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      strength?: number;
+      guidanceScale?: number;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      const apiKey = options.apiKey || process.env.HUGGINGFACE_API_KEY;
+      if (!apiKey) {
+        throw new Error("No HuggingFace API key provided");
+      }
+
+      console.log(
+        "AI Thumbnail Service: Using HuggingFace for image enhancement..."
+      );
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Convert image to base64
+      const imageBase64 = imageBuffer.toString("base64");
+
+      // Create enhanced prompt
+      const enhancedPrompt = this.createEnhancedPrompt(
+        prompt,
+        options.videoTitle,
+        options.videoDescription
+      );
+
+      console.log(
+        "AI Thumbnail Service: Enhanced prompt for HuggingFace:",
+        enhancedPrompt
+      );
+
+      // Use HuggingFace's img2img endpoint
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            inputs: enhancedPrompt,
+            parameters: {
+              image: imageBase64,
+              strength: options.strength || 0.75,
+              guidance_scale: options.guidanceScale || 7.5,
+              num_inference_steps: 50,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("AI Thumbnail Service: HuggingFace error:", errorText);
+        throw new Error(`HuggingFace error: ${errorText}`);
+      }
+
+      console.log("AI Thumbnail Service: HuggingFace API call successful");
+
+      const imageBuffer2 = await response.arrayBuffer();
+      const enhancedImageBuffer = Buffer.from(imageBuffer2);
+
+      // Upload to Cloudinary
+      const uploadResult = await CloudinaryService.uploadBuffer(
+        enhancedImageBuffer,
+        {
+          folder: "ai-thumbnails",
+          public_id: `huggingface_enhanced_${Date.now()}`,
+          resource_type: "image",
+        }
+      );
+
+      return {
+        id: `huggingface-${Date.now()}`,
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+        style: options.style || "huggingface",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error("AI Thumbnail Service: HuggingFace error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fallback method using Stability AI for frame enhancement
+   */
+  private static async enhanceFrameWithStabilityAI(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      const apiKey = options.apiKey || process.env.STABILITY_API_KEY;
+      if (!apiKey) {
+        throw new Error("No Stability AI API key provided");
+      }
+
+      console.log(
+        "AI Thumbnail Service: Using Stability AI for image enhancement..."
+      );
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Convert image to base64
+      const imageBase64 = imageBuffer.toString("base64");
+
+      // Create focused prompt for text overlay and color enhancement only
+      const enhancedPrompt = this.createFocusedPrompt(
+        prompt,
+        options.videoTitle,
+        options.videoDescription
+      );
+
+      console.log("AI Thumbnail Service: Enhanced prompt:", enhancedPrompt);
+
+      // Use Stability AI's image-to-image endpoint with correct model
+      const payload = {
+        text_prompts: [
+          {
+            text: enhancedPrompt,
+            weight: 1,
+          },
+        ],
+        init_image: imageBase64,
+        init_image_mode: "IMAGE_STRENGTH",
+        image_strength: 0.03, // Extremely low strength (97% original content)
+        cfg_scale: 2, // Very low CFG for minimal changes
+        steps: 15, // Fewer steps for subtle changes
+        samples: 1,
+      };
+
+      console.log("AI Thumbnail Service: Sending request to Stability AI...");
+
+      // Try different Stability AI endpoints with proper dimensions
+      const endpoints = [
+        {
+          url: "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/image-to-image",
+          width: 768,
+          height: 768,
+        },
+        {
+          url: "https://api.stability.ai/v1/generation/stable-diffusion-v1-5/image-to-image",
+          width: 512,
+          height: 512,
+        },
+        {
+          url: "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image",
+          width: 1024,
+          height: 1024,
+        },
+      ];
+
+      let lastError: Error | null = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`AI Thumbnail Service: Trying endpoint: ${endpoint.url}`);
+
+          // Resize image to acceptable dimensions using Cloudinary
+          const resizedImageUrl = CloudinaryService.getOptimizedUrl(
+            framePathOrUrl,
+            {
+              transformation: {
+                width: endpoint.width,
+                height: endpoint.height,
+                crop: "fill",
+                quality: "auto",
+              },
+            }
+          );
+
+          // Download the resized image
+          const resizedResponse = await fetch(resizedImageUrl);
+          if (!resizedResponse.ok) {
+            throw new Error(
+              `Failed to download resized image: ${resizedResponse.statusText}`
+            );
+          }
+          const resizedBuffer = Buffer.from(
+            await resizedResponse.arrayBuffer()
+          );
+
+          // Create FormData for multipart/form-data
+          const form = new FormData();
+          form.append("text_prompts[0][text]", enhancedPrompt);
+          form.append("text_prompts[0][weight]", "1");
+          form.append("init_image", resizedBuffer, {
+            filename: "init_image.jpg",
+            contentType: "image/jpeg",
+          });
+          form.append("init_image_mode", "IMAGE_STRENGTH");
+          form.append("image_strength", "0.15"); // Very low strength
+          form.append("cfg_scale", "6"); // Lower CFG
+          form.append("steps", "30");
+          form.append("samples", "1");
+
+          const response = await fetch(endpoint.url, {
+            method: "POST",
+            headers: {
+              ...form.getHeaders(),
+              Accept: "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: form,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.log(
+              `AI Thumbnail Service: Endpoint ${endpoint.url} failed:`,
+              errorText
+            );
+            lastError = new Error(
+              `Stability AI error (${response.status}): ${errorText}`
+            );
+            continue; // Try next endpoint
+          }
+
+          console.log("AI Thumbnail Service: Stability AI API call successful");
+
+          const data = (await response.json()) as any;
+          const artifact = data.artifacts?.[0];
+
+          if (!artifact || !artifact.base64) {
+            throw new Error("No image data received from Stability AI");
+          }
+
+          console.log(
+            "AI Thumbnail Service: Stability AI generation successful"
+          );
+
+          // Convert base64 to buffer and upload to Cloudinary
+          const enhancedImageBuffer = Buffer.from(artifact.base64, "base64");
+
+          // Upload to Cloudinary
+          const uploadResult = await CloudinaryService.uploadBuffer(
+            enhancedImageBuffer,
+            {
+              folder: "ai-thumbnails",
+              public_id: `ai_${Date.now()}`, // Simplified naming
+              resource_type: "image",
+            }
+          );
+
+          // Add post-processing text overlay if video title exists
+          if (options.videoTitle) {
+            console.log(
+              "AI Thumbnail Service: Adding post-processing text overlay..."
+            );
+
+            const finalUrl = CloudinaryService.getOverlayedImageUrl(
+              uploadResult.public_id,
+              {
+                text: options.videoTitle,
+                fontFamily: "Impact",
+                fontSize: 85,
+                fontColor: "#FFFFFF",
+                position: { gravity: "south", x: 0, y: 35 },
+                background: "rgba(0,0,0,0.8)",
+                opacity: 0.9,
+                width: 1100,
+                height: 150,
+              }
+            );
+
+            console.log(
+              "AI Thumbnail Service: Post-processing text overlay added"
+            );
+
+            // Test if the complex URL is accessible, fallback to simple URL if not
+            const isAccessible = await this.testImageAccessibility(finalUrl);
+            const finalImageUrl = isAccessible
+              ? finalUrl
+              : this.getSimpleImageUrl(uploadResult.public_id);
+
+            return {
+              id: `stability-${Date.now()}`,
+              url: finalImageUrl,
+              publicId: uploadResult.public_id,
+              style: options.style || "enhanced",
+              prompt: prompt,
+            };
+          }
+
+          // Return the enhanced image without overlay
+          const optimizedUrl = CloudinaryService.getOptimizedUrl(
+            uploadResult.public_id,
+            {
+              transformation: {
+                quality: "auto",
+                format: "auto",
+              },
+            }
+          );
+
+          // Test if the optimized URL is accessible, fallback to simple URL if not
+          const isAccessible = await this.testImageAccessibility(optimizedUrl);
+          const finalImageUrl = isAccessible
+            ? optimizedUrl
+            : this.getSimpleImageUrl(uploadResult.public_id);
+
+          return {
+            id: `stability-${Date.now()}`,
+            url: finalImageUrl,
+            publicId: uploadResult.public_id,
+            style: options.style || "enhanced",
+            prompt: prompt,
+          };
+        } catch (error) {
+          console.log(
+            `AI Thumbnail Service: Endpoint ${endpoint.url} error:`,
+            error
+          );
+          lastError = error as Error;
+          continue; // Try next endpoint
+        }
+      }
+
+      // If all endpoints failed, throw the last error
+      if (lastError) {
+        throw lastError;
+      }
+
+      throw new Error("All Stability AI endpoints failed");
+    } catch (error) {
+      console.error(
+        "AI Thumbnail Service: Stability AI fallback error:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Mock AI enhancement for testing (no API keys required)
+   */
+  private static async enhanceFrameWithMockAI(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      console.log("AI Thumbnail Service: Using mock AI for testing...");
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Upload original image to Cloudinary (mock enhancement)
+      const uploadResult = await CloudinaryService.uploadBuffer(imageBuffer, {
+        folder: "ai-thumbnails",
+        public_id: `mock_enhanced_${Date.now()}`,
+        resource_type: "image",
+      });
+
+      // Add text overlay if video title exists
+      if (options.videoTitle) {
+        console.log("AI Thumbnail Service: Adding mock text overlay...");
+
+        const finalUrl = CloudinaryService.getOverlayedImageUrl(
+          uploadResult.public_id,
+          {
+            text: options.videoTitle,
+            fontFamily: "Impact",
+            fontSize: 85,
+            fontColor: "#FFFFFF",
+            position: { gravity: "south", x: 0, y: 35 },
+            background: "rgba(0,0,0,0.8)",
+            opacity: 0.9,
+            width: 1100,
+            height: 150,
+          }
+        );
+
+        return {
+          id: `mock-${Date.now()}`,
+          url: finalUrl,
+          publicId: uploadResult.public_id,
+          style: options.style || "mock",
+          prompt: prompt,
+        };
+      }
+
+      return {
+        id: `mock-${Date.now()}`,
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+        style: options.style || "mock",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error("AI Thumbnail Service: Mock AI error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create enhanced prompt with video context
+   */
+  private static createEnhancedPrompt(
+    userPrompt: string,
+    videoTitle?: string,
+    videoDescription?: string
+  ): string {
+    let enhancedPrompt = userPrompt;
+
+    // Add video context if available
+    if (videoTitle || videoDescription) {
+      enhancedPrompt += ` Video title: "${
+        videoTitle || ""
+      }". Video description: "${videoDescription || ""}".`;
+    }
+
+    // Add quality enhancement instructions
+    enhancedPrompt += ` Create a professional YouTube thumbnail with: vibrant colors, sharp details, professional text overlay, high contrast, cinematic lighting, 4K quality, engaging visual appeal. Make it highly click-worthy and professional.`;
+
+    // Add specific enhancement for thumbnails
+    enhancedPrompt += ` Style: professional photography, bold typography, modern design, high saturation, dramatic lighting.`;
+
+    return enhancedPrompt;
+  }
+
+  /**
+   * Simple fallback enhancement using basic image transformations and text overlay
+   */
+  static async enhanceFrameWithBasicTransformations(
+    framePathOrUrl: string,
+    prompt: string,
+    options: BasicTransformOptions = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      console.log("AI Thumbnail Service: Using basic transformations...");
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Upload original image to Cloudinary
+      const uploadResult = await CloudinaryService.uploadBuffer(imageBuffer, {
+        folder: "ai-thumbnails",
+        public_id: `basic_${Date.now()}`,
+        resource_type: "image",
+      });
+
+      // Start with the original image publicId
+      let publicId = uploadResult.public_id;
+      let transformation: any = {
+        brightness: 1, // extremely subtle
+        contrast: 2, // extremely subtle
+        saturation: 2, // extremely subtle
+        quality: 95,
+        format: "jpg",
+        effect: "sharpen:20", // extremely subtle
+      };
+
+      // Build up overlays if provided
+      let overlayTransformations: any[] = [];
+      if (options.overlays && Array.isArray(options.overlays)) {
+        for (const overlay of options.overlays) {
+          if (overlay.type === "text" || overlay.type === "emoji") {
+            overlayTransformations.push({
+              overlay: {
+                font_family: "Arial",
+                font_size: overlay.fontSize || 32,
+                text: overlay.content,
+                font_weight: "normal",
+                font_color: overlay.fontColor || "#FFFFFF",
+              },
+              gravity: overlay.position?.gravity || "south_east",
+              x: overlay.position?.x || 20,
+              y: overlay.position?.y || 20,
+              opacity: overlay.opacity || 0.7,
+              width: overlay.width || 120,
+              height: overlay.height || 60,
+            });
+          } else if (overlay.type === "sticker") {
+            overlayTransformations.push({
+              overlay: overlay.content, // Cloudinary publicId for sticker
+              gravity: overlay.position?.gravity || "north_east",
+              x: overlay.position?.x || 20,
+              y: overlay.position?.y || 20,
+              opacity: overlay.opacity || 0.8,
+              width: overlay.width || 80,
+              height: overlay.height || 80,
+            });
+          }
+        }
+      }
+
+      // If videoTitle is provided and no overlays, add a small, subtle text overlay
+      if (
+        options.videoTitle &&
+        (!options.overlays || options.overlays.length === 0)
+      ) {
+        overlayTransformations.push({
+          overlay: {
+            font_family: "Arial",
+            font_size: 32,
+            text: options.videoTitle,
+            font_weight: "normal",
+            font_color: "#FFFFFF",
+          },
+          gravity: "south_east",
+          x: 20,
+          y: 20,
+          opacity: 0.5,
+          width: 400,
+          height: 60,
+        });
+      }
+
+      // Compose all transformations
+      let finalUrl = CloudinaryService.getOptimizedUrl(publicId, {
+        transformation: [transformation, ...overlayTransformations],
+      });
+
+      // Test if the final URL is accessible
+      const isAccessible = await this.testImageAccessibility(finalUrl);
+      if (!isAccessible) {
+        finalUrl = this.getSimpleImageUrl(publicId);
+      }
+      return {
+        id: `basic-${Date.now()}`,
+        url: finalUrl,
+        publicId,
+        style: options.style || "basic",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error(
+        "AI Thumbnail Service: Basic transformations error:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Apply advanced overlays to an image using Cloudinary
+   */
+  static async applyOverlay(
+    publicId: string,
+    options: {
+      text: string;
+      fontFamily?: string;
+      fontSize?: number;
+      fontColor?: string;
+      position?: { gravity?: string; x?: number; y?: number };
+      background?: string;
+      opacity?: number;
+      width?: number;
+      height?: number;
+    }
+  ): Promise<string> {
+    return CloudinaryService.getOverlayedImageUrl(publicId, options);
+  }
+
+  /**
+   * High-quality enhancement using DALL-E 3
+   */
+  private static async enhanceFrameWithDALLE3(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      const apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("No OpenAI API key provided for DALL-E 3");
+      }
+
+      console.log(
+        "AI Thumbnail Service: Using DALL-E 3 for image generation..."
+      );
+
+      // Create enhanced prompt for DALL-E 3
+      const enhancedPrompt = this.createEnhancedPrompt(
+        prompt,
+        options.videoTitle,
+        options.videoDescription
+      );
+
+      console.log(
+        "AI Thumbnail Service: Enhanced prompt for DALL-E 3:",
+        enhancedPrompt
+      );
+
+      // Use DALL-E 3 text-to-image endpoint
+      const response = await fetch(
+        "https://api.openai.com/v1/images/generations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "dall-e-3",
+            prompt: enhancedPrompt,
+            n: 1,
+            size: "1024x1024",
+            quality: "hd",
+            style: "vivid",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("AI Thumbnail Service: DALL-E 3 error:", errorText);
+        throw new Error(`DALL-E 3 error: ${errorText}`);
+      }
+
+      console.log("AI Thumbnail Service: DALL-E 3 API call successful");
+
+      const data = (await response.json()) as any;
+      const imageUrl = data.data?.[0]?.url;
+
+      if (!imageUrl) {
+        throw new Error("No image data received from DALL-E 3");
+      }
+
+      console.log("AI Thumbnail Service: DALL-E 3 generation successful");
+
+      // Download the generated image
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error("Failed to download DALL-E 3 generated image");
+      }
+
+      const generatedImageBuffer = Buffer.from(
+        await imageResponse.arrayBuffer()
+      );
+
+      // Upload to Cloudinary
+      const uploadResult = await CloudinaryService.uploadBuffer(
+        generatedImageBuffer,
+        {
+          folder: "ai-thumbnails",
+          public_id: `dalle_${Date.now()}`, // Simplified naming
+          resource_type: "image",
+        }
+      );
+
+      const optimizedUrl = CloudinaryService.getOptimizedUrl(
+        uploadResult.public_id,
+        {
+          transformation: {
+            quality: "auto",
+            format: "auto",
+          },
+        }
+      );
+
+      // Test if the optimized URL is accessible, fallback to simple URL if not
+      const isAccessible = await this.testImageAccessibility(optimizedUrl);
+      const finalImageUrl = isAccessible
+        ? optimizedUrl
+        : this.getSimpleImageUrl(uploadResult.public_id);
+
+      return {
+        id: `dalle3-${Date.now()}`,
+        url: finalImageUrl,
+        publicId: uploadResult.public_id,
+        style: options.style || "dalle3",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error("AI Thumbnail Service: DALL-E 3 error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Hybrid approach: DALL-E 3 generation + original image combination
+   */
+  private static async enhanceFrameWithDALLE3Hybrid(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      const apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("No OpenAI API key provided for DALL-E 3");
+      }
+
+      console.log("AI Thumbnail Service: Using DALL-E 3 hybrid approach...");
+
+      // First, upload the original image to Cloudinary
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Upload original image to Cloudinary
+      const originalUploadResult = await CloudinaryService.uploadBuffer(
+        imageBuffer,
+        {
+          folder: "ai-thumbnails",
+          public_id: `orig_${Date.now()}`, // Simplified naming
+          resource_type: "image",
+        }
+      );
+
+      console.log(
+        "AI Thumbnail Service: Original image uploaded to Cloudinary"
+      );
+
+      // Create enhanced prompt for DALL-E 3
+      const enhancedPrompt = this.createEnhancedPrompt(
+        prompt,
+        options.videoTitle,
+        options.videoDescription
+      );
+
+      console.log(
+        "AI Thumbnail Service: Enhanced prompt for DALL-E 3:",
+        enhancedPrompt
+      );
+
+      // Generate new image with DALL-E 3
+      const response = await fetch(
+        "https://api.openai.com/v1/images/generations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "dall-e-3",
+            prompt: enhancedPrompt,
+            n: 1,
+            size: "1024x1024",
+            quality: "hd",
+            style: "vivid",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("AI Thumbnail Service: DALL-E 3 error:", errorText);
+        throw new Error(`DALL-E 3 error: ${errorText}`);
+      }
+
+      console.log("AI Thumbnail Service: DALL-E 3 API call successful");
+
+      const data = (await response.json()) as any;
+      const dalleImageUrl = data.data?.[0]?.url;
+
+      if (!dalleImageUrl) {
+        throw new Error("No image data received from DALL-E 3");
+      }
+
+      console.log("AI Thumbnail Service: DALL-E 3 generation successful");
+
+      // Download the DALL-E 3 generated image
+      const dalleImageResponse = await fetch(dalleImageUrl);
+      if (!dalleImageResponse.ok) {
+        throw new Error("Failed to download DALL-E 3 generated image");
+      }
+
+      const dalleImageBuffer = Buffer.from(
+        await dalleImageResponse.arrayBuffer()
+      );
+
+      // Upload DALL-E 3 image to Cloudinary
+      const dalleUploadResult = await CloudinaryService.uploadBuffer(
+        dalleImageBuffer,
+        {
+          folder: "ai-thumbnails",
+          public_id: `dalle_${Date.now()}`, // Simplified naming
+          resource_type: "image",
+        }
+      );
+
+      console.log(
+        "AI Thumbnail Service: DALL-E 3 image uploaded to Cloudinary"
+      );
+
+      // Create a combined image using Cloudinary overlays
+      const combinedUrl = CloudinaryService.getOptimizedUrl(
+        originalUploadResult.public_id,
+        {
+          transformation: {
+            overlay: dalleUploadResult.public_id,
+            opacity: 70,
+            gravity: "center",
+          },
+        }
+      );
+
+      console.log("AI Thumbnail Service: Combined image created");
+
+      // Test if the combined URL is accessible, fallback to simple URL if not
+      const isAccessible = await this.testImageAccessibility(combinedUrl);
+      const finalImageUrl = isAccessible
+        ? combinedUrl
+        : this.getSimpleImageUrl(originalUploadResult.public_id);
+
+      return {
+        id: `dalle3-hybrid-${Date.now()}`,
+        url: finalImageUrl,
+        publicId: originalUploadResult.public_id,
+        style: options.style || "dalle3-hybrid",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error("AI Thumbnail Service: DALL-E 3 hybrid error:", error);
+
+      // If DALL-E 3 fails, try Stability AI as fallback
+      console.log(
+        "AI Thumbnail Service: DALL-E 3 failed, trying Stability AI fallback..."
+      );
+      try {
+        return await this.enhanceFrameWithStabilityAI(framePathOrUrl, prompt, {
+          style: options.style,
+          aspectRatio: options.aspectRatio,
+          apiKey: options.apiKey,
+          videoTitle: options.videoTitle,
+          videoDescription: options.videoDescription,
+        });
+      } catch (stabilityError) {
+        console.error(
+          "AI Thumbnail Service: Stability AI fallback also failed:",
+          stabilityError
+        );
+        throw new Error("All enhancement methods failed");
+      }
+    }
+  }
+
+  /**
+   * High-quality thumbnail enhancement that preserves original image
+   */
+  private static async enhanceFrameWithPreservation(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      console.log(
+        "AI Thumbnail Service: Using content preservation approach..."
+      );
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Upload original image to Cloudinary
+      const uploadResult = await CloudinaryService.uploadBuffer(imageBuffer, {
+        folder: "ai-thumbnails",
+        public_id: `preserved_${Date.now()}`,
+        resource_type: "image",
+      });
+
+      // Apply minimal enhancements to preserve original content
+      const enhancedUrl = CloudinaryService.getOptimizedUrl(
+        uploadResult.public_id,
+        {
+          transformation: {
+            brightness: 10,
+            contrast: 15,
+            saturation: 20,
+            quality: "auto",
+            format: "auto",
+            effect: "sharpen:150",
+          },
+        }
+      );
+
+      // Add text overlay if video title exists
+      if (options.videoTitle) {
+        console.log(
+          "AI Thumbnail Service: Adding preservation text overlay..."
+        );
+
+        const finalUrl = CloudinaryService.getOverlayedImageUrl(
+          uploadResult.public_id,
+          {
+            text: options.videoTitle,
+            fontFamily: "Impact",
+            fontSize: 85,
+            fontColor: "#FFFFFF",
+            position: { gravity: "south", x: 0, y: 35 },
+            background: "rgba(0,0,0,0.8)",
+            opacity: 0.9,
+            width: 1100,
+            height: 150,
+          }
+        );
+
+        return {
+          id: `preservation-${Date.now()}`,
+          url: finalUrl,
+          publicId: uploadResult.public_id,
+          style: options.style || "preservation",
+          prompt: prompt,
+        };
+      }
+
+      return {
+        id: `preservation-${Date.now()}`,
+        url: enhancedUrl,
+        publicId: uploadResult.public_id,
+        style: options.style || "preservation",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error("AI Thumbnail Service: Content preservation error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * High-quality enhancement using Leonardo AI
+   */
+  private static async enhanceFrameWithLeonardoAI(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      const apiKey = options.apiKey || process.env.LEONARDO_API_KEY;
+      if (!apiKey) {
+        throw new Error("No Leonardo AI API key provided");
+      }
+
+      console.log(
+        "AI Thumbnail Service: Using Leonardo AI for high-quality enhancement..."
+      );
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Convert image to base64
+      const imageBase64 = imageBuffer.toString("base64");
+
+      // Create enhanced prompt
+      const enhancedPrompt = this.createEnhancedPrompt(
+        prompt,
+        options.videoTitle,
+        options.videoDescription
+      );
+
+      console.log(
+        "AI Thumbnail Service: Enhanced prompt for Leonardo AI:",
+        enhancedPrompt
+      );
+
+      // Use Leonardo AI image-to-image endpoint
+      const response = await fetch(
+        "https://cloud.leonardo.ai/api/rest/v1/generations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            prompt: enhancedPrompt,
+            modelId: "e316348f-7773-490e-adcd-46757c738eb7", // Leonardo Creative
+            width: 1024,
+            height: 1024,
+            num_images: 1,
+            init_strength: 0.35, // Preserve more of original
+            init_image: imageBase64,
+            guidance_scale: 7,
+            num_inference_steps: 50,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("AI Thumbnail Service: Leonardo AI error:", errorText);
+        throw new Error(`Leonardo AI error: ${errorText}`);
+      }
+
+      console.log("AI Thumbnail Service: Leonardo AI API call successful");
+
+      const data = (await response.json()) as any;
+      const generationId = data.sdGenerationJob?.generationId;
+
+      if (!generationId) {
+        throw new Error("No generation ID received from Leonardo AI");
+      }
+
+      // Poll for completion
+      let attempts = 0;
+      const maxAttempts = 30;
+
+      while (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+
+        const statusResponse = await fetch(
+          `https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+            },
+          }
+        );
+
+        if (statusResponse.ok) {
+          const statusData = (await statusResponse.json()) as any;
+          const generations = statusData.generations_by_pk?.generated_images;
+
+          if (generations && generations.length > 0) {
+            const imageUrl = generations[0].url;
+
+            console.log(
+              "AI Thumbnail Service: Leonardo AI generation successful"
+            );
+
+            // Download the generated image
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+              throw new Error("Failed to download Leonardo AI generated image");
+            }
+
+            const generatedImageBuffer = Buffer.from(
+              await imageResponse.arrayBuffer()
+            );
+
+            // Upload to Cloudinary
+            const uploadResult = await CloudinaryService.uploadBuffer(
+              generatedImageBuffer,
+              {
+                folder: "ai-thumbnails",
+                public_id: `leonardo_enhanced_${Date.now()}`,
+                resource_type: "image",
+              }
+            );
+
+            return {
+              id: `leonardo-${Date.now()}`,
+              url: uploadResult.secure_url,
+              publicId: uploadResult.public_id,
+              style: options.style || "leonardo",
+              prompt: prompt,
+            };
+          }
+        }
+
+        attempts++;
+      }
+
+      throw new Error("Leonardo AI generation timed out");
+    } catch (error) {
+      console.error("AI Thumbnail Service: Leonardo AI error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Precise enhancement: Only text overlay + subtle color improvements
+   */
+  private static async enhanceFrameWithPreciseControl(
+    framePathOrUrl: string,
+    prompt: string,
+    options: {
+      style?: string;
+      aspectRatio?: string;
+      apiKey?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    } = {}
+  ): Promise<GeneratedThumbnail> {
+    try {
+      console.log("AI Thumbnail Service: Using precise control approach...");
+
+      // Download the base image
+      let imageBuffer: Buffer;
+      if (framePathOrUrl.startsWith("http")) {
+        console.log("AI Thumbnail Service: Downloading base image from URL...");
+        const response = await fetch(framePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        console.log("AI Thumbnail Service: Reading local image file...");
+        imageBuffer = fs.readFileSync(framePathOrUrl);
+      }
+
+      // Upload original image to Cloudinary
+      const uploadResult = await CloudinaryService.uploadBuffer(imageBuffer, {
+        folder: "ai-thumbnails",
+        public_id: `precise_enhanced_${Date.now()}`,
+        resource_type: "image",
+      });
+
+      console.log(
+        "AI Thumbnail Service: Original image uploaded to Cloudinary"
+      );
+
+      // Apply ONLY subtle color enhancements (no structural changes)
+      const colorEnhancements = {
+        brightness: 5, // Very subtle brightness increase
+        contrast: 8, // Very subtle contrast increase
+        saturation: 12, // Very subtle saturation increase
+        quality: "auto",
+        format: "auto",
+      };
+
+      // Create enhanced URL with ONLY color improvements
+      const enhancedUrl = CloudinaryService.getOptimizedUrl(
+        uploadResult.public_id,
+        {
+          transformation: colorEnhancements,
+        }
+      );
+
+      console.log("AI Thumbnail Service: Subtle color enhancements applied");
+
+      // Add professional text overlay ONLY if video title exists
+      if (options.videoTitle) {
+        console.log("AI Thumbnail Service: Adding text overlay only...");
+
+        const overlayUrl = CloudinaryService.getOverlayedImageUrl(
+          uploadResult.public_id,
+          {
+            text: options.videoTitle,
+            fontFamily: "Impact",
+            fontSize: 85,
+            fontColor: "#FFFFFF",
+            position: { gravity: "south", x: 0, y: 35 },
+            background: "rgba(0,0,0,0.8)",
+            opacity: 0.9,
+            width: 1100,
+            height: 150,
+          }
+        );
+
+        console.log("AI Thumbnail Service: Text overlay added");
+
+        return {
+          id: `precise-${Date.now()}`,
+          url: overlayUrl,
+          publicId: uploadResult.public_id,
+          style: options.style || "precise",
+          prompt: prompt,
+        };
+      }
+
+      // Return image with only color enhancements (no text overlay)
+      return {
+        id: `precise-${Date.now()}`,
+        url: enhancedUrl,
+        publicId: uploadResult.public_id,
+        style: options.style || "precise",
+        prompt: prompt,
+      };
+    } catch (error) {
+      console.error("AI Thumbnail Service: Precise control error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create focused prompt for Stability AI - text overlay and color enhancement only
+   */
+  private static createFocusedPrompt(
+    userPrompt: string,
+    videoTitle?: string,
+    videoDescription?: string
+  ): string {
+    let focusedPrompt = userPrompt;
+
+    // Add video context if available
+    if (videoTitle) {
+      focusedPrompt += ` Video title: "${videoTitle}".`;
+    }
+    if (videoDescription) {
+      focusedPrompt += ` Video description: "${videoDescription}".`;
+    }
+
+    // Focus on preserving original content with minimal changes
+    focusedPrompt += ` CRITICAL: Keep the original image EXACTLY as is. Do NOT change faces, objects, scene composition, lighting, shadows, or any structural elements. Do NOT add new objects or change existing ones. Only make these specific changes: 1) Add professional text overlay with bold typography at the bottom, 2) Enhance colors very subtly (brightness +5%, contrast +8%, saturation +10%), 3) Keep ALL original textures, details, structures, and composition intact. Preserve 97% of original content. Only add text overlay and very subtle color enhancement. Do NOT modify the original scene in any way.`;
+
+    console.log("AI Thumbnail Service: Focused prompt created:", focusedPrompt);
+    return focusedPrompt;
+  }
+
+  /**
+   * Test if a Cloudinary image is accessible
+   */
+  private static async testImageAccessibility(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: "HEAD" });
+      return response.ok;
+    } catch (error) {
+      console.error(
+        "AI Thumbnail Service: Image accessibility test failed:",
+        error
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Get a simple, reliable URL for an image
+   */
+  private static getSimpleImageUrl(publicId: string): string {
+    return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/v1/${publicId}`;
   }
 }

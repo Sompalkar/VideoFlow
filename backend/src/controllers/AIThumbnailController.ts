@@ -194,4 +194,181 @@ export class AIThumbnailController {
       });
     }
   }
+
+  static async enhanceFrameImg2Img(
+    req: AuthRequest,
+    res: Response
+  ): Promise<void> {
+    try {
+      const {
+        frameUrl,
+        prompt,
+        style,
+        aspectRatio,
+        // apiKey, // REMOVE user-provided apiKey
+        strength,
+        guidanceScale,
+        service,
+        videoTitle,
+        videoDescription,
+      } = req.body;
+
+      if (!frameUrl || !prompt) {
+        res.status(400).json({
+          success: false,
+          message: "frameUrl and prompt are required",
+        });
+        return;
+      }
+
+      console.log("AI Thumbnail Controller: Starting img2img enhancement");
+      console.log("AI Thumbnail Controller: Frame URL:", frameUrl);
+      console.log("AI Thumbnail Controller: Prompt:", prompt);
+      console.log("AI Thumbnail Controller: Service:", service);
+      console.log("AI Thumbnail Controller: Video Title:", videoTitle);
+      console.log(
+        "AI Thumbnail Controller: Video Description:",
+        videoDescription
+      );
+
+      // Only use API key from environment variables
+      let finalApiKey: string | undefined = undefined;
+      console.log(
+        "AI Thumbnail Controller: Using API key from environment variables..."
+      );
+
+      // Services that don't require API keys (use basic transformations)
+      const noApiKeyServices = ["precise", "basic", "preservation", "mock"];
+
+      if (noApiKeyServices.includes(service)) {
+        console.log(
+          "AI Thumbnail Controller: Service doesn't require API key:",
+          service
+        );
+        finalApiKey = undefined;
+      } else if (service === "stability" || service === "stability-ai") {
+        finalApiKey = process.env.STABILITY_API_KEY;
+      } else if (service === "openai" || service === "dalle") {
+        finalApiKey = process.env.OPENAI_API_KEY;
+      } else if (service === "leonardo") {
+        finalApiKey = process.env.LEONARDO_API_KEY;
+      } else if (service === "huggingface") {
+        finalApiKey = process.env.HUGGINGFACE_API_KEY;
+      } else {
+        // Default to Stability AI for unknown services
+        finalApiKey = process.env.STABILITY_API_KEY;
+      }
+
+      console.log(
+        "AI Thumbnail Controller: Using API key:",
+        finalApiKey ? "Available" : "Not required for this service"
+      );
+      console.log("AI Thumbnail Controller: Service:", service);
+
+      const result = await AIThumbnailService.enhanceFrameWithImg2Img(
+        frameUrl,
+        prompt,
+        {
+          style: style || "enhanced",
+          aspectRatio: aspectRatio || "16:9",
+          apiKey: finalApiKey,
+          strength: strength || 0.15,
+          guidanceScale: guidanceScale || 6,
+          service: service || "stability",
+          videoTitle,
+          videoDescription,
+        }
+      );
+
+      console.log("AI Thumbnail Controller: Enhancement successful");
+      res.status(200).json({
+        success: true,
+        ...result,
+      });
+    } catch (error) {
+      console.error("AI Thumbnail Controller: Enhancement error:", error);
+      res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Failed to enhance frame",
+      });
+    }
+  }
+
+  static async applyOverlay(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const {
+        publicId,
+        text,
+        fontFamily,
+        fontSize,
+        fontColor,
+        position,
+        background,
+        opacity,
+        width,
+        height,
+      } = req.body;
+      if (!publicId || !text) {
+        res.status(400).json({
+          message: "publicId and text are required",
+        });
+        return;
+      }
+      const url = await AIThumbnailService.applyOverlay(publicId, {
+        text,
+        fontFamily,
+        fontSize,
+        fontColor,
+        position,
+        background,
+        opacity,
+        width,
+        height,
+      });
+      res.json({
+        success: true,
+        url,
+        message: "Overlay applied successfully",
+      });
+    } catch (error) {
+      console.error("AIThumbnailController: overlay error", error);
+      res.status(500).json({
+        message: "Failed to apply overlay",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  static async fallbackTextToImage(
+    req: AuthRequest,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { prompt, aspectRatio, style, apiKey } = req.body;
+      if (!prompt) {
+        res.status(400).json({
+          message: "prompt is required",
+        });
+        return;
+      }
+      const result = await AIThumbnailService.generateWithAI(prompt, {
+        aspectRatio,
+        style,
+        apiKey,
+      });
+      res.json({
+        success: true,
+        url: result.url,
+        publicId: result.publicId,
+        message: "Generated image from text prompt successfully",
+      });
+    } catch (error) {
+      console.error("AIThumbnailController: text2img fallback error", error);
+      res.status(500).json({
+        message: "Failed to generate image from text prompt",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
 }

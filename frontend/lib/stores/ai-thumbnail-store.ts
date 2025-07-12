@@ -87,6 +87,23 @@ interface AIThumbnailState {
   clearThumbnails: () => void;
 
   clearError: () => void;
+
+  // Frame extraction and AI enhancement
+  enhanceFrameWithAI: (
+    frameUrl: string,
+    prompt: string,
+    options?: any
+  ) => Promise<GeneratedThumbnail | null>;
+
+  applyOverlay: (
+    publicId: string,
+    overlayOptions: any
+  ) => Promise<string | null>;
+
+  fallbackTextToImage: (
+    prompt: string,
+    options?: any
+  ) => Promise<{ url: string; publicId: string } | null>;
 }
 
 export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
@@ -387,5 +404,160 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
   // Clear error
   clearError: () => {
     set({ error: null });
+  },
+
+  // AI img2img enhancement
+  enhanceFrameWithAI: async (
+    frameUrl: string,
+    prompt: string,
+    options: any = {}
+  ) => {
+    try {
+      set({ isEnhancing: true, error: null });
+      console.log("AI Thumbnail Store: Starting enhanceFrameWithAI");
+      console.log("AI Thumbnail Store: Frame URL:", frameUrl);
+      console.log("AI Thumbnail Store: Prompt:", prompt);
+      console.log("AI Thumbnail Store: Options:", options);
+
+      const response = await apiClient.post<{
+        success: boolean;
+        url: string;
+        publicId: string;
+        id: string;
+        style: string;
+        prompt: string;
+        message: string;
+      }>(
+        "/ai-thumbnails/img2img",
+        {
+          frameUrl,
+          prompt,
+          ...options,
+          videoTitle: options.videoTitle,
+          videoDescription: options.videoDescription,
+        },
+        undefined,
+        { withCredentials: true }
+      );
+
+      console.log("AI Thumbnail Store: Raw response from API:", response);
+
+      set({ isEnhancing: false });
+      if (response.success) {
+        console.log(
+          "AI Thumbnail Store: Response successful, processing result"
+        );
+        // Return the complete thumbnail object
+        const enhancedThumbnail = {
+          url: response.url,
+          publicId: response.publicId,
+          id: response.id,
+          style: response.style,
+          prompt: response.prompt,
+        };
+
+        console.log(
+          "AI Thumbnail Store: Created enhanced thumbnail object:",
+          enhancedThumbnail
+        );
+
+        // Add to generated thumbnails list
+        set((state) => {
+          console.log(
+            "AI Thumbnail Store: Current state before update:",
+            state
+          );
+          const newState = {
+            generatedThumbnails: [
+              ...state.generatedThumbnails,
+              enhancedThumbnail,
+            ],
+          };
+          console.log("AI Thumbnail Store: New state after update:", newState);
+          return newState;
+        });
+
+        console.log("AI Thumbnail Store: Returning enhanced thumbnail");
+        return enhancedThumbnail;
+      } else {
+        console.log("AI Thumbnail Store: Response not successful:", response);
+        set({ error: response.message || "Failed to enhance frame with AI" });
+        return null;
+      }
+    } catch (error) {
+      console.error("AI Thumbnail Store: Error in enhanceFrameWithAI:", error);
+      set({
+        isEnhancing: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to enhance frame with AI",
+      });
+      return null;
+    }
+  },
+
+  // Apply overlay
+  applyOverlay: async (publicId: string, overlayOptions: any) => {
+    try {
+      set({ isEnhancing: true, error: null });
+      const response = await apiClient.post<{
+        success: boolean;
+        url: string;
+        message: string;
+      }>("/ai-thumbnails/overlay", { publicId, ...overlayOptions }, undefined, {
+        withCredentials: true,
+      });
+      set({ isEnhancing: false });
+      if (response.success) {
+        return response.url;
+      } else {
+        set({ error: response.message || "Failed to apply overlay" });
+        return null;
+      }
+    } catch (error) {
+      set({
+        isEnhancing: false,
+        error:
+          error instanceof Error ? error.message : "Failed to apply overlay",
+      });
+      return null;
+    }
+  },
+
+  // Fallback to text-to-image
+  fallbackTextToImage: async (prompt: string, options: any = {}) => {
+    try {
+      set({ isGenerating: true, error: null });
+      const response = await apiClient.post<{
+        success: boolean;
+        url: string;
+        publicId: string;
+        message: string;
+      }>(
+        "/ai-thumbnails/text2img-fallback",
+        { prompt, ...options },
+        undefined,
+        { withCredentials: true }
+      );
+      set({ isGenerating: false });
+      if (response.success) {
+        return { url: response.url, publicId: response.publicId };
+      } else {
+        set({
+          error: response.message || "Failed to generate image from prompt",
+        });
+        return null;
+      }
+    } catch (error) {
+      set({
+        isGenerating: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate image from prompt",
+      });
+      return null;
+    }
   },
 }));

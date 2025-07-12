@@ -135,4 +135,21 @@ router.post(
 // @access  Private
 router.get("/styles", authenticate, AIThumbnailController.getThumbnailStyles);
 
+// Img2img enhancement endpoint
+router.post(
+  "/img2img",
+  authenticate,
+  AIThumbnailController.enhanceFrameImg2Img
+);
+
+// Overlay endpoint
+router.post("/overlay", authenticate, AIThumbnailController.applyOverlay);
+
+// Text-to-image fallback endpoint
+router.post(
+  "/text2img-fallback",
+  authenticate,
+  AIThumbnailController.fallbackTextToImage
+);
+
 export default router;

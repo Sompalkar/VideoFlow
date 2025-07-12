@@ -96,7 +96,7 @@ export default function UploadPage() {
     description: "",
     tags: "",
     category: "entertainment",
-    privacy: "private",
+    privacy: "public",
     scheduledDate: "",
   });
 
@@ -281,7 +281,7 @@ export default function UploadPage() {
       description: "",
       tags: "",
       category: "entertainment",
-      privacy: "private",
+      privacy: "public",
       scheduledDate: "",
     });
     setError("");
@@ -666,7 +666,7 @@ export default function UploadPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="private">
+                          <SelectItem value="public">
                             <div className="flex items-center space-x-2">
                               <Lock className="w-4 h-4" />
                               <span> Public</span>
@@ -678,7 +678,7 @@ export default function UploadPage() {
                               <span>Unlisted</span>
                             </div>
                           </SelectItem>
-                          <SelectItem value="public">
+                          <SelectItem value="private">
                             <div className="flex items-center space-x-2">
                               <Globe className="w-4 h-4" />
                               <span>Private</span>

@@ -225,16 +225,19 @@ export class CloudinaryService {
 
   static async uploadBuffer(
     buffer: Buffer,
-    publicId: string,
-    resourceType: "image" | "video" = "image"
+    options: {
+      folder?: string;
+      public_id?: string;
+      resource_type?: "image" | "video";
+    } = {}
   ): Promise<any> {
     try {
       return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
-            resource_type: resourceType,
-            folder: "videoflow",
-            public_id: publicId,
+            resource_type: options.resource_type || "image",
+            folder: options.folder || "videoflow",
+            public_id: options.public_id,
             use_filename: true,
             unique_filename: true,
             overwrite: false,
@@ -248,7 +251,6 @@ export class CloudinaryService {
             }
           }
         );
-
         uploadStream.end(buffer);
       });
     } catch (error) {
@@ -295,5 +297,48 @@ export class CloudinaryService {
       console.error("Cloudinary image transformation error:", error);
       throw new Error("Failed to transform image");
     }
+  }
+
+  /**
+   * Generate a Cloudinary URL with advanced text overlays
+   */
+  static getOverlayedImageUrl(
+    publicId: string,
+    options: {
+      text: string;
+      fontFamily?: string;
+      fontSize?: number;
+      fontColor?: string;
+      position?: { gravity?: string; x?: number; y?: number };
+      background?: string;
+      opacity?: number;
+      width?: number;
+      height?: number;
+    }
+  ): string {
+    const transformation: any[] = [];
+    if (options.text) {
+      transformation.push({
+        overlay: {
+          font_family: options.fontFamily || "Arial",
+          font_size: options.fontSize || 60,
+          text: options.text,
+        },
+        color: options.fontColor || "#FFFFFF",
+        gravity: options.position?.gravity || "south",
+        x: options.position?.x || 0,
+        y: options.position?.y || 40,
+        opacity: options.opacity || 90,
+        background: options.background,
+        width: options.width,
+        height: options.height,
+        crop: "fit",
+      });
+    }
+    return cloudinary.url(publicId, {
+      resource_type: "image",
+      secure: true,
+      transformation,
+    });
   }
 }

@@ -32,6 +32,11 @@ router.post(
 // @access  Private
 router.get("/:id", authenticate, VideoController.getVideoById);
 
+// @route   PUT /api/videos/:id
+// @desc    Update video (thumbnail, title, description, etc.)
+// @access  Private
+router.put("/:id", authenticate, VideoController.updateVideo);
+
 // @route   POST /api/videos/:id/approve
 // @desc    Approve a video
 // @access  Private (Creator only)

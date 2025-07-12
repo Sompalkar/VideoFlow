@@ -464,10 +464,15 @@ export class VideoController {
 
   static async getVideoById(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { userId, teamId } = req.user!;
       const { id } = req.params;
+      const { userId, teamId } = req.user!;
 
-      const video = await Video.findById(id)
+      if (!teamId) {
+        res.status(400).json({ message: "User not part of any team" });
+        return;
+      }
+
+      const video = await Video.findOne({ _id: id, teamId })
         .populate("uploadedBy", "name email avatar")
         .populate("approvedBy", "name email")
         .populate("rejectedBy", "name email");
@@ -477,19 +482,12 @@ export class VideoController {
         return;
       }
 
-      // Check if user has access to this video
-      if (teamId?.toString() !== video.teamId.toString()) {
-        res.status(403).json({ message: "Access denied" });
-        return;
-      }
-
-      res.json({
-        video: {
+      const formattedVideo = {
           id: video._id,
           title: video.title,
           description: video.description,
           tags: video.tags,
-          thumbnail: video.cloudinaryThumbnailUrl,
+        thumbnail: video.cloudinaryThumbnailUrl || video.thumbnail,
           status: video.status,
           uploadedBy: video.uploadedBy,
           uploadedAt: video.uploadedAt,
@@ -507,10 +505,106 @@ export class VideoController {
           category: video.category,
           privacy: video.privacy,
           teamId: video.teamId,
-        },
-      });
+      };
+
+      res.json({ video: formattedVideo });
     } catch (error) {
       console.error("Get video by ID error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  static async updateVideo(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { userId, teamId } = req.user!;
+      const { cloudinaryThumbnailUrl, thumbnail, title, description, tags } = req.body;
+
+      if (!teamId) {
+        res.status(400).json({ message: "User not part of any team" });
+        return;
+      }
+
+      // Find the video and ensure it belongs to the user's team
+      const video = await Video.findOne({ _id: id, teamId });
+
+      if (!video) {
+        res.status(404).json({ message: "Video not found" });
+        return;
+      }
+
+      // Update fields
+      const updateData: any = {};
+      
+      if (cloudinaryThumbnailUrl) {
+        updateData.cloudinaryThumbnailUrl = cloudinaryThumbnailUrl;
+      }
+      
+      if (thumbnail) {
+        updateData.thumbnail = thumbnail;
+      }
+      
+      if (title) {
+        updateData.title = title;
+      }
+      
+      if (description) {
+        updateData.description = description;
+      }
+      
+      if (tags) {
+        updateData.tags = Array.isArray(tags) ? tags : [];
+      }
+
+      // Update the video
+      const updatedVideo = await Video.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+      ).populate("uploadedBy", "name email avatar");
+
+      if (!updatedVideo) {
+        res.status(404).json({ message: "Video not found" });
+        return;
+      }
+
+      const formattedVideo = {
+        id: updatedVideo._id,
+        title: updatedVideo.title,
+        description: updatedVideo.description,
+        tags: updatedVideo.tags,
+        thumbnail: updatedVideo.cloudinaryThumbnailUrl || updatedVideo.thumbnail,
+        status: updatedVideo.status,
+        uploadedBy: updatedVideo.uploadedBy,
+        uploadedAt: updatedVideo.uploadedAt,
+        approvedBy: updatedVideo.approvedBy,
+        approvedAt: updatedVideo.approvedAt,
+        rejectedBy: updatedVideo.rejectedBy,
+        rejectedAt: updatedVideo.rejectedAt,
+        rejectionReason: updatedVideo.rejectionReason,
+        youtubeId: updatedVideo.youtubeId,
+        youtubeUrl: updatedVideo.youtubeUrl,
+        fileSize: updatedVideo.fileSize,
+        duration: updatedVideo.duration,
+        cloudinaryVideoUrl: updatedVideo.cloudinaryVideoUrl,
+        cloudinaryThumbnailUrl: updatedVideo.cloudinaryThumbnailUrl,
+        category: updatedVideo.category,
+        privacy: updatedVideo.privacy,
+        teamId: updatedVideo.teamId,
+      };
+
+      console.log("Video updated successfully:", {
+        videoId: id,
+        updatedFields: Object.keys(updateData),
+        newThumbnail: updatedVideo.cloudinaryThumbnailUrl
+      });
+
+      res.json({ 
+        message: "Video updated successfully",
+        video: formattedVideo 
+      });
+    } catch (error) {
+      console.error("Update video error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   }
