@@ -103,7 +103,7 @@ export default function ThumbnailGeneratorPage() {
   // 1. Add useEffect to fetch uploaded videos on mount
   useEffect(() => {
     fetchUploadedVideos();
-  }, [fetchUploadedVideos]);
+  }, []); // Remove fetchUploadedVideos from dependencies
 
   // 2. Add handler for selecting an uploaded video
   const handleSelectUploadedVideo = async (video: any) => {

@@ -118,7 +118,9 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      await apiClient.delete(`/team/${memberId}`, undefined, { withCredentials: true });
+      await apiClient.delete(`/team/${memberId}`, undefined, {
+        withCredentials: true,
+      });
 
       const currentMembers = get().members;
       const updatedMembers = currentMembers.filter(

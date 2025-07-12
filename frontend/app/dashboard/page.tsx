@@ -50,7 +50,8 @@ export default function DashboardPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
+      // Only check for user.id, not the entire user object
       fetchVideos();
       fetchAnalytics();
 
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         setShowPasswordModal(true);
       }
     }
-  }, [user]);
+  }, [user?.id, user?.needsPasswordChange]); // Only depend on specific user properties
 
   const getStatusColor = (status: string) => {
     switch (status) {

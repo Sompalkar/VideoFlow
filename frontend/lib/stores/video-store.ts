@@ -43,6 +43,7 @@ interface VideoState {
   currentVideo: Video | null;
   isLoading: boolean;
   error: string | null;
+  isFetching: boolean;
   fetchVideos: () => Promise<void>;
   fetchVideoById: (id: string) => Promise<void>;
   uploadVideo: (videoData: {
@@ -69,21 +70,31 @@ export const useVideoStore = create<VideoState>((set, get) => ({
   currentVideo: null,
   isLoading: false,
   error: null,
+  isFetching: false, // Track if request is in progress
 
   fetchVideos: async () => {
-    set({ isLoading: true, error: null });
+    const state = get();
+
+    // Prevent multiple simultaneous requests
+    if (state.isFetching) {
+      console.log("VideoStore: Request already in progress, skipping...");
+      return;
+    }
+
+    set({ isLoading: true, error: null, isFetching: true });
     try {
       const response = await apiClient.get<{ videos: Video[] }>(
         "/videos",
         undefined,
         { withCredentials: true }
       );
-      set({ videos: response.videos, isLoading: false });
+      set({ videos: response.videos, isLoading: false, isFetching: false });
     } catch (error) {
       set({
         error:
           error instanceof Error ? error.message : "Failed to fetch videos",
         isLoading: false,
+        isFetching: false,
       });
     }
   },

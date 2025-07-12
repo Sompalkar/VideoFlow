@@ -77,7 +77,7 @@ interface Team {
 }
 
 export default function TeamPage() {
-  const { user, refreshToken } = useAuthStore();
+  const { user } = useAuthStore(); // Remove refreshToken from destructuring
   const [team, setTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -88,8 +88,8 @@ export default function TeamPage() {
 
   useEffect(() => {
     loadTeamData();
-    refreshToken();
-  }, [refreshToken]);
+    // Remove refreshToken() call
+  }, []); // Remove refreshToken from dependencies
 
   const loadTeamData = async () => {
     try {
@@ -97,7 +97,7 @@ export default function TeamPage() {
       setError(null);
 
       const teamResponse = await apiClient.get<{ team: Team }>(
-        "/team",
+        "/team", // Fix: Change back to "/team" to match backend
         undefined,
         { withCredentials: true }
       );
@@ -120,7 +120,7 @@ export default function TeamPage() {
       setError(null);
 
       await apiClient.post(
-        "/team/invite",
+        "/team/invite", // Fix: Change back to "/team/invite"
         {
           email: inviteEmail,
           role: inviteRole,
@@ -148,7 +148,7 @@ export default function TeamPage() {
       setError(null);
 
       await apiClient.put(
-        `/team/members/${memberId}/role`,
+        `/team/members/${memberId}/role`, // Fix: Change back to "/team/members"
         { role: newRole },
         undefined,
         { withCredentials: true }
@@ -166,7 +166,7 @@ export default function TeamPage() {
     try {
       setError(null);
 
-      await apiClient.delete(`/team/members/${memberId}`, undefined, {
+      await apiClient.delete(`/team/members/${memberId}`, undefined, { // Fix: Change back to "/team/members"
         withCredentials: true,
       });
       await loadTeamData();
@@ -182,11 +182,11 @@ export default function TeamPage() {
     try {
       setError(null);
 
-      await apiClient.post("/team/promote", {}, undefined, {
+      await apiClient.post("/team/promote", {}, undefined, { // Fix: Change back to "/team/promote"
         withCredentials: true,
       });
       await loadTeamData();
-      await refreshToken(); // Refresh token to get updated role
+      // Remove refreshToken call
     } catch (error) {
       console.error("Failed to promote to creator:", error);
       setError(

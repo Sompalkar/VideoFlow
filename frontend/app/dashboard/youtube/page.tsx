@@ -61,10 +61,10 @@ export default function YouTubePage() {
   const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) { // Only check for user.id
       checkYouTubeStatus();
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id
 
   const checkYouTubeStatus = async () => {
     try {

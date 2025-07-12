@@ -1,15 +1,32 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Upload,
   Video,
@@ -31,102 +48,110 @@ import {
   TrendingUp,
   AlertCircle,
   Loader2,
-} from "lucide-react"
-import { useAuthStore } from "@/lib/stores/auth-store"
-import { useVideoStore } from "@/lib/stores/video-store"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
+} from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useVideoStore } from "@/lib/stores/video-store";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function VideosPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user } = useAuthStore()
-  const { videos, fetchVideos, isLoading, error } = useVideoStore()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [sortBy, setSortBy] = useState("newest")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [selectedTab, setSelectedTab] = useState("all")
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuthStore();
+  const { videos, fetchVideos, isLoading, error } = useVideoStore();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedTab, setSelectedTab] = useState("all");
 
   useEffect(() => {
-    if (user) {
-      fetchVideos()
+    if (user?.id) {
+      // Only check for user.id
+      fetchVideos();
     }
-  }, [user])
+  }, [user?.id]); // Only depend on user.id
 
   useEffect(() => {
-    const tab = searchParams.get("tab")
+    const tab = searchParams.get("tab");
     if (tab) {
-      setSelectedTab(tab)
+      setSelectedTab(tab);
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const filteredVideos = videos
     .filter((video) => {
-      const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesStatus = statusFilter === "all" || video.status === statusFilter
+      const matchesSearch = video.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" || video.status === statusFilter;
       const matchesTab =
         selectedTab === "all" ||
         (selectedTab === "pending" && video.status === "pending") ||
         (selectedTab === "approved" && video.status === "approved") ||
         (selectedTab === "published" && video.status === "published") ||
-        (selectedTab === "rejected" && video.status === "rejected")
-      return matchesSearch && matchesStatus && matchesTab
+        (selectedTab === "rejected" && video.status === "rejected");
+      return matchesSearch && matchesStatus && matchesTab;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "newest":
-          return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+          return (
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+          );
         case "oldest":
-          return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime()
+          return (
+            new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime()
+          );
         case "title":
-          return a.title.localeCompare(b.title)
+          return a.title.localeCompare(b.title);
         case "status":
-          return a.status.localeCompare(b.status)
+          return a.status.localeCompare(b.status);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "published":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "approved":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
       case "rejected":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
       case "uploading":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "published":
-        return <Youtube className="w-4 h-4" />
+        return <Youtube className="w-4 h-4" />;
       case "approved":
-        return <CheckCircle className="w-4 h-4" />
+        return <CheckCircle className="w-4 h-4" />;
       case "pending":
-        return <Clock className="w-4 h-4" />
+        return <Clock className="w-4 h-4" />;
       case "rejected":
-        return <XCircle className="w-4 h-4" />
+        return <XCircle className="w-4 h-4" />;
       case "uploading":
-        return <Upload className="w-4 h-4" />
+        return <Upload className="w-4 h-4" />;
       default:
-        return <Video className="w-4 h-4" />
+        return <Video className="w-4 h-4" />;
     }
-  }
+  };
 
   const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
   const getVideoStats = () => {
     const stats = {
@@ -135,24 +160,26 @@ export default function VideosPage() {
       approved: videos.filter((v) => v.status === "approved").length,
       published: videos.filter((v) => v.status === "published").length,
       rejected: videos.filter((v) => v.status === "rejected").length,
-    }
-    return stats
-  }
+    };
+    return stats;
+  };
 
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please log in to access videos</h1>
+          <h1 className="text-2xl font-bold mb-4">
+            Please log in to access videos
+          </h1>
           <Link href="/auth/login">
             <Button>Go to Login</Button>
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  const stats = getVideoStats()
+  const stats = getVideoStats();
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,7 +196,9 @@ export default function VideosPage() {
               </Link>
               <div>
                 <h1 className="text-xl font-semibold">All Videos</h1>
-                <p className="text-sm text-muted-foreground">{stats.total} total videos</p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.total} total videos
+                </p>
               </div>
             </div>
             <Link href="/dashboard/upload">
@@ -254,13 +283,23 @@ export default function VideosPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6">
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className="mb-6"
+        >
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="all">All Videos</TabsTrigger>
             <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
-            <TabsTrigger value="approved">Approved ({stats.approved})</TabsTrigger>
-            <TabsTrigger value="published">Published ({stats.published})</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected ({stats.rejected})</TabsTrigger>
+            <TabsTrigger value="approved">
+              Approved ({stats.approved})
+            </TabsTrigger>
+            <TabsTrigger value="published">
+              Published ({stats.published})
+            </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected ({stats.rejected})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -351,14 +390,24 @@ export default function VideosPage() {
                   >
                     <div className="aspect-video bg-muted relative overflow-hidden">
                       <img
-                        src={video.thumbnail || "/placeholder.svg?height=180&width=320"}
+                        src={
+                          video.thumbnail ||
+                          "/placeholder.svg?height=180&width=320"
+                        }
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       />
                       <div className="absolute top-2 right-2">
-                        <Badge className={cn("text-xs", getStatusColor(video.status))}>
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            getStatusColor(video.status)
+                          )}
+                        >
                           {getStatusIcon(video.status)}
-                          <span className="ml-1 capitalize">{video.status}</span>
+                          <span className="ml-1 capitalize">
+                            {video.status}
+                          </span>
                         </Badge>
                       </div>
                       <div className="absolute bottom-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
@@ -374,7 +423,10 @@ export default function VideosPage() {
                           {video.title}
                         </CardTitle>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuTrigger
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Button
                               variant="ghost"
                               size="sm"
@@ -386,29 +438,36 @@ export default function VideosPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={(e) => {
-                                e.stopPropagation()
-                                router.push(`/dashboard/videos/${video.id}`)
+                                e.stopPropagation();
+                                router.push(`/dashboard/videos/${video.id}`);
                               }}
                             >
                               <Eye className="w-4 h-4 mr-2" />
                               View & Review
                             </DropdownMenuItem>
-                            {user?.role === "creator" && video.status === "pending" && (
-                              <>
-                                <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                  Quick Approve
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                                  <XCircle className="w-4 h-4 mr-2" />
-                                  Quick Reject
-                                </DropdownMenuItem>
-                              </>
-                            )}
+                            {user?.role === "creator" &&
+                              video.status === "pending" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Quick Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Quick Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <CardDescription className="line-clamp-2 text-sm">{video.description}</CardDescription>
+                      <CardDescription className="line-clamp-2 text-sm">
+                        {video.description}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -423,8 +482,16 @@ export default function VideosPage() {
                       </div>
                       {video.youtubeUrl && (
                         <div className="mt-3">
-                          <Link href={video.youtubeUrl} target="_blank" onClick={(e) => e.stopPropagation()}>
-                            <Button variant="outline" size="sm" className="w-full bg-transparent">
+                          <Link
+                            href={video.youtubeUrl}
+                            target="_blank"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full bg-transparent"
+                            >
                               <Youtube className="w-4 h-4 mr-2" />
                               View on YouTube
                             </Button>
@@ -447,7 +514,10 @@ export default function VideosPage() {
                       <div className="flex items-center space-x-4">
                         <div className="w-32 h-20 bg-muted rounded overflow-hidden flex-shrink-0">
                           <img
-                            src={video.thumbnail || "/placeholder.svg?height=80&width=128"}
+                            src={
+                              video.thumbnail ||
+                              "/placeholder.svg?height=80&width=128"
+                            }
                             alt={video.title}
                             className="w-full h-full object-cover"
                           />
@@ -455,8 +525,12 @@ export default function VideosPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h3 className="font-medium text-lg line-clamp-1 mb-1">{video.title}</h3>
-                              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{video.description}</p>
+                              <h3 className="font-medium text-lg line-clamp-1 mb-1">
+                                {video.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                                {video.description}
+                              </p>
                               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                                 <div className="flex items-center">
                                   <User className="w-3 h-3 mr-1" />
@@ -464,7 +538,9 @@ export default function VideosPage() {
                                 </div>
                                 <div className="flex items-center">
                                   <Calendar className="w-3 h-3 mr-1" />
-                                  {new Date(video.uploadedAt).toLocaleDateString()}
+                                  {new Date(
+                                    video.uploadedAt
+                                  ).toLocaleDateString()}
                                 </div>
                                 <div className="flex items-center">
                                   <Clock className="w-3 h-3 mr-1" />
@@ -473,12 +549,22 @@ export default function VideosPage() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2 ml-4">
-                              <Badge className={cn("text-xs", getStatusColor(video.status))}>
+                              <Badge
+                                className={cn(
+                                  "text-xs",
+                                  getStatusColor(video.status)
+                                )}
+                              >
                                 {getStatusIcon(video.status)}
-                                <span className="ml-1 capitalize">{video.status}</span>
+                                <span className="ml-1 capitalize">
+                                  {video.status}
+                                </span>
                               </Badge>
                               <DropdownMenu>
-                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuTrigger
+                                  asChild
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <Button variant="ghost" size="sm">
                                     <MoreHorizontal className="w-4 h-4" />
                                   </Button>
@@ -486,25 +572,32 @@ export default function VideosPage() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem
                                     onClick={(e) => {
-                                      e.stopPropagation()
-                                      router.push(`/dashboard/videos/${video.id}`)
+                                      e.stopPropagation();
+                                      router.push(
+                                        `/dashboard/videos/${video.id}`
+                                      );
                                     }}
                                   >
                                     <Eye className="w-4 h-4 mr-2" />
                                     View & Review
                                   </DropdownMenuItem>
-                                  {user?.role === "creator" && video.status === "pending" && (
-                                    <>
-                                      <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                                        <CheckCircle className="w-4 h-4 mr-2" />
-                                        Quick Approve
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Quick Reject
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
+                                  {user?.role === "creator" &&
+                                    video.status === "pending" && (
+                                      <>
+                                        <DropdownMenuItem
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <CheckCircle className="w-4 h-4 mr-2" />
+                                          Quick Approve
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <XCircle className="w-4 h-4 mr-2" />
+                                          Quick Reject
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -538,5 +631,5 @@ export default function VideosPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

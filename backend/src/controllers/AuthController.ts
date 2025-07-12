@@ -92,7 +92,7 @@ export class AuthController {
       const token = jwt.sign(
         { userId: user._id, email: user.email, role: teamMemberRole },
         getJWTSecret(),
-        { expiresIn: "7d" }
+        { expiresIn: "30d" }
       );
 
       // Set HTTP-only cookie
@@ -100,7 +100,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/",
         // Don't set domain to allow cross-port cookies on localhost
       });
@@ -166,7 +166,7 @@ export class AuthController {
       const token = jwt.sign(
         { userId: user._id, email: user.email, role: teamMemberRole },
         getJWTSecret(),
-        { expiresIn: "7d" }
+        { expiresIn: "30d" }
       );
 
       // Set HTTP-only cookie
@@ -174,7 +174,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/",
         // Don't set domain to allow cross-port cookies on localhost
       });
@@ -304,64 +304,6 @@ export class AuthController {
       });
     } catch (error) {
       console.error("Get profile error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
-
-  static async refreshToken(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { userId } = req.user!;
-
-      const user = await User.findById(userId).select("-password");
-      if (!user) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
-
-      // Get team member role if user has a team
-      let teamMemberRole = user.role; // fallback to individual role
-      if (user.teamId) {
-        const team = await Team.findById(user.teamId);
-        if (team) {
-          const teamMember = team.members.find(
-            (m) => m.userId.toString() === user._id.toString()
-          );
-          if (teamMember) {
-            teamMemberRole = teamMember.role;
-          }
-        }
-      }
-
-      // Generate new JWT token with team member role
-      const token = jwt.sign(
-        { userId: user._id, email: user.email, role: teamMemberRole },
-        getJWTSecret(),
-        { expiresIn: "7d" }
-      );
-
-      // Set new HTTP-only cookie
-      res.cookie("auth-token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: "/",
-        // Don't set domain to allow cross-port cookies on localhost
-      });
-
-      res.json({
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          role: teamMemberRole,
-          avatar: user.avatar,
-          youtubeConnected: !!user.youtubeTokens,
-          needsPasswordChange: user.needsPasswordChange,
-        },
-      });
-    } catch (error) {
-      console.error("Refresh token error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   }

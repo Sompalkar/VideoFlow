@@ -113,7 +113,7 @@ export function VideoComments({
       console.log("VideoComments: Initializing for video:", videoId);
       fetchComments(videoId);
     }
-  }, [videoId, fetchComments]);
+  }, [videoId]); // Remove fetchComments from dependencies
 
   useEffect(() => {
     // Auto-scroll to bottom when new comments are added (only for first page)

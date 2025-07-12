@@ -36,32 +36,6 @@ class ApiClient {
       const response = await fetch(url, requestConfig);
 
       if (!response.ok) {
-        // If it's a 401 error and we're using cookies, try to refresh the token
-        if (response.status === 401 && config?.withCredentials) {
-          try {
-            // Import the auth store dynamically to avoid circular dependencies
-            const { useAuthStore } = await import("../stores/auth-store");
-            const refreshToken = useAuthStore.getState().refreshToken;
-            await refreshToken();
-
-            // Retry the original request
-            const retryResponse = await fetch(url, requestConfig);
-            if (!retryResponse.ok) {
-              const errorData = await retryResponse.json().catch(() => ({}));
-              throw new Error(
-                errorData.message ||
-                  `HTTP error! status: ${retryResponse.status}`
-              );
-            }
-            return await retryResponse.json();
-          } catch (refreshError) {
-            console.error("Token refresh failed:", refreshError);
-            // If refresh fails, redirect to login
-            window.location.href = "/auth/login";
-            throw new Error("Authentication failed");
-          }
-        }
-
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.message || `HTTP error! status: ${response.status}`

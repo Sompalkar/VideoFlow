@@ -27,7 +27,6 @@ interface AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   updateProfile: (data: { name: string; avatar?: string }) => Promise<void>;
-  refreshToken: () => Promise<void>;
   changePassword: (
     currentPassword: string,
     newPassword: string
@@ -44,8 +43,13 @@ export const useAuthStore = create<AuthState>()(
       // Initialize auth state on app startup
       initialize: async () => {
         try {
-          // Try to refresh token to validate current session
-          await get().refreshToken();
+          // Check if user is logged in by making a simple API call
+          const response = await apiClient.get<{ user: User }>(
+            "/auth/profile",
+            undefined,
+            { withCredentials: true }
+          );
+          set({ user: response.user });
         } catch (error) {
           console.log("No valid session found, user needs to login");
           // Clear any stale user data
@@ -143,23 +147,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      refreshToken: async () => {
-        try {
-          const response = await apiClient.post<{ user: User }>(
-            "/auth/refresh",
-            {},
-            undefined,
-            { withCredentials: true }
-          );
-
-          set({
-            user: response.user,
-          });
-        } catch (error) {
-          console.error("Token refresh failed:", error);
-        }
-      },
-
       changePassword: async (currentPassword: string, newPassword: string) => {
         set({ isLoading: true, error: null });
         try {
@@ -174,7 +161,6 @@ export const useAuthStore = create<AuthState>()(
           );
 
           // Refresh user data to update needsPasswordChange flag
-          await get().refreshToken();
           set({ isLoading: false });
         } catch (error) {
           set({

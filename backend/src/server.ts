@@ -21,7 +21,6 @@ import teamRoutes from "./routes/teamRoutes";
 import userRoutes from "./routes/userRoutes";
 import youtubeRoutes from "./routes/youtubeRoutes";
 import cloudinaryRoutes from "./routes/cloudinaryRoutes";
-import analyticsRoutes from "./routes/analyticsRoutes";
 import aiThumbnailRoutes from "./routes/aiThumbnailRoutes";
 import youtubeThumbnailRoutes from "./routes/youtubeThumbnailRoutes";
 
@@ -92,11 +91,9 @@ app.use("/api/team", teamRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/youtube", youtubeRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
-app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai-thumbnails", aiThumbnailRoutes);
 app.use("/api/youtube-thumbnails", youtubeThumbnailRoutes);
-
-app.use("/api/comments", commentRouter); // Use comment routes
+app.use("/api/comments", commentRouter);
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
