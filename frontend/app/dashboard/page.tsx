@@ -376,14 +376,14 @@ export default function DashboardPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="shadow-lg gap-5 bg-white/80 backdrop-blur-sm border-0">
+            <Card className="shadow-lg  bg-white/80 backdrop-blur-sm border-0">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center">
                   <BarChart3 className="w-5 h-5 mr-2 text-indigo-600" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex flex-col">
                 <Link href="/dashboard/upload">
                   <Button className="w-full justify-start bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl">
                     <Upload className="w-4 h-4 mr-3" />

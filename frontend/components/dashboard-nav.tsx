@@ -57,8 +57,9 @@ export function DashboardNav() {
   return (
     <div className="bg-gray-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center space-x-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between py-3 space-y-3 lg:space-y-0">
+          {/* Navigation Links */}
+          <div className="flex items-center overflow-x-auto scrollbar-hide space-x-4 lg:space-x-6 min-w-0">
             {navigation.map((item) => {
               const isActive = item.exact
                 ? pathname === item.href
@@ -70,18 +71,19 @@ export function DashboardNav() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center text-sm font-medium transition-colors",
+                    "flex items-center text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
                     isActive
                       ? "text-blue-600"
                       : "text-gray-600 hover:text-gray-900"
                   )}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {item.name}
+                  <Icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="hidden sm:inline">{item.name}</span>
+                  <span className="sm:hidden">{item.name}</span>
                   {item.badge && (
                     <Badge
                       variant="secondary"
-                      className="ml-2 h-5 px-2 text-xs"
+                      className="ml-2 h-5 px-2 text-xs flex-shrink-0"
                     >
                       {item.badge}
                     </Badge>
@@ -92,16 +94,21 @@ export function DashboardNav() {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex  items-center justify-between lg:justify-end space-x-3 min-w-0">
             {pendingCount > 0 && (
-              <div className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-                {pendingCount} pending review
+              <div className="text-xs sm:text-sm text-amber-600 bg-amber-50 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
+                {pendingCount} pending
               </div>
             )}
-            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              asChild
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 flex-shrink-0"
+            >
               <Link href="/dashboard/upload">
-                <Plus className="w-4 h-4 mr-2" />
-                Upload
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Upload</span>
+                <span className="sm:hidden">+</span>
               </Link>
             </Button>
           </div>

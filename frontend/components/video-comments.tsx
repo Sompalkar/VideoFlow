@@ -259,9 +259,9 @@ export function VideoComments({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
-          Live Chat ({pagination?.total || comments.length})
+        <h3 className="text-lg font-semibold flex items-center gap-2 mt-4 mx-8">
+          <MessageSquare className="w-5 h-5 " />
+          Comments & Notes  ({pagination?.total || comments.length})
           {pagination?.hasMore && (
             <span className="text-sm text-gray-500 dark:text-gray-400">
               (showing {comments.length} of {pagination.total})
@@ -273,7 +273,7 @@ export function VideoComments({
           size="sm"
           onClick={handleRefresh}
           disabled={isLoading}
-          className="hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="hover:bg-gray-100 dark:hover:bg-gray-800 mt-4 mx-8"
         >
           <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
         </Button>

@@ -22,11 +22,13 @@ import {
   Award,
 } from "lucide-react";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 export default function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const { user } = useAuthStore();
 
   useEffect(() => {
     setIsVisible(true);
@@ -134,9 +136,9 @@ export default function LandingPage() {
               >
                 Pricing
               </Link>
-              <Link href="/auth/login">
+              <Link href={user ? "/dashboard" : "/auth/login"}>
                 <Button variant="ghost" className="font-medium">
-                  Sign In
+                  {user ? "Dashboard" : "Sign In"}
                 </Button>
               </Link>
               <Link href="/auth/register">
@@ -184,9 +186,9 @@ export default function LandingPage() {
                   Pricing
                 </Link>
                 <div className="pt-4 space-y-2">
-                  <Link href="/auth/login">
+                  <Link href={user ? "/dashboard" : "/auth/login"}>
                     <Button variant="outline" className="w-full bg-transparent">
-                      Sign In
+                      {user ? "Dashboard" : "Sign In"}
                     </Button>
                   </Link>
                   <Link href="/auth/register">

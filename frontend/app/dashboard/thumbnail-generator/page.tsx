@@ -392,7 +392,7 @@ export default function ThumbnailGeneratorPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-800">
+    <div className="flex flex-col min-h-screen  dark:bg-gray-800">
       <MainNav />
       <DashboardNav />
       <div className="flex-1 max-w-[1400px] mx-auto px-4 py-2">
@@ -424,11 +424,11 @@ export default function ThumbnailGeneratorPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 h-[calc(100vh-120px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 min-h-[calc(100vh-120px)] lg:h-[calc(100vh-120px)]">
           {/* Left Column: Controls */}
-          <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="lg:col-span-3 flex flex-col gap-4 min-w-0 lg:min-w-[700px]">
             {/* 1. Move AI Enhancement section to the top of the left column */}
-            <Card className="shadow-sm rounded-lg mb-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800 border-0">
+            <Card className="shadow-sm rounded-lg mb-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800 border-0 min-h-[300px]">
               <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="w-4 h-4" />
@@ -489,7 +489,7 @@ export default function ThumbnailGeneratorPage() {
               </CardContent>
             </Card>
             {/* 2. Place video selection, preview, and frames grid below, with no extra white backgrounds (remove bg-white from their Card classes) */}
-            <Card className="dark:bg-gray-900 shadow-sm rounded-lg mb-2 border-0">
+            <Card className="dark:bg-gray-900 shadow-sm rounded-lg mb-2 border-0 min-h-[300px] lg:min-h-[450px]">
               <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                   <Layers className="w-4 h-8" />
@@ -502,7 +502,7 @@ export default function ThumbnailGeneratorPage() {
                     No uploaded videos found
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                     {uploadedVideos.map((video) => (
                       <div
                         key={video.id}
@@ -516,7 +516,7 @@ export default function ThumbnailGeneratorPage() {
                       >
                         <video
                           src={video.cloudinaryVideoUrl}
-                          className="w-full h-32 object-cover rounded-md mb-2 shadow"
+                          className="w-full h-24 sm:h-32 object-cover rounded-md mb-2 shadow"
                           muted
                           playsInline
                         />
@@ -541,7 +541,7 @@ export default function ThumbnailGeneratorPage() {
                   <CardContent className="p-2">
                     <video
                       src={selectedVideoForThumbnail.cloudinaryVideoUrl}
-                      className="w-full h-48 object-cover rounded-md shadow mb-2"
+                      className="w-full h-32 sm:h-48 object-cover rounded-md shadow mb-2"
                       controls
                     />
                     <div className="text-xs text-center text-gray-700 dark:text-gray-300 font-medium">
@@ -558,7 +558,7 @@ export default function ThumbnailGeneratorPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-2">
-                      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-1 sm:gap-2">
                         {frames.map((frame, idx) => (
                           <div
                             key={idx}
@@ -573,7 +573,7 @@ export default function ThumbnailGeneratorPage() {
                             <img
                               src={frame.url}
                               alt={`Frame ${idx + 1}`}
-                              className="w-full h-16 object-cover rounded-t-md"
+                              className="w-full h-12 sm:h-16 object-cover rounded-t-md"
                             />
                             <div className="text-center text-xs text-gray-600 dark:text-gray-400 py-0.5">
                               {frame.timestamp}s
@@ -589,8 +589,8 @@ export default function ThumbnailGeneratorPage() {
           </div>
 
           {/* Right Column: Generated Thumbnails */}
-          <div className="lg:col-span-3">
-            <Card className="bg-white dark:bg-gray-900 shadow-sm rounded-lg h-full flex flex-col">
+          <div className="lg:col-span-2 min-w-0 lg:min-w-[350px]">
+            <Card className="bg-white dark:bg-gray-900 shadow-sm rounded-lg h-full flex flex-col min-h-[300px]">
               <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="w-4 h-4" />
@@ -609,24 +609,25 @@ export default function ThumbnailGeneratorPage() {
                       <img
                         src={aiResult.url}
                         alt="AI Enhanced"
-                        className="w-full h-40 object-cover rounded-md shadow-md border border-gray-200 dark:border-gray-700"
+                        className="w-full h-32 sm:h-40 object-cover rounded-md shadow-md border border-gray-200 dark:border-gray-700"
                       />
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
                         <Button
                           size="sm"
                           onClick={() => handlePreviewThumbnail(aiResult.url)}
-                          className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700 border-0 shadow"
+                          className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700 border-0 shadow text-xs"
                         >
-                          <Eye className="w-4 h-4 mr-1" /> Preview
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Preview
                         </Button>
                         <Button
                           size="sm"
                           onClick={() =>
                             handleDownload(aiResult.url, "ai-enhanced.png")
                           }
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-0 shadow"
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-0 shadow text-xs"
                         >
-                          <Download className="w-4 h-4 mr-1" /> Download
+                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
+                          Download
                         </Button>
                       </div>
                     </div>
@@ -648,15 +649,15 @@ export default function ThumbnailGeneratorPage() {
                       <img
                         src={finalThumbnail}
                         alt="Final Thumbnail"
-                        className="w-full h-40 object-cover rounded-md shadow-md border border-gray-200 dark:border-gray-700"
+                        className="w-full h-32 sm:h-40 object-cover rounded-md shadow-md border border-gray-200 dark:border-gray-700"
                       />
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
                         <Button
                           size="sm"
                           onClick={() => handlePreviewThumbnail(finalThumbnail)}
-                          className="bg-gradient-to-r from-cyan-600 to-teal-600 text-white hover:from-cyan-700 hover:to-teal-700 border-0 shadow"
+                          className="bg-gradient-to-r from-cyan-600 to-teal-600 text-white hover:from-cyan-700 hover:to-teal-700 border-0 shadow text-xs"
                         >
-                          <Eye className="w-4 h-4 mr-1" /> Preview
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Preview
                         </Button>
                         <Button
                           size="sm"
@@ -666,16 +667,18 @@ export default function ThumbnailGeneratorPage() {
                               "final-thumbnail.png"
                             )
                           }
-                          className="bg-gradient-to-r from-pink-600 to-red-600 text-white hover:from-pink-700 hover:to-red-700 border-0 shadow"
+                          className="bg-gradient-to-r from-pink-600 to-red-600 text-white hover:from-pink-700 hover:to-red-700 border-0 shadow text-xs"
                         >
-                          <Download className="w-4 h-4 mr-1" /> Download
+                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
+                          Download
                         </Button>
                         <Button
                           size="sm"
                           onClick={handleSetAsMainThumbnail}
-                          className="bg-gradient-to-r from-teal-700 to-cyan-700 text-white hover:from-teal-800 hover:to-cyan-800 border-0 shadow"
+                          className="bg-gradient-to-r from-teal-700 to-cyan-700 text-white hover:from-teal-800 hover:to-cyan-800 border-0 shadow text-xs"
                         >
-                          <CheckCircle className="w-4 h-4 mr-1" /> Set as Main
+                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
+                          Set as Main
                         </Button>
                       </div>
                     </div>
@@ -693,14 +696,14 @@ export default function ThumbnailGeneratorPage() {
 
         {/* 3. Move the Start Over button to a floating position at the bottom left of the main content area */}
         {selectedVideoForThumbnail && (
-          <div className="fixed left-8 bottom-8 z-50">
+          <div className="fixed left-4 sm:left-8 bottom-4 sm:bottom-8 z-50">
             <Button
               variant="outline"
               onClick={resetWorkflow}
-              className="border-2 border-transparent bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 hover:from-teal-200 hover:to-cyan-200 shadow-md rounded-full px-6 py-2 font-semibold"
+              className="border-2 border-transparent bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 hover:from-teal-200 hover:to-cyan-200 shadow-md rounded-full px-3 sm:px-6 py-2 font-semibold text-xs sm:text-sm"
               style={{ boxShadow: "0 2px 16px 0 rgba(0, 200, 200, 0.08)" }}
             >
-              <RefreshCw className="mr-1 h-4 w-4" /> Start Over
+              <RefreshCw className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> Start Over
             </Button>
           </div>
         )}
