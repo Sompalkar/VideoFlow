@@ -1,12 +1,24 @@
 const normalizeBaseUrl = (url: string): string => {
+  if (!url) return "/api";
   const trimmed = url.replace(/\/+$/, "");
   return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
 };
 
-const rawBaseUrl =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const resolveBrowserBaseUrl = (): string | undefined => {
+  if (typeof window === "undefined") return undefined;
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  const origin = window.location?.origin;
+  return envUrl ? normalizeBaseUrl(envUrl) : normalizeBaseUrl(origin);
+};
 
-const API_BASE_URL = normalizeBaseUrl(rawBaseUrl);
+const resolveServerBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
+  }
+  return normalizeBaseUrl(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000");
+};
+
+const API_BASE_URL = resolveBrowserBaseUrl() || resolveServerBaseUrl();
 
 // console.log("API Base URL:", API_BASE_URL);
 // console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
@@ -33,7 +45,7 @@ class ApiClient {
 
     // Support both token-based and cookie-based auth
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
     }
 
     const requestConfig: RequestInit = {
