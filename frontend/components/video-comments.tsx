@@ -92,9 +92,9 @@ export function VideoComments({
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting && !isLoadingMore && pagination?.hasMore) {
-          console.log(
-            "VideoComments: Loading more comments via intersection observer"
-          );
+          // console.log(
+          //   "VideoComments: Loading more comments via intersection observer"
+          // );
           loadMoreComments(videoId);
         }
       },
@@ -110,7 +110,7 @@ export function VideoComments({
 
   useEffect(() => {
     if (videoId) {
-      console.log("VideoComments: Initializing for video:", videoId);
+      // console.log("VideoComments: Initializing for video:", videoId);
       fetchComments(videoId);
     }
   }, [videoId]); // Remove fetchComments from dependencies
@@ -125,41 +125,41 @@ export function VideoComments({
 
   // Debug logging
   useEffect(() => {
-    console.log("VideoComments: Comments state updated:", {
-      commentsCount: comments.length,
-      isLoading,
-      isLoadingMore,
-      pagination,
-      comments: comments.map((c) => ({
-        id: c._id,
-        content: c.content.substring(0, 20) + "...",
-      })),
-    });
+    // console.log("VideoComments: Comments state updated:", {
+    //   commentsCount: comments.length,
+    //   isLoading,
+    //   isLoadingMore,
+    //   pagination,
+    //   comments: comments.map((c) => ({
+    //     id: c._id,
+    //     content: c.content.substring(0, 20) + "...",
+    //   })),
+    // });
   }, [comments, isLoading, isLoadingMore, pagination]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
     try {
-      console.log("VideoComments: Submitting comment:", {
-        videoId,
-        content: newComment,
-        timestamp: includeTimestamp
-          ? customTimestamp || currentTime
-          : undefined,
-        parentId: replyingTo,
-      });
+      // console.log("VideoComments: Submitting comment:", {
+      //   videoId,
+      //   content: newComment,
+      //   timestamp: includeTimestamp
+      //     ? customTimestamp || currentTime
+      //     : undefined,
+      //   parentId: replyingTo,
+      // });
 
       setIsSubmitting(true);
       const timestamp = includeTimestamp
         ? customTimestamp || currentTime
         : undefined;
-      await addComment(videoId, newComment, timestamp, replyingTo);
+      await addComment(videoId, newComment, timestamp, replyingTo || undefined);
       setNewComment("");
       setReplyingTo(null);
       setIncludeTimestamp(false);
       setCustomTimestamp(0);
-      console.log("VideoComments: Comment submitted successfully");
+      // console.log("VideoComments: Comment submitted successfully");
     } catch (error) {
       console.error("VideoComments: Failed to add comment:", error);
     } finally {
@@ -251,7 +251,7 @@ export function VideoComments({
   };
 
   const handleRefresh = () => {
-    console.log("VideoComments: Manual refresh requested");
+    // console.log("VideoComments: Manual refresh requested");
     fetchComments(videoId);
   };
 

@@ -5,6 +5,7 @@ import { validationResult } from "express-validator";
 import User from "../models/User";
 import Team from "../models/Team";
 import type { AuthRequest } from "../middleware/auth";
+import { clouddebugger } from "googleapis/build/src/apis/clouddebugger";
 
 // Get JWT secret dynamically
 const getJWTSecret = (): string => {
@@ -17,14 +18,18 @@ const getJWTSecret = (): string => {
 
 export class AuthController {
   static async register(req: Request, res: Response): Promise<void> {
+
+
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res
-          .status(400)
-          .json({ message: "Validation errors", errors: errors.array() });
-        return;
-      }
+      // const errors = validationResult(req);
+      // if (!errors.isEmpty()) {
+      //   res
+      //     .status(400)
+      //     .json({ message: "Validation errors", errors: errors.array() });
+      //   return;
+      // }
+
+      console.log(req.body)
 
       const { email, password, name, role = "creator" } = req.body;
 

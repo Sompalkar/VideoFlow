@@ -36,7 +36,7 @@ export default function LandingPage() {
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Newsletter signup:", email);
+    // console.log("Newsletter signup:", email);
     setEmail("");
   };
 
