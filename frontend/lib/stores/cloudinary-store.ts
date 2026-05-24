@@ -20,12 +20,39 @@ export const useCloudinaryStore = create<CloudinaryState>((set) => ({
     set({ isUploading: true, uploadProgress: 0, error: null });
 
     try {
-      // Create FormData for file upload
+      // 1. Get signature from backend
+      const signatureResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/cloudinary/signature`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ resourceType }),
+          // Important: include credentials so authenticate middleware works
+          credentials: "include"
+        }
+      );
+
+      if (!signatureResponse.ok) {
+        throw new Error("Failed to get upload signature from server");
+      }
+
+      const { signature, timestamp, cloudName, apiKey, folder } = await signatureResponse.json();
+
+      // 2. Create FormData for direct Cloudinary upload
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("resourceType", resourceType);
+      formData.append("api_key", apiKey);
+      formData.append("timestamp", timestamp.toString());
+      formData.append("signature", signature);
+      formData.append("folder", folder);
+      
+      // Add chunking options for large files if needed
+      // Note: For true chunking (upload_large), we need the Cloudinary JS SDK.
+      // But standard direct upload handles up to 100MB fine and bypasses Nginx.
 
-      // Upload via backend with progress tracking
+      // 3. Upload directly to Cloudinary with progress tracking
       const uploadResult = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
@@ -37,21 +64,29 @@ export const useCloudinaryStore = create<CloudinaryState>((set) => ({
         });
 
         xhr.addEventListener("load", () => {
-          if (xhr.status === 200) {
+          if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const result = JSON.parse(xhr.responseText);
-              resolve(result);
+              // Format result to match what the app expects from our old backend upload
+              resolve({
+                success: true,
+                data: {
+                  publicId: result.public_id,
+                  url: result.secure_url,
+                  width: result.width,
+                  height: result.height,
+                  format: result.format,
+                  bytes: result.bytes,
+                  duration: result.duration,
+                }
+              });
             } catch (e) {
-              reject(new Error("Invalid response format"));
+              reject(new Error("Invalid response format from Cloudinary"));
             }
           } else {
             try {
               const errorData = JSON.parse(xhr.responseText);
-              reject(
-                new Error(
-                  errorData.message || `Upload failed with status ${xhr.status}`
-                )
-              );
+              reject(new Error(errorData.error?.message || `Upload failed with status ${xhr.status}`));
             } catch (e) {
               reject(new Error(`Upload failed with status ${xhr.status}`));
             }
@@ -59,7 +94,7 @@ export const useCloudinaryStore = create<CloudinaryState>((set) => ({
         });
 
         xhr.addEventListener("error", () => {
-          reject(new Error("Network error during upload"));
+          reject(new Error("Network error during direct Cloudinary upload"));
         });
 
         xhr.addEventListener("timeout", () => {
@@ -68,12 +103,10 @@ export const useCloudinaryStore = create<CloudinaryState>((set) => ({
 
         xhr.open(
           "POST",
-          `${
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-          }/cloudinary/upload`
+          `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`
         );
-        xhr.withCredentials = true; // Enable cookies
-        xhr.timeout = 300000; // 5 minutes timeout
+        // Do NOT set withCredentials for Cloudinary direct upload (CORS will fail)
+        xhr.timeout = 600000; // 10 minutes timeout for large files
         xhr.send(formData);
       });
 

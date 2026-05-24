@@ -225,8 +225,6 @@ router.post(
       const params = {
         timestamp,
         folder: `videoflow/${resourceType}s`,
-        resource_type: resourceType,
-        chunk_size: 6000000,
       };
 
       const signature = await CloudinaryService.generateSignature(params);
