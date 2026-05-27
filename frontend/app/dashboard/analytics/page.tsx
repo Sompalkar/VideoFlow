@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
 
       setAnalyticsData(mockData)
     } catch (error) {
-      /* console log removed */
+      console.error("Failed to fetch analytics:", error)
     } finally {
       setLoading(false)
     }

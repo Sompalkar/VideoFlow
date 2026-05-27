@@ -32,11 +32,21 @@ class ApiClient {
       credentials: config?.withCredentials ? "include" : "same-origin",
     };
 
-     
+    // console.log("API Request:", {
+    //   url,
+    //   method: options.method || "GET",
+    //   withCredentials: config?.withCredentials,
+    //   hasToken: !!token,
+    // });
 
     try {
       const response = await fetch(url, requestConfig);
- 
+
+      // console.log("API Response:", {
+      //   status: response.status,
+      //   statusText: response.statusText,
+      //   headers: Object.fromEntries(response.headers.entries()),
+      // });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -47,7 +57,7 @@ class ApiClient {
 
       return await response.json();
     } catch (error) {
-      /* console log removed */
+      console.error("API request failed:", error);
       throw error;
     }
   }
@@ -132,7 +142,7 @@ class ApiClient {
 
       return await response.json();
     } catch (error) {
-      /* console log removed */
+      console.error("File upload failed:", error);
       throw error;
     }
   }

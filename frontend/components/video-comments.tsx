@@ -92,7 +92,9 @@ export function VideoComments({
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting && !isLoadingMore && pagination?.hasMore) {
-
+          // console.log(
+          //   "VideoComments: Loading more comments via intersection observer"
+          // );
           loadMoreComments(videoId);
         }
       },
@@ -108,7 +110,7 @@ export function VideoComments({
 
   useEffect(() => {
     if (videoId) {
-
+      // console.log("VideoComments: Initializing for video:", videoId);
       fetchComments(videoId);
     }
   }, [videoId]); // Remove fetchComments from dependencies
@@ -123,14 +125,30 @@ export function VideoComments({
 
   // Debug logging
   useEffect(() => {
-
+    // console.log("VideoComments: Comments state updated:", {
+    //   commentsCount: comments.length,
+    //   isLoading,
+    //   isLoadingMore,
+    //   pagination,
+    //   comments: comments.map((c) => ({
+    //     id: c._id,
+    //     content: c.content.substring(0, 20) + "...",
+    //   })),
+    // });
   }, [comments, isLoading, isLoadingMore, pagination]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
     try {
-
+      // console.log("VideoComments: Submitting comment:", {
+      //   videoId,
+      //   content: newComment,
+      //   timestamp: includeTimestamp
+      //     ? customTimestamp || currentTime
+      //     : undefined,
+      //   parentId: replyingTo,
+      // });
 
       setIsSubmitting(true);
       const timestamp = includeTimestamp
@@ -141,9 +159,9 @@ export function VideoComments({
       setReplyingTo(null);
       setIncludeTimestamp(false);
       setCustomTimestamp(0);
-
+      // console.log("VideoComments: Comment submitted successfully");
     } catch (error) {
-      /* console log removed */
+      console.error("VideoComments: Failed to add comment:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +175,7 @@ export function VideoComments({
       setEditingComment(null);
       setEditContent("");
     } catch (error) {
-      /* console log removed */
+      console.error("Failed to update comment:", error);
     }
   };
 
@@ -166,7 +184,7 @@ export function VideoComments({
       await deleteComment(commentId);
       setDeleteConfirmId(null);
     } catch (error) {
-      /* console log removed */
+      console.error("Failed to delete comment:", error);
     }
   };
 
@@ -177,7 +195,7 @@ export function VideoComments({
     try {
       await toggleReaction(commentId, type);
     } catch (error) {
-      /* console log removed */
+      console.error("Failed to toggle reaction:", error);
     }
   };
 
@@ -233,7 +251,7 @@ export function VideoComments({
   };
 
   const handleRefresh = () => {
-
+    // console.log("VideoComments: Manual refresh requested");
     fetchComments(videoId);
   };
 

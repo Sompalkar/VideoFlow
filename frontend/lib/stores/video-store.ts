@@ -77,7 +77,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
 
     // Prevent multiple simultaneous requests
     if (state.isFetching) {
-      /* console log removed */
+      console.log("VideoStore: Request already in progress, skipping...");
       return;
     }
 

@@ -186,7 +186,7 @@ export default function VideoReviewPage() {
       await approveVideo(currentVideo.id);
       router.push("/dashboard");
     } catch (error) {
-      /* console log removed */
+      console.error("Approve error:", error);
     } finally {
       setActionLoading(null);
     }
@@ -202,7 +202,7 @@ export default function VideoReviewPage() {
       setRejectionReason("");
       router.push("/dashboard");
     } catch (error) {
-      /* console log removed */
+      console.error("Reject error:", error);
     } finally {
       setActionLoading(null);
     }

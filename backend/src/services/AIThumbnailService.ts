@@ -32,7 +32,7 @@ export class AIThumbnailService {
     options: ThumbnailGenerationOptions = {}
   ): Promise<GeneratedThumbnail[]> {
     try {
-      /* console log removed */
+      console.log("AI Thumbnail Service: Performing video analysis...");
       const videoAnalysis = await VideoAnalysisService.analyzeVideo(videoUrl, title, description);
       
       const {
@@ -53,7 +53,7 @@ export class AIThumbnailService {
 
       return thumbnails;
     } catch (error) {
-      /* console log removed */
+      console.error("AI Thumbnail Service: Error generating thumbnails:", error);
       throw new Error("Failed to generate AI thumbnails");
     }
   }
@@ -80,7 +80,7 @@ export class AIThumbnailService {
         throw new Error("No Hugging Face API key provided");
       }
 
-      /* console log removed */
+      console.log(`AI Thumbnail Service: Requesting image from Hugging Face FLUX.1-schnell`);
 
       const response = await fetch(this.HF_API_URL, {
         method: "POST",
@@ -119,7 +119,7 @@ export class AIThumbnailService {
         prompt: prompt,
       };
     } catch (error) {
-      /* console log removed */
+      console.error("AI Thumbnail Service: AI generation failed:", error);
       throw error;
     }
   }
@@ -167,7 +167,7 @@ export class AIThumbnailService {
       videoDescription?: string;
     } = {}
   ): Promise<GeneratedThumbnail> {
-    /* console log removed */
+    console.log("AI Thumbnail Service: Generating AI image from prompt (HuggingFace)...");
     
     // Clean and structure the prompt for FLUX.1 diffusion model
     // Diffusion models work best with visual descriptions, not conversational instructions

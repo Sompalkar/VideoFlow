@@ -74,7 +74,7 @@ export default function YouTubePage() {
         fetchChannelInfo();
       }
     } catch (error) {
-      /* console log removed */
+      console.error("Failed to check YouTube status:", error);
     }
   };
 
