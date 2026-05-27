@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthState>()(
           );
           set({ user: response.user, isInitialized: true });
         } catch (error) {
-          console.log("No valid session found, user needs to login");
+          /* console log removed */
           // Clear any stale user data
           set({ user: null, isInitialized: true });
         }
@@ -113,7 +113,7 @@ export const useAuthStore = create<AuthState>()(
             withCredentials: true,
           });
         } catch (error) {
-          console.error("Logout error:", error);
+          /* console log removed */
         } finally {
           set({ user: null, error: null });
         }

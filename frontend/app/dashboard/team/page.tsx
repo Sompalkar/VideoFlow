@@ -96,7 +96,7 @@ export default function TeamPage() {
       const teamResponse = await apiClient.get<{ team: Team }>("/team", undefined, { withCredentials: true });
       setTeam(teamResponse.team);
     } catch (error) {
-      console.error("Failed to load team data:", error);
+      /* console log removed */
       setError(error instanceof Error ? error.message : "Failed to load team data");
     } finally {
       setIsLoading(false);
@@ -114,7 +114,7 @@ export default function TeamPage() {
       setInviteRole("editor");
       await loadTeamData();
     } catch (error) {
-      console.error("Failed to invite member:", error);
+      /* console log removed */
       setError(error instanceof Error ? error.message : "Failed to invite member");
     } finally {
       setIsInviting(false);
@@ -127,7 +127,7 @@ export default function TeamPage() {
       await apiClient.put(`/team/members/${memberId}/role`, { role: newRole }, undefined, { withCredentials: true });
       await loadTeamData();
     } catch (error) {
-      console.error("Failed to update member role:", error);
+      /* console log removed */
       setError(error instanceof Error ? error.message : "Failed to update member role");
     }
   };
@@ -138,7 +138,7 @@ export default function TeamPage() {
       await apiClient.delete(`/team/members/${memberId}`, undefined, { withCredentials: true });
       await loadTeamData();
     } catch (error) {
-      console.error("Failed to remove member:", error);
+      /* console log removed */
       setError(error instanceof Error ? error.message : "Failed to remove member");
     }
   };
@@ -149,7 +149,7 @@ export default function TeamPage() {
       await apiClient.post("/team/promote", {}, undefined, { withCredentials: true });
       await loadTeamData();
     } catch (error) {
-      console.error("Failed to promote to creator:", error);
+      /* console log removed */
       setError(error instanceof Error ? error.message : "Failed to promote to creator");
     }
   };

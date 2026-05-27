@@ -8,15 +8,15 @@ import mongoose from "mongoose";
 export class CommentController {
   static async testComments(req: AuthRequest, res: Response): Promise<void> {
     try {
-      console.log("Comment controller test endpoint called");
+      /* console log removed */
 
       // Test database connection
       const commentCount = await VideoComment.countDocuments();
-      console.log(`Total comments in database: ${commentCount}`);
+      /* console log removed */
 
       // Test finding a comment
       const sampleComment = await VideoComment.findOne();
-      console.log("Sample comment:", sampleComment);
+      /* console log removed */
 
       res.json({
         message: "Comment controller is working",
@@ -24,7 +24,7 @@ export class CommentController {
         sampleComment: sampleComment ? "Found" : "None",
       });
     } catch (error) {
-      console.error("Comment controller test error:", error);
+      /* console log removed */
       res.status(500).json({
         message: "Test failed",
         error: error instanceof Error ? error.message : String(error),
@@ -37,10 +37,8 @@ export class CommentController {
       const { videoId } = req.params;
       const { page = 1, limit = 50 } = req.query; // Increased default limit for infinite scroll
 
-      console.log(
-        `Getting comments for video ${videoId}, page ${page}, limit ${limit}`
-      );
-      console.log(`VideoId type: ${typeof videoId}, value: ${videoId}`);
+      /* console log removed */
+      /* console log removed */
 
       const video = await Video.findById(videoId);
       if (!video) {
@@ -48,7 +46,7 @@ export class CommentController {
         return;
       }
 
-      console.log(`Found video: ${video._id}, title: ${video.title}`);
+      /* console log removed */
 
       // Check if user has access to this video
       if (req.user!.teamId?.toString() !== video.teamId.toString()) {
@@ -58,7 +56,7 @@ export class CommentController {
 
       // Debug: Check all comments in database
       const allComments = await VideoComment.find({});
-      console.log(`Total comments in database: ${allComments.length}`);
+      /* console log removed */
 
       // Find comments that match this videoId (handle both string and ObjectId types)
       const matchingComments = allComments.filter((comment) => {
@@ -67,17 +65,13 @@ export class CommentController {
         return commentVideoId === queryVideoId;
       });
 
-      console.log(
-        `Found ${matchingComments.length} comments matching videoId ${videoId}`
-      );
+      /* console log removed */
 
       // Filter for main comments (no parentId)
       const mainComments = matchingComments.filter(
         (comment) => !comment.parentId
       );
-      console.log(
-        `Found ${mainComments.length} main comments for video ${videoId}`
-      );
+      /* console log removed */
 
       // Sort by creation date (oldest first)
       mainComments.sort(
@@ -110,9 +104,7 @@ export class CommentController {
         })
       );
 
-      console.log(
-        `Returning ${populatedComments.length} comments with replies for video ${videoId}`
-      );
+      /* console log removed */
 
       res.json({
         comments: populatedComments,
@@ -125,7 +117,7 @@ export class CommentController {
         },
       });
     } catch (error) {
-      console.error("Get comments error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -144,11 +136,11 @@ export class CommentController {
       const { content, timestamp, parentId, mentions } = req.body;
       const { userId } = req.user!;
 
-      console.log(`Adding comment to video ${videoId} by user ${userId}`);
-      console.log(`Comment content: ${content}`);
-      console.log(`Timestamp: ${timestamp}`);
-      console.log(`Parent ID: ${parentId}`);
-      console.log(`VideoId type: ${typeof videoId}, value: ${videoId}`);
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
 
       const video = await Video.findById(videoId);
       if (!video) {
@@ -156,7 +148,7 @@ export class CommentController {
         return;
       }
 
-      console.log(`Found video: ${video._id}, title: ${video.title}`);
+      /* console log removed */
 
       // Check if user has access to this video
       if (req.user!.teamId?.toString() !== video.teamId.toString()) {
@@ -174,12 +166,10 @@ export class CommentController {
         mentions: mentions || [],
       });
 
-      console.log(`Saving comment with videoId: ${comment.videoId}`);
+      /* console log removed */
 
       await comment.save();
-      console.log(
-        `Comment saved with ID: ${comment._id}, videoId: ${comment.videoId}`
-      );
+      /* console log removed */
 
       // Populate the comment with user data
       await comment.populate("userId", "name email avatar");
@@ -187,12 +177,12 @@ export class CommentController {
 
       // Convert to plain object for response
       const commentData = comment.toObject();
-      console.log(`Comment created successfully for video ${videoId}`);
-      console.log(`Comment data:`, JSON.stringify(commentData, null, 2));
+      /* console log removed */
+      /* console log removed */
 
       res.status(201).json({ comment: commentData });
     } catch (error) {
-      console.error("Add comment error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -223,7 +213,7 @@ export class CommentController {
 
       res.json({ comment });
     } catch (error) {
-      console.error("Update comment error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -252,7 +242,7 @@ export class CommentController {
 
       res.json({ message: "Comment deleted successfully" });
     } catch (error) {
-      console.error("Delete comment error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -296,7 +286,7 @@ export class CommentController {
 
       res.json({ comment });
     } catch (error) {
-      console.error("Toggle reaction error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }

@@ -47,7 +47,7 @@ class SocketService {
   private videoRooms: Map<string, VideoRoom> = new Map();
 
   initialize(server: HTTPServer) {
-    console.log("Initializing Socket.IO service...");
+    /* console log removed */
 
     // Check for JWT secret
     const getJWTSecret = (): string => {
@@ -61,8 +61,8 @@ class SocketService {
     };
 
     const jwtSecret = getJWTSecret();
-    console.log("JWT Secret available:", !!jwtSecret);
-    console.log("Using JWT secret:", jwtSecret.substring(0, 10) + "...");
+    /* console log removed */
+    /* console log removed */
 
     this.io = new SocketIOServer(server, {
       cors: {
@@ -74,7 +74,7 @@ class SocketService {
 
     this.io.use(async (socket: Socket, next) => {
       try {
-        console.log("Socket authentication attempt...");
+        /* console log removed */
 
         // Try to get token from auth object first (for backward compatibility)
         let token = (socket as any).handshake.auth.token;
@@ -82,58 +82,53 @@ class SocketService {
         // If not in auth, try to get from cookies
         if (!token) {
           const cookies = (socket as any).handshake.headers.cookie;
-          console.log("Cookies from handshake:", cookies);
+          /* console log removed */
 
           if (cookies) {
             const parsedCookies = parseCookies(cookies);
-            console.log("Parsed cookies:", Object.keys(parsedCookies));
+            /* console log removed */
 
             token = parsedCookies["auth-token"];
             if (token) {
-              console.log(
-                "Found auth token in cookie:",
-                token.substring(0, 20) + "..."
-              );
+              /* console log removed */
             } else {
-              console.log("No auth-token found in cookies");
+              /* console log removed */
             }
           }
         }
 
         if (!token) {
-          console.log("No token found in auth or cookies");
+          /* console log removed */
           return next(new Error("Authentication error"));
         }
 
-        console.log("Verifying JWT token...");
+        /* console log removed */
         const decoded = jwt.verify(token, jwtSecret) as any;
-        console.log("JWT decoded successfully for user:", decoded.userId);
+        /* console log removed */
 
         // Fetch user data from database
         const user = await User.findById(decoded.userId).select("name teamId");
         if (!user) {
-          console.log("User not found in database:", decoded.userId);
+          /* console log removed */
           return next(new Error("User not found"));
         }
 
-        console.log("User found:", user.name);
+        /* console log removed */
 
         (socket as AuthenticatedSocket).userId = decoded.userId;
         (socket as AuthenticatedSocket).userName = user.name;
         (socket as AuthenticatedSocket).teamId = user.teamId?.toString();
         next();
       } catch (error) {
-        console.error("Socket authentication error:", error);
+        /* console log removed */
         next(new Error("Authentication error"));
       }
     });
 
     this.io.on("connection", (socket: Socket) => {
       const authSocket = socket as AuthenticatedSocket;
-      console.log(
-        `User connected: ${authSocket.userName} (${authSocket.userId})`
-      );
-      console.log(`Socket ID: ${socket.id}`);
+      /* console log removed */
+      /* console log removed */
 
       // Join video room
       socket.on("join-video-room", (data: JoinVideoRoomData) => {
@@ -152,18 +147,14 @@ class SocketService {
 
       // Handle disconnection
       socket.on("disconnect", () => {
-        console.log(
-          `User disconnected: ${authSocket.userName} (${authSocket.userId})`
-        );
+        /* console log removed */
         this.handleDisconnect(authSocket);
       });
     });
   }
 
   private joinVideoRoom(socket: AuthenticatedSocket, videoId: string) {
-    console.log(
-      `Socket: User ${socket.userName} (${socket.userId}) joining video room: ${videoId}`
-    );
+    /* console log removed */
 
     socket.join(`video-${videoId}`);
 
@@ -174,18 +165,16 @@ class SocketService {
     const room = this.videoRooms.get(videoId)!;
     room.users.add(socket.userId!);
 
-    console.log(`User ${socket.userName} joined video room: ${videoId}`);
-    console.log(`Total users in room ${videoId}: ${room.users.size}`);
-    console.log(`Users in room:`, Array.from(room.users));
+    /* console log removed */
+    /* console log removed */
+    /* console log removed */
 
     // Verify the user is actually in the socket room
     if (this.io) {
       const socketRoom = this.io.sockets.adapter.rooms.get(`video-${videoId}`);
       if (socketRoom) {
-        console.log(`Socket room ${videoId} has ${socketRoom.size} sockets`);
-        console.log(
-          `Socket ${socket.id} is in room: ${socketRoom.has(socket.id)}`
-        );
+        /* console log removed */
+        /* console log removed */
       }
     }
   }
@@ -201,7 +190,7 @@ class SocketService {
       }
     }
 
-    console.log(`User ${socket.userName} left video room: ${videoId}`);
+    /* console log removed */
   }
 
   private handleTyping(
@@ -231,25 +220,23 @@ class SocketService {
   // Emit comment events
   emitCommentAdded(videoId: string, comment: any) {
     if (this.io) {
-      console.log(
-        `Socket: Emitting comment-added to video room: video-${videoId}`
-      );
-      console.log(`Socket: Comment data:`, JSON.stringify(comment, null, 2));
+      /* console log removed */
+      /* console log removed */
 
       // Get the room and check who's in it
       const room = this.io.sockets.adapter.rooms.get(`video-${videoId}`);
       if (room) {
-        console.log(`Socket: Users in room video-${videoId}:`, room.size);
+        /* console log removed */
         room.forEach((socketId) => {
-          console.log(`Socket: User in room: ${socketId}`);
+          /* console log removed */
         });
       } else {
-        console.log(`Socket: No users in room video-${videoId}`);
+        /* console log removed */
       }
 
       this.io.to(`video-${videoId}`).emit("comment-added", comment);
     } else {
-      console.error("Socket: IO not initialized, cannot emit comment-added");
+      /* console log removed */
     }
   }
 

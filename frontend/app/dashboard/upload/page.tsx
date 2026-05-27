@@ -194,7 +194,7 @@ export default function UploadPage() {
       await uploadVideo(uploadPayload);
       setStep("success");
     } catch (err) {
-      console.error("Upload error:", err);
+      /* console log removed */
       if (err instanceof Error && err.message.toLowerCase().includes("invalid file type")) {
         setError("The file you selected is not a valid video or image.");
       } else {

@@ -29,7 +29,7 @@ export class AuthController {
         return;
       }
 
-      console.log(req.body)
+      /* console log removed */
 
       const { email, password, name, role = "creator" } = req.body;
 
@@ -101,13 +101,7 @@ export class AuthController {
       );
 
       // Set HTTP-only cookie
-      console.log("Setting auth cookie with options:", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
+      /* console log removed */
 
       res.cookie("auth-token", token, {
         httpOnly: true,
@@ -129,7 +123,7 @@ export class AuthController {
         },
       });
     } catch (error) {
-      console.error("Registration error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -182,13 +176,7 @@ export class AuthController {
       );
 
       // Set HTTP-only cookie
-      console.log("Setting auth cookie with options:", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
+      /* console log removed */
 
       res.cookie("auth-token", token, {
         httpOnly: true,
@@ -210,7 +198,7 @@ export class AuthController {
         },
       });
     } catch (error) {
-      console.error("Login error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -281,7 +269,7 @@ export class AuthController {
         },
       });
     } catch (error) {
-      console.error("Update profile error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -322,7 +310,7 @@ export class AuthController {
         },
       });
     } catch (error) {
-      console.error("Get profile error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -375,7 +363,7 @@ export class AuthController {
 
       res.json({ message: "Password changed successfully" });
     } catch (error) {
-      console.error("Change password error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -392,7 +380,7 @@ export class AuthController {
 
       res.json({ message: "Logged out successfully" });
     } catch (error) {
-      console.error("Logout error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }

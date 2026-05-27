@@ -10,7 +10,7 @@ export const errorHandler = (err: CustomError, req: Request, res: Response, next
   error.message = err.message
 
   // Log error
-  console.error(err)
+  /* console log removed */
 
   // Mongoose bad ObjectId
   if (err.name === "CastError") {

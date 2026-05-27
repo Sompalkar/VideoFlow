@@ -31,7 +31,7 @@ export class TeamController {
 
       res.json({ team });
     } catch (error) {
-      console.error("Get team members error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -59,7 +59,7 @@ export class TeamController {
 
       res.json({ team });
     } catch (error) {
-      console.error("Get team error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -141,10 +141,7 @@ export class TeamController {
             loginUrl: `${process.env.FRONTEND_URL}/auth/login`,
           });
         } catch (emailError) {
-          console.log(
-            "Email sending failed, but user was added to team:",
-            emailError
-          );
+          /* console log removed */
           // Continue even if email fails
         }
       } else {
@@ -188,17 +185,14 @@ export class TeamController {
             }/auth/login`,
           });
         } catch (emailError) {
-          console.log(
-            "Email sending failed, but user was created and added to team:",
-            emailError
-          );
+          /* console log removed */
           // Continue even if email fails
         }
       }
 
       res.json({ message: "Invitation sent successfully" });
     } catch (error) {
-      console.error("Invite member error:", error);
+      /* console log removed */
 
       // Provide more specific error messages based on the error type
       if (error instanceof Error) {
@@ -265,7 +259,7 @@ export class TeamController {
 
       res.json({ message: "Member role updated successfully" });
     } catch (error) {
-      console.error("Update member role error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -317,7 +311,7 @@ export class TeamController {
 
       res.json({ message: "Member removed successfully" });
     } catch (error) {
-      console.error("Remove member error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -357,7 +351,7 @@ export class TeamController {
 
       res.json({ team });
     } catch (error) {
-      console.error("Update team error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -393,7 +387,7 @@ export class TeamController {
 
       res.json({ stats });
     } catch (error) {
-      console.error("Get team stats error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -447,7 +441,7 @@ export class TeamController {
         role: "creator",
       });
     } catch (error) {
-      console.error("Promote to creator error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }

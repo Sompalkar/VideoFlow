@@ -13,6 +13,7 @@ import { createServer } from "http";
 import { connectDB } from "./config/database";
 import { errorHandler } from "./middleware/errorHandler";
 import { notFound } from "./middleware/notFound";
+import { Logger } from "./utils/logger";
 
 // Import routes
 import authRoutes from "./routes/authRoutes";
@@ -110,12 +111,12 @@ app.use(errorHandler);
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(
+  Logger.info(`🚀 Server running on port ${PORT}`);
+  Logger.info(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+  Logger.info(
     `🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:3000"}`
   );
-  console.log(`🔌 Socket.IO initialized`);
+  Logger.info(`🔌 Socket.IO initialized`);
 });
 
 export default app;

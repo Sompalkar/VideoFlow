@@ -89,10 +89,7 @@ export class VideoAnalysisService {
     description: string
   ): Promise<VideoAnalysis> {
     try {
-      console.log(
-        "Video Analysis Service: Starting enhanced analysis for:",
-        title
-      );
+      /* console log removed */
 
       // Try to perform full analysis with frame extraction
       try {
@@ -101,28 +98,23 @@ export class VideoAnalysisService {
           title,
           description
         );
-        console.log(
-          "Video Analysis Service: Full analysis with frame extraction completed"
-        );
+        /* console log removed */
         return analysis;
       } catch (frameError: unknown) {
         const errorMessage =
           frameError instanceof Error ? frameError.message : "Unknown error";
-        console.log(
-          "Video Analysis Service: Frame extraction failed, falling back to simplified analysis:",
-          errorMessage
-        );
+        /* console log removed */
         // Fallback to simplified analysis
         const analysis = await this.performSimplifiedAnalysis(
           videoUrl,
           title,
           description
         );
-        console.log("Video Analysis Service: Simplified analysis completed");
+        /* console log removed */
         return analysis;
       }
     } catch (error) {
-      console.error("Video Analysis Service: Error analyzing video:", error);
+      /* console log removed */
       // Return a fallback analysis if the main analysis fails
       return this.getEnhancedFallbackAnalysis(title, description);
     }
@@ -155,21 +147,14 @@ export class VideoAnalysisService {
         // Analyze frames for objects, colors, and scenes
         frameAnalysis = await this.analyzeFrames(frames);
 
-        console.log(
-          "Video Analysis Service: Frame extraction and analysis completed"
-        );
+        /* console log removed */
       } catch (frameError: unknown) {
         const errorMessage =
           frameError instanceof Error ? frameError.message : "Unknown error";
-        console.log(
-          "Video Analysis Service: Frame extraction failed, continuing without frames:",
-          errorMessage
-        );
+        /* console log removed */
       }
     } else {
-      console.log(
-        "Video Analysis Service: FFmpeg not available, using enhanced text analysis only"
-      );
+      /* console log removed */
     }
 
     // Extract rich context from title and description
@@ -250,7 +235,7 @@ export class VideoAnalysisService {
     duration: number
   ): Promise<VideoFrame[]> {
     try {
-      console.log("Video Analysis Service: Extracting frames using ffmpeg...");
+      /* console log removed */
 
       const frames: VideoFrame[] = [];
       const frameCount = Math.min(
@@ -283,25 +268,18 @@ export class VideoAnalysisService {
             scene: frameAnalysis.scene,
           });
 
-          console.log(
-            `Video Analysis Service: Extracted frame ${
-              i + 1
-            }/${frameCount} at ${timestamp}s`
-          );
+          /* console log removed */
         } catch (frameError: unknown) {
           const errorMessage =
             frameError instanceof Error ? frameError.message : "Unknown error";
-          console.log(
-            `Video Analysis Service: Failed to extract frame ${i + 1}:`,
-            errorMessage
-          );
+          /* console log removed */
           // Continue with other frames
         }
       }
 
       return frames;
     } catch (error) {
-      console.error("Video Analysis Service: Frame extraction failed:", error);
+      /* console log removed */
       throw new Error("Failed to extract video frames");
     }
   }
@@ -361,7 +339,7 @@ export class VideoAnalysisService {
 
       return { objects, text, colors, scene };
     } catch (error) {
-      console.error("Video Analysis Service: Frame analysis failed:", error);
+      /* console log removed */
       return {
         objects: ["content"],
         text: [],
@@ -413,7 +391,7 @@ export class VideoAnalysisService {
         }
       }
     } catch (error) {
-      console.log("Could not get video info, using default duration");
+      /* console log removed */
     }
 
     return { duration: 60 }; // Default duration

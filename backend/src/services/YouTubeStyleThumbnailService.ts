@@ -189,14 +189,12 @@ export class YouTubeStyleThumbnailService {
     options: ThumbnailOptions
   ): Promise<GeneratedThumbnail[]> {
     try {
-      console.log("YouTube Style Thumbnail Service: Starting generation...");
-      console.log("Options:", JSON.stringify(options, null, 2));
+      /* console log removed */
+      /* console log removed */
 
       // Step 1: Get base images (frames or uploaded image)
       const baseImages = await this.getBaseImages(options);
-      console.log(
-        `YouTube Style Thumbnail Service: Got ${baseImages.length} base images`
-      );
+      /* console log removed */
 
       // Step 2: Generate thumbnails for each base image
       const thumbnails: GeneratedThumbnail[] = [];
@@ -218,30 +216,19 @@ export class YouTubeStyleThumbnailService {
           );
 
           thumbnails.push(thumbnail);
-          console.log(
-            `YouTube Style Thumbnail Service: Generated thumbnail ${i + 1}/${
-              options.variations
-            }`
-          );
+          /* console log removed */
         } catch (error) {
-          console.error(
-            `YouTube Style Thumbnail Service: Failed to generate thumbnail ${
-              i + 1
-            }:`,
-            error
-          );
+          /* console log removed */
         }
       }
 
       // Step 3: Clean up temporary files
       await this.cleanupTempFiles(baseImages);
 
-      console.log(
-        `YouTube Style Thumbnail Service: Generated ${thumbnails.length} thumbnails`
-      );
+      /* console log removed */
       return thumbnails;
     } catch (error) {
-      console.error("YouTube Style Thumbnail Service: Error:", error);
+      /* console log removed */
       throw new Error("Failed to generate YouTube-style thumbnails");
     }
   }
@@ -282,9 +269,7 @@ export class YouTubeStyleThumbnailService {
     videoUrl: string
   ): Promise<VideoFrame[]> {
     try {
-      console.log(
-        "YouTube Style Thumbnail Service: Extracting video frames..."
-      );
+      /* console log removed */
 
       // Get video duration
       const duration = await this.getVideoDuration(videoUrl);
@@ -322,28 +307,16 @@ export class YouTubeStyleThumbnailService {
             contrast: analysis.contrast,
           });
 
-          console.log(
-            `YouTube Style Thumbnail Service: Extracted frame ${
-              i + 1
-            }/${frameCount} at ${timestamp}s`
-          );
+          /* console log removed */
         } catch (error) {
-          console.log(
-            `YouTube Style Thumbnail Service: Failed to extract frame ${
-              i + 1
-            }:`,
-            error
-          );
+          /* console log removed */
         }
       }
 
       // Sort by quality and return top frames
       return frames.sort((a, b) => b.quality - a.quality).slice(0, 4);
     } catch (error) {
-      console.error(
-        "YouTube Style Thumbnail Service: Frame extraction failed:",
-        error
-      );
+      /* console log removed */
       throw new Error("Failed to extract video frames");
     }
   }
@@ -451,10 +424,7 @@ export class YouTubeStyleThumbnailService {
 
       return { quality, objects, colors, hasFaces, brightness, contrast };
     } catch (error) {
-      console.error(
-        "YouTube Style Thumbnail Service: Frame analysis failed:",
-        error
-      );
+      /* console log removed */
       return {
         quality: 70,
         objects: ["content"],
@@ -517,10 +487,7 @@ export class YouTubeStyleThumbnailService {
         },
       };
     } catch (error) {
-      console.error(
-        "YouTube Style Thumbnail Service: Failed to create thumbnail:",
-        error
-      );
+      /* console log removed */
       throw error;
     }
   }
@@ -688,14 +655,9 @@ export class YouTubeStyleThumbnailService {
         }
       }
 
-      console.log(
-        "YouTube Style Thumbnail Service: Cleaned up temporary files"
-      );
+      /* console log removed */
     } catch (error) {
-      console.error(
-        "YouTube Style Thumbnail Service: Failed to cleanup files:",
-        error
-      );
+      /* console log removed */
     }
   }
 }

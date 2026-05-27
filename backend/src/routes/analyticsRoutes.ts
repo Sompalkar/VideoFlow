@@ -71,7 +71,7 @@ router.get(
 
       res.json({ analytics });
     } catch (error) {
-      console.error("Get analytics error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Failed to fetch analytics" });
     }
   }

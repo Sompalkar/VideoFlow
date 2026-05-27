@@ -27,11 +27,8 @@ export class AIThumbnailController {
         return;
       }
 
-      console.log(
-        "AI Thumbnail Controller: Generating thumbnails for user:",
-        userId
-      );
-      console.log("AI Thumbnail Controller: Video title:", title);
+      /* console log removed */
+      /* console log removed */
 
       const options = {
         style: style || "modern",
@@ -59,11 +56,7 @@ export class AIThumbnailController {
         }
       }
 
-      console.log(
-        "AI Thumbnail Controller: Generated",
-        thumbnails.length,
-        "thumbnails"
-      );
+      /* console log removed */
 
       res.json({
         success: true,
@@ -71,10 +64,7 @@ export class AIThumbnailController {
         message: `Generated ${thumbnails.length} thumbnail variations`,
       });
     } catch (error) {
-      console.error(
-        "AI Thumbnail Controller: Error generating thumbnails:",
-        error
-      );
+      /* console log removed */
       res.status(500).json({
         message: "Failed to generate thumbnails",
         error: error instanceof Error ? error.message : "Unknown error",
@@ -97,10 +87,7 @@ export class AIThumbnailController {
         return;
       }
 
-      console.log(
-        "AI Thumbnail Controller: Enhancing thumbnail for user:",
-        userId
-      );
+      /* console log removed */
 
       const enhancements = {
         brightness: brightness || 0,
@@ -121,10 +108,7 @@ export class AIThumbnailController {
         message: "Thumbnail enhanced successfully",
       });
     } catch (error) {
-      console.error(
-        "AI Thumbnail Controller: Error enhancing thumbnail:",
-        error
-      );
+      /* console log removed */
       res.status(500).json({
         message: "Failed to enhance thumbnail",
         error: error instanceof Error ? error.message : "Unknown error",
@@ -143,7 +127,7 @@ export class AIThumbnailController {
         return;
       }
 
-      console.log("AI Thumbnail Controller: Analyzing video for user:", userId);
+      /* console log removed */
 
       const analysis = await AIThumbnailService.analyzeVideoContent(
         videoUrl as string
@@ -155,7 +139,7 @@ export class AIThumbnailController {
         message: "Video analysis completed",
       });
     } catch (error) {
-      console.error("AI Thumbnail Controller: Error analyzing video:", error);
+      /* console log removed */
       res.status(500).json({
         message: "Failed to analyze video",
         error: error instanceof Error ? error.message : "Unknown error",
@@ -207,7 +191,7 @@ export class AIThumbnailController {
         message: "Thumbnail styles retrieved successfully",
       });
     } catch (error) {
-      console.error("AI Thumbnail Controller: Error getting styles:", error);
+      /* console log removed */
       res.status(500).json({
         message: "Failed to get thumbnail styles",
         error: error instanceof Error ? error.message : "Unknown error",
@@ -241,30 +225,22 @@ export class AIThumbnailController {
         return;
       }
 
-      console.log("AI Thumbnail Controller: Starting img2img enhancement");
-      console.log("AI Thumbnail Controller: Frame URL:", frameUrl);
-      console.log("AI Thumbnail Controller: Prompt:", prompt);
-      console.log("AI Thumbnail Controller: Service:", service);
-      console.log("AI Thumbnail Controller: Video Title:", videoTitle);
-      console.log(
-        "AI Thumbnail Controller: Video Description:",
-        videoDescription
-      );
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
 
       // Only use API key from environment variables
       let finalApiKey: string | undefined = undefined;
-      console.log(
-        "AI Thumbnail Controller: Using API key from environment variables..."
-      );
+      /* console log removed */
 
       // Services that don't require API keys (use basic transformations)
       const noApiKeyServices = ["precise", "basic", "preservation", "mock"];
 
       if (service && noApiKeyServices.includes(service as string)) {
-        console.log(
-          "AI Thumbnail Controller: Service doesn't require API key:",
-          service
-        );
+        /* console log removed */
         finalApiKey = undefined;
       } else if (service === "stability" || service === "stability-ai") {
         finalApiKey = process.env.STABILITY_API_KEY;
@@ -279,11 +255,8 @@ export class AIThumbnailController {
         finalApiKey = process.env.STABILITY_API_KEY;
       }
 
-      console.log(
-        "AI Thumbnail Controller: Using API key:",
-        finalApiKey ? "Available" : "Not required for this service"
-      );
-      console.log("AI Thumbnail Controller: Service:", service);
+      /* console log removed */
+      /* console log removed */
 
       const result = await AIThumbnailService.enhanceFrameWithImg2Img(
         frameUrl as string,
@@ -300,13 +273,13 @@ export class AIThumbnailController {
         }
       );
 
-      console.log("AI Thumbnail Controller: Enhancement successful");
+      /* console log removed */
       res.status(200).json({
         success: true,
         ...result,
       });
     } catch (error) {
-      console.error("AI Thumbnail Controller: Enhancement error:", error);
+      /* console log removed */
       res.status(500).json({
         success: false,
         message:
@@ -352,7 +325,7 @@ export class AIThumbnailController {
         message: "Overlay applied successfully",
       });
     } catch (error) {
-      console.error("AIThumbnailController: overlay error", error);
+      /* console log removed */
       res.status(500).json({
         message: "Failed to apply overlay",
         error: error instanceof Error ? error.message : "Unknown error",
@@ -384,7 +357,7 @@ export class AIThumbnailController {
         message: "Generated image from text prompt successfully",
       });
     } catch (error) {
-      console.error("AIThumbnailController: text2img fallback error", error);
+      /* console log removed */
       res.status(500).json({
         message: "Failed to generate image from text prompt",
         error: error instanceof Error ? error.message : "Unknown error",

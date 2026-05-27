@@ -140,14 +140,8 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
         ...options,
       };
 
-      console.log("AI Thumbnail Store: Generating thumbnails", requestData);
-      console.log("AI Thumbnail Store: Request data types", {
-        videoUrl: typeof videoUrl,
-        title: typeof title,
-        description: typeof description,
-        videoId: typeof videoId,
-        options: typeof options,
-      });
+      /* console log removed */
+      /* console log removed */
 
       const response = await apiClient.post<{
         success: boolean;
@@ -162,16 +156,12 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
           generatedThumbnails: response.thumbnails,
           isGenerating: false,
         });
-        console.log(
-          "AI Thumbnail Store: Generated",
-          response.thumbnails.length,
-          "thumbnails"
-        );
+        /* console log removed */
       } else {
         throw new Error(response.message || "Failed to generate thumbnails");
       }
     } catch (error) {
-      console.error("AI Thumbnail Store: Error generating thumbnails:", error);
+      /* console log removed */
       set({
         error:
           error instanceof Error
@@ -187,10 +177,7 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
     try {
       set({ isEnhancing: true, error: null });
 
-      console.log("AI Thumbnail Store: Enhancing thumbnail", {
-        thumbnailUrl,
-        enhancements,
-      });
+      /* console log removed */
 
       const response = await apiClient.post<{
         success: boolean;
@@ -220,12 +207,12 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
             isEnhancing: false,
           });
         }
-        console.log("AI Thumbnail Store: Thumbnail enhanced successfully");
+        /* console log removed */
       } else {
         throw new Error(response.message || "Failed to enhance thumbnail");
       }
     } catch (error) {
-      console.error("AI Thumbnail Store: Error enhancing thumbnail:", error);
+      /* console log removed */
       set({
         error:
           error instanceof Error
@@ -241,7 +228,7 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
     try {
       set({ isAnalyzing: true, error: null });
 
-      console.log("AI Thumbnail Store: Analyzing video", { videoUrl });
+      /* console log removed */
 
       const response = await apiClient.post<{
         success: boolean;
@@ -256,12 +243,12 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
           videoAnalysis: response.analysis,
           isAnalyzing: false,
         });
-        console.log("AI Thumbnail Store: Video analysis completed");
+        /* console log removed */
       } else {
         throw new Error(response.message || "Failed to analyze video");
       }
     } catch (error) {
-      console.error("AI Thumbnail Store: Error analyzing video:", error);
+      /* console log removed */
       set({
         error:
           error instanceof Error ? error.message : "Failed to analyze video",
@@ -290,7 +277,7 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
         throw new Error(response.message || "Failed to get thumbnail styles");
       }
     } catch (error) {
-      console.error("AI Thumbnail Store: Error getting styles:", error);
+      /* console log removed */
       set({
         error:
           error instanceof Error
@@ -317,7 +304,7 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      console.error("AI Thumbnail Store: Error fetching videos:", error);
+      /* console log removed */
       set({
         error:
           error instanceof Error ? error.message : "Failed to fetch videos",
@@ -336,26 +323,13 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
     try {
       set({ isUploading: true, error: null });
 
-      console.log("AI Thumbnail Store: Starting file upload", {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-      });
+      /* console log removed */
 
       // Create FormData for file upload
       const formData = new FormData();
       formData.append("file", file);
 
-      console.log("AI Thumbnail Store: FormData created", {
-        hasFile: formData.has("file"),
-        entries: Array.from(formData.entries()).map(([key, value]) => ({
-          key,
-          value:
-            value instanceof File
-              ? `${value.name} (${value.size} bytes)`
-              : value,
-        })),
-      });
+      /* console log removed */
 
       // Upload to Cloudinary using the dedicated uploadFile method
       const uploadResponse = await apiClient.uploadFile<{
@@ -369,7 +343,7 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
         message: string;
       }>("/cloudinary/upload", formData, undefined, { withCredentials: true });
 
-      console.log("AI Thumbnail Store: Upload response", uploadResponse);
+      /* console log removed */
 
       if (uploadResponse.success) {
         set({ isUploading: false });
@@ -381,7 +355,7 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
         throw new Error(uploadResponse.message || "Failed to upload video");
       }
     } catch (error) {
-      console.error("AI Thumbnail Store: Error uploading video:", error);
+      /* console log removed */
       set({
         error:
           error instanceof Error ? error.message : "Failed to upload video",
@@ -414,10 +388,10 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
   ) => {
     try {
       set({ isEnhancing: true, error: null });
-      console.log("AI Thumbnail Store: Starting enhanceFrameWithAI");
-      console.log("AI Thumbnail Store: Frame URL:", frameUrl);
-      console.log("AI Thumbnail Store: Prompt:", prompt);
-      console.log("AI Thumbnail Store: Options:", options);
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
+      /* console log removed */
 
       const response = await apiClient.post<{
         success: boolean;
@@ -440,13 +414,11 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
         { withCredentials: true }
       );
 
-      console.log("AI Thumbnail Store: Raw response from API:", response);
+      /* console log removed */
 
       set({ isEnhancing: false });
       if (response.success) {
-        console.log(
-          "AI Thumbnail Store: Response successful, processing result"
-        );
+        /* console log removed */
         // Return the complete thumbnail object
         const enhancedThumbnail = {
           url: response.url,
@@ -456,36 +428,30 @@ export const useAIThumbnailStore = create<AIThumbnailState>((set, get) => ({
           prompt: response.prompt,
         };
 
-        console.log(
-          "AI Thumbnail Store: Created enhanced thumbnail object:",
-          enhancedThumbnail
-        );
+        /* console log removed */
 
         // Add to generated thumbnails list
         set((state) => {
-          console.log(
-            "AI Thumbnail Store: Current state before update:",
-            state
-          );
+          /* console log removed */
           const newState = {
             generatedThumbnails: [
               ...state.generatedThumbnails,
               enhancedThumbnail,
             ],
           };
-          console.log("AI Thumbnail Store: New state after update:", newState);
+          /* console log removed */
           return newState;
         });
 
-        console.log("AI Thumbnail Store: Returning enhanced thumbnail");
+        /* console log removed */
         return enhancedThumbnail;
       } else {
-        console.log("AI Thumbnail Store: Response not successful:", response);
+        /* console log removed */
         set({ error: response.message || "Failed to enhance frame with AI" });
         return null;
       }
     } catch (error) {
-      console.error("AI Thumbnail Store: Error in enhanceFrameWithAI:", error);
+      /* console log removed */
       set({
         isEnhancing: false,
         error:

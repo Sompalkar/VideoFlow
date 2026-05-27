@@ -73,9 +73,7 @@ const upload = multer({
     req.resourceType = resourceType;
 
     // Log the file upload attempt for debugging
-    console.log(
-      `File upload attempt: ${file.originalname}, Extension: ${ext}, Determined Resource Type: ${resourceType}`
-    );
+    /* console log removed */
 
     if (resourceType) {
       cb(null, true);
@@ -83,7 +81,7 @@ const upload = multer({
       // Provide a user-friendly error message
       const errorMsg =
         "Invalid file type. Please upload a supported video (e.g., .mp4, .avi) or image (e.g., .jpg, .png) format.";
-      console.error("File filter error:", errorMsg);
+      /* console log removed */
       cb(new Error(errorMsg), false);
     }
   },
@@ -98,10 +96,7 @@ router.post(
   upload.single("file"),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      console.log("Upload request received:", {
-        file: req.file ? req.file.originalname : "No file",
-        body: req.body,
-      });
+      /* console log removed */
 
       if (!req.file) {
         res.status(400).json({ message: "No file uploaded" });
@@ -116,13 +111,11 @@ router.post(
       }
 
       const filePath = req.file.path;
-      console.log(
-        `Processing ${resourceType} upload: ${req.file.originalname}`
-      );
+      /* console log removed */
 
       // Check file size before attempting upload
       const fileSizeInMB = req.file.size / (1024 * 1024);
-      console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
+      /* console log removed */
 
       if (fileSizeInMB > 100) {
         // Clean up temporary file
@@ -155,7 +148,7 @@ router.post(
       // Clean up temporary file
       fs.unlinkSync(filePath);
 
-      console.log("Upload successful:", result.public_id);
+      /* console log removed */
 
       res.json({
         success: true,
@@ -175,7 +168,7 @@ router.post(
         fs.unlinkSync(req.file.path);
       }
 
-      console.error("Cloudinary upload error:", error);
+      /* console log removed */
 
       // Provide more specific error responses
       if (error instanceof Error) {
@@ -237,7 +230,7 @@ router.post(
         folder: params.folder,
       });
     } catch (error) {
-      console.error("Signature generation error:", error);
+      /* console log removed */
       res.status(500).json({
         message:
           error instanceof Error
@@ -269,7 +262,7 @@ router.delete(
         result,
       });
     } catch (error) {
-      console.error("Cloudinary delete error:", error);
+      /* console log removed */
       res.status(500).json({
         message:
           error instanceof Error ? error.message : "Failed to delete file",
@@ -297,7 +290,7 @@ router.get(
           : `Cloudinary configuration missing: ${status.missing.join(", ")}`,
       });
     } catch (error) {
-      console.error("Cloudinary health check error:", error);
+      /* console log removed */
       res.status(500).json({
         success: false,
         message:
@@ -325,7 +318,7 @@ router.get(
         data: info,
       });
     } catch (error) {
-      console.error("Get file info error:", error);
+      /* console log removed */
       res.status(500).json({
         message:
           error instanceof Error ? error.message : "Failed to get file info",

@@ -127,7 +127,7 @@ export function YouTubeThumbnailGenerator() {
         setAvailableStyles(data.styles);
       }
     } catch (error) {
-      console.error("Failed to load styles:", error);
+      /* console log removed */
     }
   };
 
@@ -163,7 +163,7 @@ export function YouTubeThumbnailGenerator() {
         toast.error(data.message || "Failed to generate thumbnails");
       }
     } catch (error) {
-      console.error("Error generating thumbnails:", error);
+      /* console log removed */
       toast.error("Failed to generate thumbnails");
     } finally {
       setIsGenerating(false);

@@ -52,7 +52,7 @@ export class VideoController {
 
       res.json({ videos: formattedVideos });
     } catch (error) {
-      console.error("Get videos error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -61,8 +61,8 @@ export class VideoController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.error("Validation errors:", errors.array());
-        console.error("Request body:", req.body);
+        /* console log removed */
+        /* console log removed */
         res
           .status(400)
           .json({ message: "Validation errors", errors: errors.array() });
@@ -90,21 +90,7 @@ export class VideoController {
         privacy = "private",
       } = req.body;
 
-      console.log("Creating video with data:", {
-        title,
-        description,
-        tags,
-        cloudinaryVideoId,
-        cloudinaryVideoUrl,
-        cloudinaryThumbnailId,
-        cloudinaryThumbnailUrl,
-        fileSize,
-        duration,
-        category,
-        privacy,
-        uploadedBy: userId,
-        teamId,
-      });
+      /* console log removed */
 
       const video = new Video({
         title,
@@ -181,7 +167,7 @@ export class VideoController {
         },
       });
     } catch (error) {
-      console.error("Upload video error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -315,7 +301,7 @@ export class VideoController {
         }
       } catch (youtubeError) {
         // Do not set status to published if upload fails
-        console.error("YouTube upload failed:", youtubeError);
+        /* console log removed */
         // Keep video as approved so user can retry
       }
 
@@ -348,7 +334,7 @@ export class VideoController {
         },
       });
     } catch (error) {
-      console.error("Approve video error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -416,7 +402,7 @@ export class VideoController {
         },
       });
     } catch (error) {
-      console.error("Reject video error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -456,7 +442,7 @@ export class VideoController {
 
       res.json({ success: true });
     } catch (error) {
-      console.error("Delete video error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -508,7 +494,7 @@ export class VideoController {
 
       res.json({ video: formattedVideo });
     } catch (error) {
-      console.error("Get video by ID error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
@@ -592,18 +578,14 @@ export class VideoController {
         teamId: updatedVideo.teamId,
       };
 
-      console.log("Video updated successfully:", {
-        videoId: id,
-        updatedFields: Object.keys(updateData),
-        newThumbnail: updatedVideo.cloudinaryThumbnailUrl,
-      });
+      /* console log removed */
 
       res.json({
         message: "Video updated successfully",
         video: formattedVideo,
       });
     } catch (error) {
-      console.error("Update video error:", error);
+      /* console log removed */
       res.status(500).json({ message: "Internal server error" });
     }
   }
