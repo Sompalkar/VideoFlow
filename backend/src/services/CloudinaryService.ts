@@ -71,7 +71,7 @@ export class CloudinaryService {
       );
       return signature;
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary signature generation error:", error);
       throw new Error("Failed to generate upload signature");
     }
   }
@@ -93,7 +93,7 @@ export class CloudinaryService {
       const stats = fs.statSync(filePath);
       const fileSizeInMB = stats.size / (1024 * 1024);
 
-      /* console log removed */
+      console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
 
       // Cloudinary has a 100MB limit for free accounts, 10GB for paid
       if (fileSizeInMB > 100) {
@@ -122,7 +122,7 @@ export class CloudinaryService {
 
       return result;
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary upload error:", error);
 
       // Provide more specific error messages
       if (error instanceof Error) {
@@ -171,7 +171,7 @@ export class CloudinaryService {
 
       return result;
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary image upload error:", error);
       throw new Error("Failed to upload image to Cloudinary");
     }
   }
@@ -187,7 +187,7 @@ export class CloudinaryService {
 
       return result;
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary delete error:", error);
       throw new Error("Failed to delete resource from Cloudinary");
     }
   }
@@ -209,7 +209,7 @@ export class CloudinaryService {
         createdAt: result.created_at,
       };
     } catch (error) {
-      /* console log removed */
+      console.error("Get video info error:", error);
       throw new Error("Failed to get video information");
     }
   }
@@ -243,7 +243,7 @@ export class CloudinaryService {
         transformation: options.transformation,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("Get optimized URL error:", error);
       throw new Error(
         `Failed to generate optimized URL: ${
           error instanceof Error ? error.message : "Unknown error"
@@ -267,7 +267,7 @@ export class CloudinaryService {
         secure: true,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary getVideoUrl error:", error);
       // Return a fallback URL or throw a more descriptive error
       throw new Error(
         `Failed to generate Cloudinary video URL: ${
@@ -309,7 +309,7 @@ export class CloudinaryService {
 
       return result;
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary data URL upload error:", error);
       throw new Error("Failed to upload data URL to Cloudinary");
     }
   }
@@ -335,7 +335,7 @@ export class CloudinaryService {
           },
           (error, result) => {
             if (error) {
-              /* console log removed */
+              console.error("Cloudinary buffer upload error:", error);
               reject(new Error("Failed to upload buffer to Cloudinary"));
             } else {
               resolve(result);
@@ -345,7 +345,7 @@ export class CloudinaryService {
         uploadStream.end(buffer);
       });
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary buffer upload error:", error);
       throw new Error("Failed to upload buffer to Cloudinary");
     }
   }
@@ -392,7 +392,7 @@ export class CloudinaryService {
         transformation: [transformParams],
       });
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary image transformation error:", error);
       throw new Error(
         `Failed to transform image: ${
           error instanceof Error ? error.message : "Unknown error"
@@ -451,7 +451,7 @@ export class CloudinaryService {
         transformation,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("Cloudinary getOverlayedImageUrl error:", error);
       throw new Error(
         `Failed to generate overlay image URL: ${
           error instanceof Error ? error.message : "Unknown error"

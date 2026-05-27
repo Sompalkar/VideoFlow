@@ -8,16 +8,23 @@ class SocketService {
   private pendingRoomJoins: string[] = [];
 
   connect() {
-    /* console log removed */
-    /* console log removed */
+    console.log("Frontend: SocketService.connect() called");
+    console.log("Frontend: Current socket state:", {
+      socketExists: !!this.socket,
+      isConnected: this.isConnected,
+      socketConnected: this.socket?.connected
+    });
     
     if (this.socket?.connected) {
-      /* console log removed */
+      console.log("Socket already connected, skipping...");
       return;
     }
 
-    /* console log removed */
-    /* console log removed */
+    console.log("Connecting to socket with cookies...");
+    console.log(
+      "Backend URL:",
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
+    );
 
     this.socket = io(
       process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000",
@@ -31,47 +38,47 @@ class SocketService {
       }
     );
 
-    /* console log removed */
+    console.log("Frontend: Socket instance created:", !!this.socket);
 
     this.socket.on("connect", () => {
-      /* console log removed */
-      /* console log removed */
-      /* console log removed */
+      console.log("Socket connected successfully");
+      console.log("Socket ID:", this.socket?.id);
+      console.log("Socket connected:", this.socket?.connected);
       this.isConnected = true;
       this.reconnectAttempts = 0;
 
       // Join any pending rooms
       this.pendingRoomJoins.forEach((videoId) => {
-        /* console log removed */
+        console.log("Frontend: Joining pending room:", videoId);
         this.socket?.emit("join-video-room", { videoId });
       });
       this.pendingRoomJoins = [];
     });
 
     this.socket.on("disconnect", (reason) => {
-      /* console log removed */
+      console.log("Socket disconnected:", reason);
       this.isConnected = false;
     });
 
     this.socket.on("connect_error", (error) => {
-      /* console log removed */
-      /* console log removed */
-      /* console log removed */
-      /* console log removed */
+      console.error("Socket connection error:", error);
+      console.error("Error details:", error.message);
+      console.error("Error data:", error.data);
+      console.error("Error type:", error.type);
       this.reconnectAttempts++;
     });
 
     this.socket.on("reconnect", (attemptNumber) => {
-      /* console log removed */
+      console.log("Socket reconnected after", attemptNumber, "attempts");
       this.isConnected = true;
     });
 
     this.socket.on("reconnect_failed", () => {
-      /* console log removed */
+      console.error("Socket reconnection failed");
     });
 
     this.socket.on("error", (error) => {
-      /* console log removed */
+      console.error("Socket error event:", error);
     });
   }
 
@@ -85,10 +92,13 @@ class SocketService {
 
   joinVideoRoom(videoId: string) {
     if (this.socket?.connected) {
-      /* console log removed */
+      console.log("Frontend: Joining video room:", videoId);
       this.socket.emit("join-video-room", { videoId });
     } else {
-      /* console log removed */
+      console.log(
+        "Frontend: Socket not connected, queuing room join for:",
+        videoId
+      );
       if (!this.pendingRoomJoins.includes(videoId)) {
         this.pendingRoomJoins.push(videoId);
       }
@@ -107,9 +117,9 @@ class SocketService {
 
   onCommentAdded(callback: (comment: any) => void) {
     if (this.socket) {
-      /* console log removed */
+      console.log("Frontend: Setting up comment-added listener");
       this.socket.on("comment-added", (comment) => {
-        /* console log removed */
+        console.log("Frontend: Received comment-added event:", comment);
         callback(comment);
       });
     }
@@ -117,9 +127,9 @@ class SocketService {
 
   onCommentUpdated(callback: (comment: any) => void) {
     if (this.socket) {
-      /* console log removed */
+      console.log("Frontend: Setting up comment-updated listener");
       this.socket.on("comment-updated", (comment) => {
-        /* console log removed */
+        console.log("Frontend: Received comment-updated event:", comment);
         callback(comment);
       });
     }
@@ -127,9 +137,9 @@ class SocketService {
 
   onCommentDeleted(callback: (commentId: string) => void) {
     if (this.socket) {
-      /* console log removed */
+      console.log("Frontend: Setting up comment-deleted listener");
       this.socket.on("comment-deleted", (commentId) => {
-        /* console log removed */
+        console.log("Frontend: Received comment-deleted event:", commentId);
         callback(commentId);
       });
     }
@@ -184,7 +194,7 @@ class SocketService {
         }
 
         if (Date.now() - startTime > timeout) {
-          /* console log removed */
+          console.error("Frontend: Socket connection timeout");
           resolve(false);
           return;
         }

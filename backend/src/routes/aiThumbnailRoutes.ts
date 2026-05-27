@@ -9,7 +9,7 @@ const router = express.Router();
 const validateThumbnailGeneration = [
   body("videoUrl")
     .custom((value) => {
-      /* console log removed */
+      console.log("Validating videoUrl:", value, typeof value);
       // Allow both URLs and blob URLs
       if (
         typeof value === "string" &&
@@ -49,8 +49,8 @@ const validateThumbnailGeneration = [
 const logValidationErrors = (req: any, res: any, next: any) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    /* console log removed */
-    /* console log removed */
+    console.log("Validation errors:", errors.array());
+    console.log("Request body:", req.body);
     res.status(400).json({
       message: "Validation errors",
       errors: errors.array(),

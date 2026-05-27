@@ -189,12 +189,14 @@ export class YouTubeStyleThumbnailService {
     options: ThumbnailOptions
   ): Promise<GeneratedThumbnail[]> {
     try {
-      /* console log removed */
-      /* console log removed */
+      console.log("YouTube Style Thumbnail Service: Starting generation...");
+      console.log("Options:", JSON.stringify(options, null, 2));
 
       // Step 1: Get base images (frames or uploaded image)
       const baseImages = await this.getBaseImages(options);
-      /* console log removed */
+      console.log(
+        `YouTube Style Thumbnail Service: Got ${baseImages.length} base images`
+      );
 
       // Step 2: Generate thumbnails for each base image
       const thumbnails: GeneratedThumbnail[] = [];
@@ -216,19 +218,30 @@ export class YouTubeStyleThumbnailService {
           );
 
           thumbnails.push(thumbnail);
-          /* console log removed */
+          console.log(
+            `YouTube Style Thumbnail Service: Generated thumbnail ${i + 1}/${
+              options.variations
+            }`
+          );
         } catch (error) {
-          /* console log removed */
+          console.error(
+            `YouTube Style Thumbnail Service: Failed to generate thumbnail ${
+              i + 1
+            }:`,
+            error
+          );
         }
       }
 
       // Step 3: Clean up temporary files
       await this.cleanupTempFiles(baseImages);
 
-      /* console log removed */
+      console.log(
+        `YouTube Style Thumbnail Service: Generated ${thumbnails.length} thumbnails`
+      );
       return thumbnails;
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube Style Thumbnail Service: Error:", error);
       throw new Error("Failed to generate YouTube-style thumbnails");
     }
   }
@@ -269,7 +282,9 @@ export class YouTubeStyleThumbnailService {
     videoUrl: string
   ): Promise<VideoFrame[]> {
     try {
-      /* console log removed */
+      console.log(
+        "YouTube Style Thumbnail Service: Extracting video frames..."
+      );
 
       // Get video duration
       const duration = await this.getVideoDuration(videoUrl);
@@ -307,16 +322,28 @@ export class YouTubeStyleThumbnailService {
             contrast: analysis.contrast,
           });
 
-          /* console log removed */
+          console.log(
+            `YouTube Style Thumbnail Service: Extracted frame ${
+              i + 1
+            }/${frameCount} at ${timestamp}s`
+          );
         } catch (error) {
-          /* console log removed */
+          console.log(
+            `YouTube Style Thumbnail Service: Failed to extract frame ${
+              i + 1
+            }:`,
+            error
+          );
         }
       }
 
       // Sort by quality and return top frames
       return frames.sort((a, b) => b.quality - a.quality).slice(0, 4);
     } catch (error) {
-      /* console log removed */
+      console.error(
+        "YouTube Style Thumbnail Service: Frame extraction failed:",
+        error
+      );
       throw new Error("Failed to extract video frames");
     }
   }
@@ -424,7 +451,10 @@ export class YouTubeStyleThumbnailService {
 
       return { quality, objects, colors, hasFaces, brightness, contrast };
     } catch (error) {
-      /* console log removed */
+      console.error(
+        "YouTube Style Thumbnail Service: Frame analysis failed:",
+        error
+      );
       return {
         quality: 70,
         objects: ["content"],
@@ -487,7 +517,10 @@ export class YouTubeStyleThumbnailService {
         },
       };
     } catch (error) {
-      /* console log removed */
+      console.error(
+        "YouTube Style Thumbnail Service: Failed to create thumbnail:",
+        error
+      );
       throw error;
     }
   }
@@ -655,9 +688,14 @@ export class YouTubeStyleThumbnailService {
         }
       }
 
-      /* console log removed */
+      console.log(
+        "YouTube Style Thumbnail Service: Cleaned up temporary files"
+      );
     } catch (error) {
-      /* console log removed */
+      console.error(
+        "YouTube Style Thumbnail Service: Failed to cleanup files:",
+        error
+      );
     }
   }
 }

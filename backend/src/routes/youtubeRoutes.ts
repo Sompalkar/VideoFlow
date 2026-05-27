@@ -19,7 +19,7 @@ router.get(
       const authUrl = await YoutubeService.getAuthUrl();
       res.json({ authUrl });
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube auth URL error:", error);
       res.status(500).json({ message: "Failed to generate YouTube auth URL" });
     }
   }
@@ -71,7 +71,7 @@ router.post(
         channel: channelInfo,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube callback error:", error);
       res.status(500).json({
         message:
           error instanceof Error
@@ -129,7 +129,7 @@ router.get(
 
       res.json({ channel: channelInfo });
     } catch (error) {
-      /* console log removed */
+      console.error("Get YouTube channel error:", error);
       res.status(500).json({
         message:
           error instanceof Error
@@ -164,7 +164,7 @@ router.get(
         channelName: user?.youtubeChannelName || null,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube status error:", error);
       res.status(500).json({ message: "Failed to check YouTube status" });
     }
   }
@@ -211,7 +211,7 @@ router.post(
 
       res.json({ channel: channelInfo });
     } catch (error) {
-      /* console log removed */
+      console.error("Refresh YouTube channel error:", error);
       res.status(500).json({
         message:
           error instanceof Error
@@ -244,7 +244,7 @@ router.delete(
 
       res.json({ success: true, message: "YouTube disconnected successfully" });
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube disconnect error:", error);
       res.status(500).json({ message: "Failed to disconnect YouTube account" });
     }
   }

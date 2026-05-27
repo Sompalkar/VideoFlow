@@ -45,7 +45,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
     // Prevent multiple simultaneous requests
     if (state.isFetching) {
-      /* console log removed */
+      console.log("DashboardStore: Request already in progress, skipping...");
       return;
     }
 

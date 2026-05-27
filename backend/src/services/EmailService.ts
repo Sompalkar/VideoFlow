@@ -38,9 +38,9 @@ export class EmailService {
       // Verify connection configuration
       this.transporter.verify((error: Error | null, success: boolean) => {
         if (error) {
-          /* console log removed */
+          console.error("Email service configuration error:", error);
         } else {
-          /* console log removed */
+          console.log("Email service is ready to send messages");
         }
       });
     }
@@ -61,9 +61,9 @@ export class EmailService {
       };
 
       const info = await transporter.sendMail(mailOptions);
-      /* console log removed */
+      console.log("Email sent successfully:", info.messageId);
     } catch (error) {
-      /* console log removed */
+      console.error("Email sending failed:", error);
       throw new Error("Failed to send email");
     }
   }

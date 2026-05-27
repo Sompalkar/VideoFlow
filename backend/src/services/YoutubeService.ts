@@ -105,7 +105,7 @@ export class YoutubeService {
           : undefined,
       };
     } catch (error) {
-      /* console log removed */
+      console.error("Token exchange error:", error);
       throw new Error("Failed to exchange code for tokens");
     }
   }
@@ -141,7 +141,7 @@ export class YoutubeService {
         viewCount: Number.parseInt(channel.statistics?.viewCount || "0"),
       };
     } catch (error) {
-      /* console log removed */
+      console.error("Get channel info error:", error);
       throw new Error("Failed to get channel information");
     }
   }
@@ -159,7 +159,7 @@ export class YoutubeService {
         youtubeChannel: channelInfo,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube callback error:", error);
       throw new Error("Failed to connect YouTube account");
     }
   }
@@ -175,7 +175,7 @@ export class YoutubeService {
         },
       });
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube disconnect error:", error);
       throw new Error("Failed to disconnect YouTube account");
     }
   }
@@ -211,7 +211,10 @@ export class YoutubeService {
       // Check Cloudinary configuration first
       const cloudinaryStatus = CloudinaryService.getConfigurationStatus();
       if (!cloudinaryStatus.configured) {
-        /* console log removed */
+        console.error(
+          "Cloudinary configuration missing:",
+          cloudinaryStatus.missing
+        );
         throw new Error(
           `Cloudinary not configured. Missing environment variables: ${cloudinaryStatus.missing.join(
             ", "
@@ -224,7 +227,7 @@ export class YoutubeService {
       try {
         videoUrl = CloudinaryService.getVideoUrl(cloudinaryPublicId);
       } catch (cloudinaryError) {
-        /* console log removed */
+        console.error("Cloudinary configuration error:", cloudinaryError);
         throw new Error(
           "Failed to generate Cloudinary video URL. Please check your Cloudinary configuration."
         );
@@ -264,7 +267,7 @@ export class YoutubeService {
         throw new Error("No video ID returned from YouTube");
       }
 
-      /* console log removed */
+      console.log(`✅ YouTube video uploaded successfully: ${videoId}`);
 
       // Note: Thumbnail upload removed due to YouTube API permissions
       // Users can set custom thumbnails manually on YouTube after upload
@@ -276,7 +279,7 @@ export class YoutubeService {
         description: uploadResponse.data.snippet?.description || undefined,
       };
     } catch (error) {
-      /* console log removed */
+      console.error("YouTube upload error:", error);
       throw new Error("Failed to upload video to YouTube");
     }
   }
@@ -323,7 +326,7 @@ export class YoutubeService {
 
       return response.data.items || [];
     } catch (error) {
-      /* console log removed */
+      console.error("Get videos error:", error);
       throw new Error("Failed to get YouTube videos");
     }
   }
@@ -349,7 +352,7 @@ export class YoutubeService {
           : undefined,
       });
     } catch (error) {
-      /* console log removed */
+      console.error("Token refresh error:", error);
       throw new Error("Failed to refresh YouTube tokens");
     }
   }

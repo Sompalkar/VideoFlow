@@ -66,7 +66,12 @@ export const useCommentStore = create<CommentState>((set, get) => ({
 
   fetchComments: async (videoId: string, page = 1) => {
     try {
-      /* console log removed */
+      console.log(
+        "Comment store: Fetching comments for video:",
+        videoId,
+        "page:",
+        page
+      );
       set({ isLoading: true, error: null });
 
       const response = await apiClient.get<{
@@ -76,10 +81,13 @@ export const useCommentStore = create<CommentState>((set, get) => ({
         withCredentials: true,
       });
 
-      /* console log removed */
-      /* console log removed */
-      /* console log removed */
-      /* console log removed */
+      console.log("Comment store: Raw API response:", response);
+      console.log(
+        "Comment store: Fetched comments from API:",
+        response.comments
+      );
+      console.log("Comment store: Comments count:", response.comments.length);
+      console.log("Comment store: Pagination info:", response.pagination);
 
       // Ensure we have a valid response
       if (response && response.comments) {
@@ -100,14 +108,17 @@ export const useCommentStore = create<CommentState>((set, get) => ({
             isLoading: false,
           });
         }
-        /* console log removed */
+        console.log("Comment store: Successfully set comments in state");
       } else {
-        /* console log removed */
+        console.error("Comment store: Invalid response structure:", response);
         set({ comments: [], pagination: null, isLoading: false });
       }
     } catch (error) {
-      /* console log removed */
-      /* console log removed */
+      console.error("Comment store: Error fetching comments:", error);
+      console.error("Comment store: Error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       set({
         error:
           error instanceof Error ? error.message : "Failed to fetch comments",
@@ -122,11 +133,14 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     try {
       const { pagination } = get();
       if (!pagination || !pagination.hasMore) {
-        /* console log removed */
+        console.log("Comment store: No more comments to load");
         return;
       }
 
-      /* console log removed */
+      console.log(
+        "Comment store: Loading more comments, page:",
+        pagination.page + 1
+      );
       set({ isLoadingMore: true });
 
       const response = await apiClient.get<{
@@ -146,10 +160,13 @@ export const useCommentStore = create<CommentState>((set, get) => ({
           pagination: response.pagination,
           isLoadingMore: false,
         });
-        /* console log removed */
+        console.log(
+          "Comment store: Loaded more comments, total:",
+          newComments.length
+        );
       }
     } catch (error) {
-      /* console log removed */
+      console.error("Comment store: Error loading more comments:", error);
       set({
         isLoadingMore: false,
         error:
@@ -167,7 +184,12 @@ export const useCommentStore = create<CommentState>((set, get) => ({
     parentId?: string
   ) => {
     try {
-      /* console log removed */
+      console.log("Comment store: Adding comment via API:", {
+        videoId,
+        content,
+        timestamp,
+        parentId,
+      });
       set({ error: null });
 
       const response = await apiClient.post<{ comment: Comment }>(
@@ -181,19 +203,31 @@ export const useCommentStore = create<CommentState>((set, get) => ({
         { withCredentials: true }
       );
 
-      /* console log removed */
-      /* console log removed */
+      console.log("Comment store: API response:", response.comment);
+      console.log("Comment store: API response structure:", {
+        hasId: !!response.comment._id,
+        hasContent: !!response.comment.content,
+        hasUserId: !!response.comment.userId,
+        hasCreatedAt: !!response.comment.createdAt,
+      });
 
       // Add the new comment to the local state immediately for better UX
       const { comments } = get();
       const newComment = response.comment;
 
-      /* console log removed */
-      /* console log removed */
+      console.log(
+        "Comment store: Current comments before adding:",
+        comments.length
+      );
+      console.log("Comment store: New comment to add:", {
+        id: newComment._id,
+        content: newComment.content,
+        userId: newComment.userId,
+      });
 
       // Ensure the comment has all required fields
       if (!newComment._id || !newComment.content || !newComment.userId) {
-        /* console log removed */
+        console.error("Comment store: Invalid comment structure:", newComment);
         throw new Error("Invalid comment structure received from server");
       }
 
@@ -209,19 +243,31 @@ export const useCommentStore = create<CommentState>((set, get) => ({
           return comment;
         });
         set({ comments: updatedComments });
-        /* console log removed */
+        console.log(
+          "Comment store: Added reply, new count:",
+          updatedComments.length
+        );
       } else {
         // Add as new comment to the bottom of the list
         const newComments = [...comments, newComment];
         set({ comments: newComments });
-        /* console log removed */
-        /* console log removed */
+        console.log(
+          "Comment store: Added new comment to bottom, new count:",
+          newComments.length
+        );
+        console.log(
+          "Comment store: New comments array:",
+          newComments.map((c) => ({
+            id: c._id,
+            content: c.content.substring(0, 20),
+          }))
+        );
       }
 
       // Don't refresh automatically - let the user refresh manually if needed
       // This prevents the comment from disappearing
     } catch (error) {
-      /* console log removed */
+      console.error("Comment store: Error adding comment:", error);
       set({
         error: error instanceof Error ? error.message : "Failed to add comment",
       });
@@ -328,11 +374,11 @@ export const useCommentStore = create<CommentState>((set, get) => ({
 
   refreshComments: async (videoId: string) => {
     try {
-      /* console log removed */
+      console.log("Comment store: Refreshing comments for video:", videoId);
       // Reset to first page when refreshing
       await get().fetchComments(videoId, 1);
     } catch (error) {
-      /* console log removed */
+      console.error("Comment store: Error refreshing comments:", error);
       set({ isLoading: false });
     }
   },

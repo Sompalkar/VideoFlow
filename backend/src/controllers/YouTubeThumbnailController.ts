@@ -36,9 +36,9 @@ export const generateYouTubeStyleThumbnails = async (
       return;
     }
 
-    /* console log removed */
-    /* console log removed */
-    /* console log removed */
+    console.log("YouTube Thumbnail Controller: Generating thumbnails...");
+    console.log("YouTube Thumbnail Controller: Title:", title);
+    console.log("YouTube Thumbnail Controller: Style:", style);
 
     const options = {
       baseImage,
@@ -58,7 +58,11 @@ export const generateYouTubeStyleThumbnails = async (
       options
     );
 
-    /* console log removed */
+    console.log(
+      "YouTube Thumbnail Controller: Generated",
+      thumbnails.length,
+      "thumbnails"
+    );
 
     res.json({
       success: true,
@@ -73,7 +77,7 @@ export const generateYouTubeStyleThumbnails = async (
       },
     });
   } catch (error) {
-    /* console log removed */
+    console.error("YouTube Thumbnail Controller: Error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to generate YouTube-style thumbnails",
@@ -95,7 +99,7 @@ export const getAvailableStyles = async (
       count: styles.length,
     });
   } catch (error) {
-    /* console log removed */
+    console.error("YouTube Thumbnail Controller: Error getting styles:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get available styles",
@@ -125,7 +129,10 @@ export const getStyleDetails = async (
       style,
     });
   } catch (error) {
-    /* console log removed */
+    console.error(
+      "YouTube Thumbnail Controller: Error getting style details:",
+      error
+    );
     res.status(500).json({
       success: false,
       message: "Failed to get style details",
