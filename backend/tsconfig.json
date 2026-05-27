@@ -20,8 +20,6 @@
     "noImplicitThis": false,
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "baseUrl": "./src",
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "allowJs": true,
     "checkJs": false,
