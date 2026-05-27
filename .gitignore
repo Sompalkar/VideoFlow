@@ -1,0 +1,18 @@
+# Deployment and Scripts
+deploy.sh
+provision-ec2.mjs
+
+# Keys and Credentials
+*.pem
+aws-credentials.env
+.env
+.env.*
+!.env.example
+
+# Root node_modules and package files (these should be in frontend/backend, not root)
+node_modules/
+package.json
+package-lock.json
+
+# OS files
+.DS_Store

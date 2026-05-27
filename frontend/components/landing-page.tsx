@@ -1,8 +1,8 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +17,10 @@ import {
   Star,
   Menu,
   X,
-  Sparkles,
   TrendingUp,
   Award,
+  Video,
+  CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -36,7 +37,6 @@ export default function LandingPage() {
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // console.log("Newsletter signup:", email);
     setEmail("");
   };
 
@@ -45,155 +45,142 @@ export default function LandingPage() {
       icon: Users,
       title: "Team Collaboration",
       description:
-        "Let your editors upload while you maintain full control with advanced approval workflows.",
+        "Assign roles to editors and reviewers. Maintain full control with built-in approval workflows before anything goes live.",
     },
     {
       icon: Shield,
-      title: "Bank-Level Security",
+      title: "Enterprise Security",
       description:
-        "Enterprise-grade security for your YouTube credentials with OAuth 2.0 and encrypted storage.",
+        "Your YouTube credentials remain secure. Editors can upload directly without ever needing your channel password.",
     },
     {
       icon: Youtube,
-      title: "Direct YouTube Upload",
+      title: "Direct Publishing",
       description:
-        "Seamless integration with YouTube API for instant publishing with custom metadata.",
+        "Push approved videos directly to YouTube with custom metadata, tags, and thumbnails—all from one dashboard.",
     },
     {
       icon: TrendingUp,
-      title: "Analytics & Insights",
+      title: "Advanced Analytics",
       description:
-        "Comprehensive analytics dashboard with performance metrics and team productivity.",
+        "Track team productivity, video performance metrics, and upload frequency in a single, unified view.",
     },
   ];
 
   const testimonials = [
     {
       name: "Sarah Chen",
-      role: "Tech YouTuber",
-      subscribers: "2.5M",
+      role: "Tech Creator • 2.5M Subs",
       content:
-        "VideoFlow transformed our workflow completely. We've increased our upload frequency by 300% while maintaining quality control.",
+        "VideoFlow eliminated our bottleneck. Editors upload drafts, I approve them on my phone, and they go live. It's incredibly efficient.",
       avatar: "SC",
+      color: "bg-blue-100 text-blue-700",
     },
     {
       name: "Mike Rodriguez",
-      role: "Gaming Creator",
-      subscribers: "1.8M",
+      role: "Gaming Channel • 1.8M Subs",
       content:
-        "The security features give me complete peace of mind. My team can work efficiently without compromising my channel.",
+        "I used to share my Google password with three editors. Now, they have their own logins, and I sleep better at night.",
       avatar: "MR",
+      color: "bg-emerald-100 text-emerald-700",
     },
     {
       name: "Emma Thompson",
-      role: "Lifestyle Channel",
-      subscribers: "950K",
+      role: "Lifestyle Vlogger • 950K Subs",
       content:
-        "Best investment I've made for my channel. The approval system is intuitive and the analytics are incredibly detailed.",
+        "The automated thumbnail generation and metadata management alone save us 10 hours a week. A game changer.",
       avatar: "ET",
+      color: "bg-orange-100 text-orange-700",
     },
   ];
 
   const stats = [
-    { value: "50K+", label: "Videos Uploaded" },
-    { value: "2K+", label: "Happy Creators" },
-    { value: "99.9%", label: "Uptime" },
-    { value: "24/7", label: "Support" },
+    { value: "50K+", label: "Videos Processed" },
+    { value: "2,000+", label: "Active Channels" },
+    { value: "1M+", label: "Hours Saved" },
+    { value: "99.9%", label: "Platform Uptime" },
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-blue-200">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 z-50">
+      <nav className="fixed top-0 w-full bg-white border-b border-slate-200 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Play className="w-5 h-5 text-white fill-white" />
+            <Link href="/" className="flex items-center space-x-3 group">
+              <div className="relative w-40 h-12 transition-transform group-hover:scale-105">
+                <Image src="/image.png" alt="Logo" fill className="object-contain" priority />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                VideoFlow
-              </span>
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link
                 href="#features"
-                className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
+                className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
               >
                 Features
               </Link>
               <Link
                 href="#testimonials"
-                className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
+                className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
               >
                 Reviews
               </Link>
               <Link
                 href="#pricing"
-                className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
+                className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
               >
                 Pricing
               </Link>
-              <Link href={user ? "/dashboard" : "/auth/login"}>
-                <Button variant="ghost" className="font-medium">
-                  {user ? "Dashboard" : "Sign In"}
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-lg">
-                  Get Started
-                </Button>
-              </Link>
+              
+              <div className="flex items-center space-x-4 pl-4 border-l border-slate-200">
+                <Link href={user ? "/dashboard" : "/auth/login"}>
+                  <Button variant="ghost" className="text-sm font-medium hover:bg-slate-100">
+                    {user ? "Dashboard" : "Log in"}
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button className="bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors">
+                    Start Free Trial
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Mobile menu button */}
             <Button
               variant="ghost"
-              size="sm"
-              className="md:hidden"
+              size="icon"
+              className="md:hidden text-slate-600"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-100 py-4">
-              <div className="space-y-2">
-                <Link
-                  href="#features"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-                >
+            <div className="md:hidden border-t border-slate-100 py-4 pb-6 bg-white">
+              <div className="space-y-1">
+                <Link href="#features" className="block px-4 py-3 text-base font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600">
                   Features
                 </Link>
-                <Link
-                  href="#testimonials"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-                >
+                <Link href="#testimonials" className="block px-4 py-3 text-base font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600">
                   Reviews
                 </Link>
-                <Link
-                  href="#pricing"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900"
-                >
+                <Link href="#pricing" className="block px-4 py-3 text-base font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600">
                   Pricing
                 </Link>
-                <div className="pt-4 space-y-2">
-                  <Link href={user ? "/dashboard" : "/auth/login"}>
-                    <Button variant="outline" className="w-full bg-transparent">
-                      {user ? "Dashboard" : "Sign In"}
+                <div className="pt-4 px-4 space-y-3 border-t border-slate-100 mt-2">
+                  <Link href={user ? "/dashboard" : "/auth/login"} className="block w-full">
+                    <Button variant="outline" className="w-full justify-center">
+                      {user ? "Dashboard" : "Log in"}
                     </Button>
                   </Link>
-                  <Link href="/auth/register">
-                    <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600">
-                      Get Started
+                  <Link href="/auth/register" className="block w-full">
+                    <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white">
+                      Start Free Trial
                     </Button>
                   </Link>
                 </div>
@@ -204,106 +191,131 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200 overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div
-            className={`text-center transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-10"
-            }`}
-          >
-            <Badge
-              variant="secondary"
-              className="mb-6 px-4 py-2 bg-indigo-50 text-indigo-700 border-indigo-200 rounded-full"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Trusted by 10,000+ Content Creators
-            </Badge>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            <div className={`transition-all duration-1000 transform ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+              <Badge className="mb-6 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-blue-100">
+                <span className="flex items-center">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 mr-2 animate-pulse"></span>
+                  VideoFlow 2.0 is live
+                </span>
+              </Badge>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              Streamline Your
-              <br />
-              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Video Workflow
-              </span>
-            </h1>
+              <h1 className="text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1]">
+                Ship videos to YouTube <span className="text-blue-600">faster.</span>
+              </h1>
 
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-              Empower your team with seamless video uploads, collaborative
-              workflows, and secure credential management.
-              <br />
-              <span className="font-semibold text-gray-800">
-                Let editors upload while you maintain full control.
-              </span>
-            </p>
+              <p className="text-xl text-slate-600 mb-8 max-w-xl leading-relaxed">
+                The secure bridge between your editors and your YouTube channel. Review, approve, and publish without ever sharing your password.
+              </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <Link href="/auth/register">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-lg px-8 py-6 rounded-xl shadow-xl hover:shadow-2xl transition-all"
-                >
-                  Start Free Trial
-                  <ArrowRight className="ml-2 w-5 h-5" />
+              <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                <Link href="/auth/register">
+                  <Button size="lg" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 h-14 text-base font-semibold shadow-sm transition-all hover:-translate-y-0.5">
+                    Start 14-day free trial
+                  </Button>
+                </Link>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto bg-white border-slate-300 text-slate-700 hover:bg-slate-50 px-8 h-14 text-base font-semibold transition-all">
+                  <Play className="mr-2 w-5 h-5 text-slate-500" />
+                  See how it works
                 </Button>
-              </Link>
-              <Button
-                variant="outline"
-                size="lg"
-                className="text-lg px-8 py-6 rounded-xl border-2 bg-transparent"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Watch Demo
-              </Button>
+              </div>
+
+              <div className="flex items-center space-x-4 text-sm text-slate-500 font-medium">
+                <div className="flex items-center"><CheckCircle2 className="w-4 h-4 text-emerald-500 mr-1.5"/> No credit card required</div>
+                <div className="flex items-center"><CheckCircle2 className="w-4 h-4 text-emerald-500 mr-1.5"/> Cancel anytime</div>
+              </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                    {stat.value}
+            {/* Hero Visual Mockup */}
+            <div className={`relative transition-all duration-1000 delay-200 transform ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}>
+              <div className="relative rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 md:p-4 aspect-video flex flex-col">
+                {/* Mock UI Header */}
+                <div className="flex items-center justify-between mb-4 px-2 border-b border-slate-800 pb-3">
+                  <div className="flex space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
                   </div>
-                  <div className="text-gray-600 text-sm">{stat.label}</div>
+                  <div className="text-xs text-slate-400 font-medium font-mono">dashboard / approvals</div>
                 </div>
-              ))}
+                
+                {/* Mock UI Content */}
+                <div className="flex-1 bg-slate-800/50 rounded-lg border border-slate-700/50 p-4 flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="h-4 w-48 bg-slate-700 rounded animate-pulse"></div>
+                      <div className="h-3 w-32 bg-slate-700/60 rounded"></div>
+                    </div>
+                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Ready for Review</Badge>
+                  </div>
+                  
+                  <div className="flex-1 bg-slate-900/50 rounded border border-slate-700/50 flex items-center justify-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay"></div>
+                    <Video className="w-12 h-12 text-slate-600" />
+                  </div>
+                  
+                  <div className="flex justify-end gap-2 mt-auto">
+                    <div className="h-8 w-24 bg-slate-700 rounded"></div>
+                    <div className="h-8 w-24 bg-blue-600 rounded"></div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Floating element */}
+              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-4 animate-bounce" style={{ animationDuration: '3s' }}>
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-900">Video Published</div>
+                  <div className="text-xs text-slate-500">Just now • YouTube</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-white">
+      {/* Stats Section */}
+      <section className="py-12 bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <Badge className="mb-4 bg-blue-50 text-blue-700 border-blue-200 rounded-full">
-              <Zap className="w-4 h-4 mr-2" />
-              Powerful Features
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Everything You Need
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="flex flex-col items-center justify-center text-center">
+                <div className="text-3xl lg:text-4xl font-black text-slate-900 mb-1">{stat.value}</div>
+                <div className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mb-16">
+            <h2 className="text-blue-600 font-semibold tracking-wide uppercase text-sm mb-3">
+              Platform Features
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Powerful features designed for modern content creators and their
-              teams
+            <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">
+              Built for teams who treat YouTube like a business.
+            </h3>
+            <p className="text-lg text-slate-600 leading-relaxed">
+              We've stripped away the noise to give you exactly what you need: a bulletproof pipeline from your editor's render queue to your channel's public feed.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
             {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-gradient-to-br from-white to-gray-50"
-              >
+              <Card key={index} className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow rounded-2xl overflow-hidden">
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <feature.icon className="w-7 h-7 text-white" />
+                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-6 border border-blue-100">
+                    <feature.icon className="w-6 h-6 text-blue-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <h4 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h4>
+                  <p className="text-slate-600 leading-relaxed">
                     {feature.description}
                   </p>
                 </CardContent>
@@ -314,54 +326,33 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section
-        id="testimonials"
-        className="py-24 bg-gradient-to-br from-gray-50 to-indigo-50"
-      >
+      <section id="testimonials" className="py-24 bg-white border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <Badge className="mb-4 bg-yellow-50 text-yellow-700 border-yellow-200 rounded-full">
-              <Award className="w-4 h-4 mr-2" />
-              Customer Love
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Loved by Creators
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">
+              Trusted by creators scaling their teams
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Join thousands of successful content creators who trust VideoFlow
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card
-                key={index}
-                className="border-0 shadow-xl bg-white hover:shadow-2xl transition-all duration-300"
-              >
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-4">
+              <Card key={index} className="bg-slate-50 border border-slate-200 rounded-2xl shadow-sm">
+                <CardContent className="p-8 flex flex-col h-full">
+                  <div className="flex items-center space-x-1 mb-6">
                     {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-5 h-5 text-yellow-400 fill-current"
-                      />
+                      <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
                     ))}
                   </div>
-                  <p className="text-gray-700 mb-6 text-lg leading-relaxed">
-                    {`"${testimonial.content}"`}
+                  <p className="text-slate-700 mb-8 text-lg leading-relaxed flex-grow">
+                    "{testimonial.content}"
                   </p>
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                  <div className="flex items-center pt-6 border-t border-slate-200">
+                    <div className={`w-10 h-10 ${testimonial.color} rounded-full flex items-center justify-center font-bold text-sm mr-4`}>
                       {testimonial.avatar}
                     </div>
-                    <div className="ml-4">
-                      <div className="font-semibold text-gray-900">
-                        {testimonial.name}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {testimonial.role} • {testimonial.subscribers}{" "}
-                        subscribers
-                      </div>
+                    <div>
+                      <div className="font-bold text-slate-900">{testimonial.name}</div>
+                      <div className="text-sm font-medium text-slate-500">{testimonial.role}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -372,157 +363,78 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600">
+      <section className="py-24 bg-blue-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Transform Your Workflow?
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+            Take control of your upload pipeline today.
           </h2>
-          <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of creators who have streamlined their upload process
-            with VideoFlow
+          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+            Stop sharing passwords. Start shipping videos faster.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register">
-              <Button
-                size="lg"
-                className="bg-white text-indigo-600 hover:bg-gray-100 text-lg px-8 py-6 rounded-xl shadow-xl"
-              >
-                Start Your Free Trial
-                <ArrowRight className="ml-2 w-5 h-5" />
+              <Button size="lg" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-slate-50 px-8 h-14 text-base font-semibold shadow-lg transition-transform hover:-translate-y-0.5">
+                Start your 14-day free trial
               </Button>
             </Link>
           </div>
-
-          <div className="max-w-md mx-auto">
-            <form onSubmit={handleNewsletterSubmit} className="flex gap-3">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-white/20 border-white/30 text-white placeholder:text-white/70 rounded-xl"
-                required
-              />
-              <Button type="submit" variant="secondary" className="rounded-xl">
-                Subscribe
-              </Button>
-            </form>
-            <p className="text-indigo-200 text-sm mt-3">
-              Get updates on new features and tips
-            </p>
-          </div>
-
-          <p className="text-indigo-200 text-sm mt-8">
-            No credit card required • 14-day free trial • Cancel anytime
+          <p className="text-blue-200 text-sm mt-6 font-medium">
+            No credit card required. Cancel anytime.
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Play className="w-5 h-5 text-white fill-white" />
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
+            <div className="col-span-2 lg:col-span-2">
+              <Link href="/" className="flex items-center space-x-3 mb-6">
+                <div className="relative w-40 h-12">
+                  <Image src="/image.png" alt="Logo" fill className="object-contain" />
                 </div>
-                <span className="text-xl font-bold">VideoFlow</span>
-              </div>
-              <p className="text-gray-400 mb-6 leading-relaxed">
-                Streamline your video workflow with secure, collaborative
-                uploads to YouTube.
+              </Link>
+              <p className="text-sm leading-relaxed max-w-xs text-slate-400">
+                The enterprise-grade publishing pipeline built exclusively for YouTube creators and their editing teams.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-6">Product</h3>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link
-                    href="#features"
-                    className="hover:text-white transition-colors"
-                  >
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="#pricing"
-                    className="hover:text-white transition-colors"
-                  >
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Security
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    API
-                  </Link>
-                </li>
+              <h3 className="font-semibold text-white mb-4">Product</h3>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="#features" className="hover:text-blue-400 transition-colors">Features</Link></li>
+                <li><Link href="#pricing" className="hover:text-blue-400 transition-colors">Pricing</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Security</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">API Integration</Link></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-6">Company</h3>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Careers
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Contact
-                  </Link>
-                </li>
+              <h3 className="font-semibold text-white mb-4">Company</h3>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">About Us</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Careers</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Blog</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Contact</Link></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-6">Support</h3>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Help Center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Status
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Privacy
-                  </Link>
-                </li>
+              <h3 className="font-semibold text-white mb-4">Legal</h3>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-blue-400 transition-colors">Cookie Policy</Link></li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 VideoFlow. All rights reserved.</p>
+          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm">&copy; {new Date().getFullYear()} VideoFlow Inc. All rights reserved.</p>
+            <div className="flex space-x-6">
+              {/* Social icons could go here */}
+            </div>
           </div>
         </div>
       </footer>

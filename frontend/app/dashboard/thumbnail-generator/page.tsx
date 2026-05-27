@@ -23,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MainNav } from "@/components/main-nav";
-import { DashboardNav } from "@/components/dashboard-nav";
+
 import {
   Sparkles,
   ImageIcon,
@@ -73,16 +73,13 @@ export default function ThumbnailGeneratorPage() {
   const { fetchVideos } = useVideoStore();
   const { uploadToCloudinary } = useCloudinaryStore();
 
-  const [selectedVideoForThumbnail, setSelectedVideoForThumbnail] =
-    useState<any>(null);
+  const [selectedVideoForThumbnail, setSelectedVideoForThumbnail] = useState<any>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [frames, setFrames] = useState<Frame[]>([]);
   const [selectedFrame, setSelectedFrame] = useState<Frame | null>(null);
   const [aiPrompt, setAIPrompt] = useState("");
-  const [aiService, setAIService] = useState<
-    "precise" | "preserve" | "leonardo" | "dalle3" | "stability" | "huggingface"
-  >("precise");
+  const aiService = "huggingface";
   const [overlayText, setOverlayText] = useState("");
   const [fontFamily, setFontFamily] = useState("Arial");
   const [fontSize, setFontSize] = useState(60);
@@ -95,17 +92,12 @@ export default function ThumbnailGeneratorPage() {
   const [enhancementStatus, setEnhancementStatus] = useState<string>("");
   const [isExtracting, setIsExtracting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [aiResult, setAIResult] = useState<{
-    url: string;
-    publicId: string;
-  } | null>(null);
+  const [aiResult, setAIResult] = useState<{ url: string; publicId: string } | null>(null);
 
-  // 1. Add useEffect to fetch uploaded videos on mount
   useEffect(() => {
     fetchUploadedVideos();
-  }, []); // Remove fetchUploadedVideos from dependencies
+  }, []);
 
-  // 2. Add handler for selecting an uploaded video
   const handleSelectUploadedVideo = async (video: any) => {
     setSelectedVideoForThumbnail(video);
     setVideoFile(null);
@@ -116,11 +108,7 @@ export default function ThumbnailGeneratorPage() {
     setFinalThumbnail(null);
     setIsExtracting(true);
     try {
-      const extractedFrames = await extractFramesClientSide(
-        video.cloudinaryVideoUrl,
-        8,
-        true
-      );
+      const extractedFrames = await extractFramesClientSide(video.cloudinaryVideoUrl, 8, true);
       setFrames(extractedFrames);
       toast.success(`Extracted ${extractedFrames.length} frames!`);
     } catch (err) {
@@ -130,12 +118,7 @@ export default function ThumbnailGeneratorPage() {
     }
   };
 
-  // 3. Update extractFramesClientSide to support maxFrames
-  const extractFramesClientSide = async (
-    fileOrUrl: File | string,
-    maxFrames = 8,
-    evenlySpaced = false
-  ) => {
+  const extractFramesClientSide = async (fileOrUrl: File | string, maxFrames = 8, evenlySpaced = false) => {
     return new Promise<Frame[]>(async (resolve, reject) => {
       try {
         let videoSrc = "";
@@ -165,13 +148,9 @@ export default function ThumbnailGeneratorPage() {
         canvas.height = height;
         let times: number[] = [];
         if (evenlySpaced) {
-          // Evenly spaced timestamps
           const step = duration / (maxFrames + 1);
-          times = Array.from({ length: maxFrames }, (_, i) =>
-            Math.floor((i + 1) * step)
-          );
+          times = Array.from({ length: maxFrames }, (_, i) => Math.floor((i + 1) * step));
         } else {
-          // Every 5 seconds as fallback
           for (let t = 0; t < duration && frames.length < maxFrames; t += 5) {
             times.push(Math.floor(t));
           }
@@ -192,7 +171,6 @@ export default function ThumbnailGeneratorPage() {
     });
   };
 
-  // Handle video file selection
   const handleVideoFileChange = async (file: File) => {
     setVideoFile(file);
     setVideoUrl("");
@@ -213,39 +191,27 @@ export default function ThumbnailGeneratorPage() {
     }
   };
 
-  // 1. Update handleFrameSelect to only set selectedFrame, not upload
   const handleFrameSelect = (frame: Frame) => {
     setSelectedFrame(frame);
   };
 
-  // 2. In handleGenerateAI, if selectedFrame.url is a data URL (not already uploaded), upload it to Cloudinary before AI enhancement
   const handleGenerateAI = async () => {
     if (!aiPrompt.trim()) {
       toast.error("Please enter an AI prompt");
       return;
     }
-    if (!selectedFrame) {
-      toast.error("Please select a frame first");
-      return;
-    }
-    setEnhancementStatus("Preparing frame for enhancement...");
-    let frameUrl = selectedFrame.url;
-    // If the frame is a data URL, upload it to Cloudinary
-    if (frameUrl.startsWith("data:")) {
+    setEnhancementStatus("Preparing for generation...");
+    let frameUrl = selectedFrame?.url || "https://res.cloudinary.com/demo/image/upload/sample.jpg";
+    if (selectedFrame && frameUrl.startsWith("data:")) {
       try {
         toast.loading("Uploading selected frame to Cloudinary...");
         const res = await fetch(frameUrl);
         const blob = await res.blob();
-        const file = new File([blob], `frame_${selectedFrame.timestamp}.jpg`, {
-          type: "image/jpeg",
-        });
+        const file = new File([blob], `frame_${selectedFrame.timestamp}.jpg`, { type: "image/jpeg" });
         const uploadResult = await uploadToCloudinary(file, "image");
         if (uploadResult && uploadResult.data && uploadResult.data.url) {
           frameUrl = uploadResult.data.url;
-          setSelectedFrame({
-            url: frameUrl,
-            timestamp: selectedFrame.timestamp,
-          });
+          setSelectedFrame({ url: frameUrl, timestamp: selectedFrame.timestamp });
           toast.success("Frame uploaded to Cloudinary!");
         } else {
           throw new Error("Upload failed");
@@ -268,7 +234,6 @@ export default function ThumbnailGeneratorPage() {
       setEnhancementStatus("Sending to AI service...");
       const result = await enhanceFrameWithAI(frameUrl, aiPrompt, options);
       setEnhancementStatus("Processing AI response...");
-      // Fallback: if result is missing or has no url, show selected frame as result
       if (result && result.url) {
         setAIResult(result);
         setFinalThumbnail(result.url);
@@ -276,10 +241,7 @@ export default function ThumbnailGeneratorPage() {
         toast.success("AI enhancement completed!");
       } else {
         setEnhancementStatus("Enhancement failed");
-        setAIResult({
-          url: frameUrl,
-          publicId: `original_frame_${Date.now()}`,
-        });
+        setAIResult({ url: frameUrl, publicId: `original_frame_${Date.now()}` });
         setFinalThumbnail(frameUrl);
         toast.success("Using original frame as thumbnail");
       }
@@ -304,12 +266,7 @@ export default function ThumbnailGeneratorPage() {
       if (!finalOverlayText && selectedVideoForThumbnail) {
         finalOverlayText = selectedVideoForThumbnail.title || "Amazing Video";
       }
-      const url = await applyOverlay(aiResult.publicId, {
-        text: finalOverlayText,
-        fontFamily,
-        fontSize,
-        fontColor,
-      });
+      const url = await applyOverlay(aiResult.publicId, { text: finalOverlayText, fontFamily, fontSize, fontColor });
       if (url) {
         setOverlayedUrl(url);
         setFinalThumbnail(url);
@@ -329,18 +286,12 @@ export default function ThumbnailGeneratorPage() {
     }
     try {
       toast.loading("Setting as main thumbnail...");
-      const response = await fetch(
-        `http://localhost:5000/api/videos/${selectedVideoForThumbnail.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            cloudinaryThumbnailUrl: finalThumbnail,
-            thumbnail: finalThumbnail,
-          }),
-        }
-      );
+      const response = await fetch(`http://localhost:5000/api/videos/${selectedVideoForThumbnail.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ cloudinaryThumbnailUrl: finalThumbnail, thumbnail: finalThumbnail }),
+      });
       if (response.ok) {
         toast.success("Thumbnail set as main thumbnail!");
         setShowPreviewDialog(true);
@@ -391,74 +342,59 @@ export default function ThumbnailGeneratorPage() {
     toast.success("Workflow reset!");
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Please log in to access tools</h1>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen  dark:bg-gray-800">
-      <MainNav />
-      <DashboardNav />
-      <div className="flex-1 max-w-[1400px] mx-auto px-4 py-2">
-        <div className="mb-2">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-teal-500" />
+    <div className="flex flex-col min-h-screen bg-zinc-50 font-sans">
+      <div className="flex-1 max-w-[1400px] mx-auto px-4 py-6 w-full">
+        <div className="mb-6 border-b border-zinc-200 pb-4">
+          <h1 className="text-2xl font-bold text-zinc-950 flex items-center gap-2 tracking-tight">
+            <Sparkles className="w-5 h-5 text-blue-600" />
             AI Thumbnail Generator
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Create stunning thumbnails with AI-powered tools
+          <p className="text-zinc-500 mt-1 text-sm font-semibold uppercase tracking-wider">
+            Create stunning thumbnails with AI
           </p>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-2">
+          <Alert variant="destructive" className="mb-4 rounded-none border-red-200 bg-red-50 text-red-900">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {(isEnhancing || enhancementStatus) && (
-          <div className="mb-2 p-1.5 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200">
             <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
-              <span className="text-sm text-teal-700 dark:text-teal-300">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              <span className="text-sm font-semibold text-blue-900">
                 {enhancementStatus || "Enhancing thumbnail with AI..."}
               </span>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 min-h-[calc(100vh-120px)] lg:h-[calc(100vh-120px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Column: Controls */}
-          <div className="lg:col-span-3 flex flex-col gap-4 min-w-0 lg:min-w-[700px]">
-            {/* 1. Move AI Enhancement section to the top of the left column */}
-            <Card className="shadow-sm rounded-lg mb-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800 border-0 min-h-[300px]">
-              <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="w-4 h-4" />
-                  AI Enhancement
+          <div className="lg:col-span-3 flex flex-col gap-6 min-w-0">
+            
+            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+              <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                  AI Enhancement Options
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-1.5 space-y-1.5">
+              <CardContent className="p-4 space-y-4">
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 text-xs">
-                    AI Service
-                  </Label>
-                  <Select
-                    value={aiService}
-                    onValueChange={(value: any) => setAIService(value)}
-                  >
-                    <SelectTrigger className="mt-0.5 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="precise">Precise</SelectItem>
-                      <SelectItem value="preserve">Preserve</SelectItem>
-                      <SelectItem value="leonardo">Leonardo AI</SelectItem>
-                      <SelectItem value="dalle3">DALL-E 3</SelectItem>
-                      <SelectItem value="stability">Stability AI</SelectItem>
-                      <SelectItem value="huggingface">HuggingFace</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-gray-700 dark:text-gray-300 text-xs">
+                  <Label className="text-zinc-900 font-bold text-xs uppercase tracking-widest">
                     AI Prompt
                   </Label>
                   <Textarea
@@ -466,61 +402,50 @@ export default function ThumbnailGeneratorPage() {
                     value={aiPrompt}
                     onChange={(e) => setAIPrompt(e.target.value)}
                     rows={2}
-                    className="mt-0.5 text-sm"
+                    className="mt-1 text-sm rounded-none border-zinc-300 focus-visible:ring-blue-600"
                   />
                 </div>
                 <Button
                   onClick={handleGenerateAI}
-                  disabled={isGenerating}
-                  className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700 text-sm py-1"
+                  disabled={isEnhancing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none h-10 font-bold"
                 >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                      Enhancing...
-                    </>
+                  {isEnhancing ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enhancing...</>
                   ) : (
-                    <>
-                      <Sparkles className="mr-1 h-4 w-4" />
-                      Enhance with AI
-                    </>
+                    <><Sparkles className="mr-2 h-4 w-4" /> Enhance with AI</>
                   )}
                 </Button>
               </CardContent>
             </Card>
-            {/* 2. Place video selection, preview, and frames grid below, with no extra white backgrounds (remove bg-white from their Card classes) */}
-            <Card className="dark:bg-gray-900 shadow-sm rounded-lg mb-2 border-0 min-h-[300px] lg:min-h-[450px]">
-              <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Layers className="w-4 h-8" />
-                  Select Uploaded Video
+
+            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+              <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
+                  <Layers className="w-4 h-4 text-zinc-400" />
+                  Select Source Video
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-2">
+              <CardContent className="p-4">
                 {uploadedVideos.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">
+                  <div className="text-center text-zinc-500 text-sm py-8 font-semibold">
                     No uploaded videos found
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[220px] overflow-y-auto pr-2">
                     {uploadedVideos.map((video) => (
                       <div
                         key={video.id}
                         className={cn(
-                          "border rounded-lg cursor-pointer transition-all hover:shadow-lg p-2 flex flex-col items-center",
+                          "border rounded-none cursor-pointer transition-all p-2 flex flex-col items-center bg-zinc-50",
                           selectedVideoForThumbnail?.id === video.id
-                            ? "border-teal-500 bg-teal-50 dark:bg-teal-900/20 ring-2 ring-teal-400"
-                            : "border-gray-200 dark:border-gray-700 hover:border-teal-300"
+                            ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50"
+                            : "border-zinc-200 hover:border-blue-400"
                         )}
                         onClick={() => handleSelectUploadedVideo(video)}
                       >
-                        <video
-                          src={video.cloudinaryVideoUrl}
-                          className="w-full h-24 sm:h-32 object-cover rounded-md mb-2 shadow"
-                          muted
-                          playsInline
-                        />
-                        <div className="text-xs text-center text-gray-700 dark:text-gray-300 truncate w-full font-medium">
+                        <video src={video.cloudinaryVideoUrl} className="w-full h-24 object-cover mb-2 border border-zinc-200" muted playsInline />
+                        <div className="text-xs text-center text-zinc-900 truncate w-full font-bold">
                           {video.title}
                         </div>
                       </div>
@@ -529,53 +454,47 @@ export default function ThumbnailGeneratorPage() {
                 )}
               </CardContent>
             </Card>
+
             {selectedVideoForThumbnail && (
               <>
-                <Card className="dark:bg-gray-900 shadow-sm rounded-lg mb-2 border-0">
-                  <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
-                    <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                      <Video className="w-4 h-8" />
+                <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+                  <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
+                    <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
+                      <Video className="w-4 h-4 text-zinc-400" />
                       Video Preview
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-2">
-                    <video
-                      src={selectedVideoForThumbnail.cloudinaryVideoUrl}
-                      className="w-full h-32 sm:h-48 object-cover rounded-md shadow mb-2"
-                      controls
-                    />
-                    <div className="text-xs text-center text-gray-700 dark:text-gray-300 font-medium">
+                  <CardContent className="p-4">
+                    <video src={selectedVideoForThumbnail.cloudinaryVideoUrl} className="w-full h-32 object-cover border border-zinc-200 mb-3 bg-black" controls />
+                    <div className="text-sm text-center text-zinc-900 font-bold truncate">
                       {selectedVideoForThumbnail.title}
                     </div>
                   </CardContent>
                 </Card>
+
                 {frames.length > 0 && (
-                  <Card className="dark:bg-gray-900 shadow-sm rounded-lg mb-2 border-0">
-                    <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
-                      <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                        <ImageIcon className="w-4 h-8" />
+                  <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+                    <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
+                      <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
+                        <ImageIcon className="w-4 h-4 text-zinc-400" />
                         Select Frame
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-2">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-1 sm:gap-2">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto pr-2">
                         {frames.map((frame, idx) => (
                           <div
                             key={idx}
                             className={cn(
-                              "border rounded-md cursor-pointer transition-all hover:shadow-md",
+                              "border rounded-none cursor-pointer transition-all bg-zinc-50",
                               selectedFrame?.url === frame.url
-                                ? "border-teal-500 bg-teal-50 dark:bg-teal-900/20 ring-2 ring-teal-400"
-                                : "border-gray-200 dark:border-gray-700 hover:border-teal-300"
+                                ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50"
+                                : "border-zinc-200 hover:border-blue-400"
                             )}
                             onClick={() => handleFrameSelect(frame)}
                           >
-                            <img
-                              src={frame.url}
-                              alt={`Frame ${idx + 1}`}
-                              className="w-full h-12 sm:h-16 object-cover rounded-t-md"
-                            />
-                            <div className="text-center text-xs text-gray-600 dark:text-gray-400 py-0.5">
+                            <img src={frame.url} alt={`Frame ${idx + 1}`} className="w-full h-20 object-cover border-b border-zinc-200" />
+                            <div className="text-center text-xs text-zinc-600 font-bold py-1.5 uppercase tracking-widest">
                               {frame.timestamp}s
                             </div>
                           </div>
@@ -589,186 +508,118 @@ export default function ThumbnailGeneratorPage() {
           </div>
 
           {/* Right Column: Generated Thumbnails */}
-          <div className="lg:col-span-2 min-w-0 lg:min-w-[350px]">
-            <Card className="bg-white dark:bg-gray-900 shadow-sm rounded-lg h-full flex flex-col min-h-[300px]">
-              <CardHeader className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-t-lg p-1.5">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="w-4 h-4" />
+          <div className="lg:col-span-2 min-w-0">
+            <div className="sticky top-6">
+              <Card className="bg-white shadow-none border border-zinc-200 rounded-none flex flex-col">
+                <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4 shrink-0">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
+                  <Wand2 className="w-4 h-4 text-blue-600" />
                   Generated Thumbnails
                 </CardTitle>
               </CardHeader>
-              {/* Replace the CardContent in the right column with a vertical stack, left-aligned, with expert styling */}
-              <CardContent className="p-6 flex-1 flex flex-col items-start justify-start gap-6">
+              
+              <CardContent className="p-6 flex-1 flex flex-col gap-8">
+                
                 <div className="w-full">
-                  <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2">
-                    <Wand2 className="w-5 h-5 text-teal-500" />
+                  <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">
                     AI Enhanced Result
                   </h3>
                   {aiResult ? (
-                    <div className="rounded-lg bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900 p-3 shadow-sm flex flex-col gap-2">
-                      <img
-                        src={aiResult.url}
-                        alt="AI Enhanced"
-                        className="w-full h-32 sm:h-40 object-cover rounded-md shadow-md border border-gray-200 dark:border-gray-700"
-                      />
-                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePreviewThumbnail(aiResult.url)}
-                          className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700 border-0 shadow text-xs"
-                        >
-                          <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Preview
+                    <div className="p-4 border border-zinc-200 bg-zinc-50 flex flex-col gap-3">
+                      <img src={aiResult.url} alt="AI Enhanced" className="w-full h-40 object-cover border border-zinc-200 bg-zinc-200" />
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button size="sm" onClick={() => handlePreviewThumbnail(aiResult.url)} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold">
+                          <Eye className="w-3.5 h-3.5 mr-2 text-zinc-400" /> Preview
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            handleDownload(aiResult.url, "ai-enhanced.png")
-                          }
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-0 shadow text-xs"
-                        >
-                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
-                          Download
+                        <Button size="sm" onClick={() => handleDownload(aiResult.url, "ai-enhanced.png")} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold">
+                          <Download className="w-3.5 h-3.5 mr-2 text-zinc-400" /> Download
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-gray-500 dark:text-gray-400 text-sm py-8 flex items-center gap-2">
-                      <Sparkles className="w-6 h-6 animate-pulse text-cyan-400" />
-                      Complete the workflow to generate thumbnails
+                    <div className="text-zinc-400 text-sm py-12 flex flex-col items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 font-semibold text-center px-4">
+                      <Sparkles className="w-6 h-6 mb-2 text-zinc-300" />
+                      Complete the workflow to generate
                     </div>
                   )}
                 </div>
-                <div className="w-full border-t border-gray-200 dark:border-gray-700 my-2"></div>
+
                 <div className="w-full">
-                  <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-teal-500" />
+                  <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">
                     Final Thumbnail
                   </h3>
                   {finalThumbnail ? (
-                    <div className="rounded-lg bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 p-3 shadow-sm flex flex-col gap-2">
-                      <img
-                        src={finalThumbnail}
-                        alt="Final Thumbnail"
-                        className="w-full h-32 sm:h-40 object-cover rounded-md shadow-md border border-gray-200 dark:border-gray-700"
-                      />
-                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePreviewThumbnail(finalThumbnail)}
-                          className="bg-gradient-to-r from-cyan-600 to-teal-600 text-white hover:from-cyan-700 hover:to-teal-700 border-0 shadow text-xs"
-                        >
-                          <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Preview
+                    <div className="p-4 border border-zinc-200 bg-zinc-50 flex flex-col gap-3">
+                      <img src={finalThumbnail} alt="Final Thumbnail" className="w-full h-40 object-cover border border-zinc-200 bg-zinc-200" />
+                      <div className="flex flex-col sm:flex-row gap-2">
+                         <Button size="sm" onClick={() => handlePreviewThumbnail(finalThumbnail)} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold px-2">
+                          <Eye className="w-3.5 h-3.5" />
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            handleDownload(
-                              finalThumbnail,
-                              "final-thumbnail.png"
-                            )
-                          }
-                          className="bg-gradient-to-r from-pink-600 to-red-600 text-white hover:from-pink-700 hover:to-red-700 border-0 shadow text-xs"
-                        >
-                          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
-                          Download
+                        <Button size="sm" onClick={() => handleDownload(finalThumbnail, "final-thumbnail.png")} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold px-2">
+                          <Download className="w-3.5 h-3.5" />
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSetAsMainThumbnail}
-                          className="bg-gradient-to-r from-teal-700 to-cyan-700 text-white hover:from-teal-800 hover:to-cyan-800 border-0 shadow text-xs"
-                        >
-                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
-                          Set as Main
+                        <Button size="sm" onClick={handleSetAsMainThumbnail} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white rounded-none font-bold">
+                          <CheckCircle className="w-3.5 h-3.5 mr-2" /> Set Main
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-gray-500 dark:text-gray-400 text-sm py-8 flex items-center gap-2">
-                      <Sparkles className="w-6 h-6 animate-pulse text-cyan-400" />
+                    <div className="text-zinc-400 text-sm py-12 flex flex-col items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 font-semibold text-center px-4">
+                      <ImageIcon className="w-6 h-6 mb-2 text-zinc-300" />
                       No final thumbnail yet
                     </div>
                   )}
                 </div>
+
               </CardContent>
             </Card>
+            </div>
           </div>
         </div>
 
-        {/* 3. Move the Start Over button to a floating position at the bottom left of the main content area */}
         {selectedVideoForThumbnail && (
-          <div className="fixed left-4 sm:left-8 bottom-4 sm:bottom-8 z-50">
+          <div className="fixed left-6 bottom-6 z-50">
             <Button
               variant="outline"
               onClick={resetWorkflow}
-              className="border-2 border-transparent bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 hover:from-teal-200 hover:to-cyan-200 shadow-md rounded-full px-3 sm:px-6 py-2 font-semibold text-xs sm:text-sm"
-              style={{ boxShadow: "0 2px 16px 0 rgba(0, 200, 200, 0.08)" }}
+              className="border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm rounded-none px-6 h-10 font-bold uppercase tracking-widest text-xs"
             >
-              <RefreshCw className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> Start Over
+              <RefreshCw className="mr-2 h-4 w-4 text-zinc-400" /> Start Over
             </Button>
           </div>
         )}
 
+        {/* Dialogs */}
         <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-          <DialogContent className="bg-white dark:bg-gray-900 rounded-lg">
+          <DialogContent className="bg-white rounded-none border-zinc-200">
             <DialogHeader>
-              <DialogTitle className="text-gray-800 dark:text-gray-200">
-                Thumbnail Set Successfully!
-              </DialogTitle>
-              <DialogDescription className="text-gray-600 dark:text-gray-400">
-                Your new thumbnail has been set as the main thumbnail for this
-                video.
-              </DialogDescription>
+              <DialogTitle className="text-zinc-900 font-bold">Success!</DialogTitle>
+              <DialogDescription className="text-zinc-500">Thumbnail set as the main thumbnail.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button
-                onClick={() => setShowPreviewDialog(false)}
-                className="text-sm py-1"
-              >
-                Close
-              </Button>
+              <Button onClick={() => setShowPreviewDialog(false)} className="rounded-none bg-blue-600 text-white font-bold">Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
-          <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 rounded-lg">
-            <DialogHeader>
-              <DialogTitle className="text-gray-800 dark:text-gray-200">
-                Thumbnail Preview
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex justify-center">
+          <DialogContent className="max-w-4xl bg-white rounded-none border-zinc-200 p-0 overflow-hidden">
+            <div className="bg-zinc-900 w-full flex items-center justify-center p-4">
               {previewThumbnail && (
-                <img
-                  src={previewThumbnail}
-                  alt="Thumbnail preview"
-                  className="max-w-full max-h-80 object-contain rounded-md shadow-md"
-                />
+                <img src={previewThumbnail} alt="Thumbnail preview" className="max-w-full max-h-[70vh] object-contain border border-zinc-800" />
               )}
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowPreviewModal(false)}
-                className="text-sm py-1"
-              >
-                Close
-              </Button>
+            <div className="p-4 flex justify-end gap-2 bg-white border-t border-zinc-200">
+              <Button variant="outline" onClick={() => setShowPreviewModal(false)} className="rounded-none border-zinc-200 text-zinc-900 font-bold">Close</Button>
               {previewThumbnail && (
-                <Button
-                  onClick={() => {
-                    handleDownload(previewThumbnail, "thumbnail-preview.png");
-                    setShowPreviewModal(false);
-                  }}
-                  className="text-sm py-1"
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  Download
+                <Button onClick={() => { handleDownload(previewThumbnail, "thumbnail-preview.png"); setShowPreviewModal(false); }} className="rounded-none bg-blue-600 text-white font-bold">
+                  <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               )}
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
+
       </div>
     </div>
   );

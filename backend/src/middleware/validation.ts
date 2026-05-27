@@ -6,9 +6,10 @@ export const validateVideoUpload = [
     .isLength({ min: 1, max: 200 })
     .withMessage("Title must be between 1 and 200 characters"),
   body("description")
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 1, max: 2000 })
-    .withMessage("Description must be between 1 and 2000 characters"),
+    .isLength({ max: 2000 })
+    .withMessage("Description must be at most 2000 characters"),
   body("cloudinaryVideoUrl")
     .trim()
     .isLength({ min: 1 })

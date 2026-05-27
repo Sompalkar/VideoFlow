@@ -13,8 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { MainNav } from "@/components/main-nav";
-import { DashboardNav } from "@/components/dashboard-nav";
+
+
 import {
   Youtube,
   CheckCircle,
@@ -61,20 +61,15 @@ export default function YouTubePage() {
   const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
-    if (user?.id) { // Only check for user.id
+    if (user?.id) {
       checkYouTubeStatus();
     }
-  }, [user?.id]); // Only depend on user.id
+  }, [user?.id]);
 
   const checkYouTubeStatus = async () => {
     try {
-      const response = await apiClient.get<YouTubeStatus>(
-        "/youtube/status",
-        undefined,
-        { withCredentials: true }
-      );
+      const response = await apiClient.get<YouTubeStatus>("/youtube/status", undefined, { withCredentials: true });
       setYoutubeStatus(response);
-
       if (response.connected) {
         fetchChannelInfo();
       }
@@ -86,17 +81,11 @@ export default function YouTubePage() {
   const fetchChannelInfo = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<{ channel: ChannelInfo }>(
-        "/youtube/channel",
-        undefined,
-        { withCredentials: true }
-      );
+      const response = await apiClient.get<{ channel: ChannelInfo }>("/youtube/channel", undefined, { withCredentials: true });
       setChannelInfo(response.channel);
       setError("");
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Failed to fetch channel info"
-      );
+      setError(error instanceof Error ? error.message : "Failed to fetch channel info");
     } finally {
       setIsLoading(false);
     }
@@ -105,20 +94,11 @@ export default function YouTubePage() {
   const refreshChannelInfo = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{ channel: ChannelInfo }>(
-        "/youtube/refresh-channel",
-        {},
-        undefined,
-        { withCredentials: true }
-      );
+      const response = await apiClient.post<{ channel: ChannelInfo }>("/youtube/refresh-channel", {}, undefined, { withCredentials: true });
       setChannelInfo(response.channel);
       setError("");
     } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to refresh channel info"
-      );
+      setError(error instanceof Error ? error.message : "Failed to refresh channel info");
     } finally {
       setIsLoading(false);
     }
@@ -127,18 +107,11 @@ export default function YouTubePage() {
   const connectYouTube = async () => {
     setIsConnecting(true);
     setError("");
-
     try {
-      const response = await apiClient.get<{ authUrl: string }>(
-        "/youtube/auth-url",
-        undefined,
-        { withCredentials: true }
-      );
+      const response = await apiClient.get<{ authUrl: string }>("/youtube/auth-url", undefined, { withCredentials: true });
       window.location.href = response.authUrl;
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Failed to connect YouTube"
-      );
+      setError(error instanceof Error ? error.message : "Failed to connect YouTube");
       setIsConnecting(false);
     }
   };
@@ -146,20 +119,12 @@ export default function YouTubePage() {
   const disconnectYouTube = async () => {
     setIsLoading(true);
     try {
-      await apiClient.delete("/youtube/disconnect", undefined, {
-        withCredentials: true,
-      });
+      await apiClient.delete("/youtube/disconnect", undefined, { withCredentials: true });
       setChannelInfo(null);
-      setYoutubeStatus({
-        connected: false,
-        channelId: null,
-        channelName: null,
-      });
+      setYoutubeStatus({ connected: false, channelId: null, channelName: null });
       setError("");
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Failed to disconnect YouTube"
-      );
+      setError(error instanceof Error ? error.message : "Failed to disconnect YouTube");
     } finally {
       setIsLoading(false);
     }
@@ -167,39 +132,25 @@ export default function YouTubePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">
-            Please log in to access YouTube settings
-          </h1>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Please log in to access YouTube settings</h1>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      <MainNav />
-      <DashboardNav />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-zinc-50 font-sans">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Youtube className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              YouTube Integration
-            </h1>
-          </div>
-          <p className="text-gray-600">
-            Manage your YouTube channel connection and publishing settings
+        <div className="mb-8 border-b border-zinc-200 pb-6">
+          <h1 className="text-3xl font-bold text-zinc-950 tracking-tight">YouTube Integration</h1>
+          <p className="text-zinc-500 mt-2 text-sm uppercase tracking-wider font-semibold">
+            Manage your YouTube channel connection
           </p>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive" className="mb-6 rounded-none border-red-200 bg-red-50 text-red-900">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -208,70 +159,50 @@ export default function YouTubePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            
             {/* Connection Status */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+              <CardHeader className="border-b border-zinc-100 pb-4">
+                <CardTitle className="text-lg font-bold flex items-center space-x-2 text-zinc-900">
                   <Youtube className="w-5 h-5 text-red-600" />
                   <span>Connection Status</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-zinc-500">
                   Your YouTube channel connection and authentication status
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {youtubeStatus.connected ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-200">
                       <div className="flex items-center space-x-3">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
+                        <CheckCircle className="w-5 h-5 text-zinc-900" />
                         <div>
-                          <p className="font-semibold text-green-900">
-                            Connected
-                          </p>
-                          <p className="text-sm text-green-700">
-                            Your YouTube channel is connected and ready
-                          </p>
+                          <p className="font-bold text-zinc-900 text-sm">Connected</p>
+                          <p className="text-xs text-zinc-500">Your YouTube channel is ready</p>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        Active
-                      </Badge>
+                      <Badge className="bg-zinc-900 text-white hover:bg-zinc-800 rounded-none shadow-none">Active</Badge>
                     </div>
 
                     {channelInfo && (
-                      <div className="p-4 bg-gray-50 rounded-xl">
+                      <div className="p-4 border border-zinc-200 bg-white">
                         <div className="flex items-center space-x-4">
-                          <Avatar className="w-16 h-16">
-                            <AvatarImage
-                              src={channelInfo.thumbnail || "/placeholder.svg"}
-                              alt={channelInfo.title}
-                            />
-                            <AvatarFallback>
-                              {channelInfo.title.charAt(0)}
-                            </AvatarFallback>
+                          <Avatar className="w-16 h-16 rounded-none border border-zinc-200">
+                            <AvatarImage src={channelInfo.thumbnail} alt={channelInfo.title} className="rounded-none object-cover" />
+                            <AvatarFallback className="rounded-none bg-zinc-100 text-zinc-500">{channelInfo.title.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {channelInfo.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 line-clamp-2">
-                              {channelInfo.description}
-                            </p>
-                            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                            <h3 className="text-lg font-bold text-zinc-900">{channelInfo.title}</h3>
+                            <p className="text-sm text-zinc-500 line-clamp-2 mt-1">{channelInfo.description}</p>
+                            <div className="flex items-center space-x-4 mt-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                               <span className="flex items-center">
-                                <Users className="w-4 h-4 mr-1" />
-                                {Number.parseInt(
-                                  channelInfo.subscriberCount
-                                ).toLocaleString()}{" "}
-                                subscribers
+                                <Users className="w-3.5 h-3.5 mr-1.5" />
+                                {Number.parseInt(channelInfo.subscriberCount).toLocaleString()} subs
                               </span>
                               <span className="flex items-center">
-                                <Video className="w-4 h-4 mr-1" />
-                                {Number.parseInt(
-                                  channelInfo.videoCount
-                                ).toLocaleString()}{" "}
-                                videos
+                                <Video className="w-3.5 h-3.5 mr-1.5" />
+                                {Number.parseInt(channelInfo.videoCount).toLocaleString()} videos
                               </span>
                             </div>
                           </div>
@@ -280,57 +211,28 @@ export default function YouTubePage() {
                     )}
 
                     <div className="flex space-x-3">
-                      <Button
-                        onClick={refreshChannelInfo}
-                        disabled={isLoading}
-                        variant="outline"
-                        className="rounded-xl bg-transparent"
-                      >
-                        <RefreshCw
-                          className={`w-4 h-4 mr-2 ${
-                            isLoading ? "animate-spin" : ""
-                          }`}
-                        />
-                        Refresh Info
+                      <Button onClick={refreshChannelInfo} disabled={isLoading} variant="outline" className="rounded-none border-zinc-200 text-zinc-700 bg-white hover:bg-zinc-50 hover:text-zinc-900">
+                        <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} /> Refresh
                       </Button>
-                      <Button
-                        onClick={disconnectYouTube}
-                        disabled={isLoading}
-                        variant="outline"
-                        className="rounded-xl text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
-                      >
-                        <Unlink className="w-4 h-4 mr-2" />
-                        Disconnect
+                      <Button onClick={disconnectYouTube} disabled={isLoading} variant="outline" className="rounded-none border-red-200 text-red-600 bg-white hover:bg-red-50">
+                        <Unlink className="w-4 h-4 mr-2" /> Disconnect
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-zinc-100 flex items-center justify-center mx-auto mb-4 rounded-full">
                       <Youtube className="w-8 h-8 text-red-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Connect Your YouTube Channel
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Connect your YouTube channel to automatically publish
-                      approved videos and manage your content.
+                    <h3 className="text-lg font-bold text-zinc-900 mb-2">Connect Your Channel</h3>
+                    <p className="text-sm text-zinc-500 mb-6 max-w-sm mx-auto">
+                      Link your YouTube account to publish approved videos directly from the dashboard.
                     </p>
-                    <Button
-                      onClick={connectYouTube}
-                      disabled={isConnecting}
-                      className="bg-red-600 hover:bg-red-700 rounded-xl"
-                    >
+                    <Button onClick={connectYouTube} disabled={isConnecting} className="bg-red-600 hover:bg-red-700 text-white rounded-none shadow-none px-8">
                       {isConnecting ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Connecting...
-                        </>
+                        <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Connecting...</>
                       ) : (
-                        <>
-                          <Youtube className="w-4 h-4 mr-2" />
-                          Connect YouTube
-                        </>
+                        <><Youtube className="w-4 h-4 mr-2" /> Connect YouTube</>
                       )}
                     </Button>
                   </div>
@@ -340,44 +242,32 @@ export default function YouTubePage() {
 
             {/* Channel Analytics */}
             {youtubeStatus.connected && channelInfo && (
-              <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+              <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+                <CardHeader className="border-b border-zinc-100 pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center space-x-2 text-zinc-900">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
                     <span>Channel Analytics</span>
                   </CardTitle>
-                  <CardDescription>
-                    Overview of your YouTube channel performance
-                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-xl">
-                      <Eye className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                      <p className="text-2xl font-bold text-blue-900">
-                        {Number.parseInt(
-                          channelInfo.viewCount
-                        ).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-blue-700">Total Views</p>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 border border-zinc-200 bg-zinc-50">
+                      <div className="flex items-center space-x-2 mb-2 text-zinc-500 uppercase tracking-wider text-xs font-bold">
+                        <Eye className="w-4 h-4" /> <span>Views</span>
+                      </div>
+                      <p className="text-2xl font-bold text-zinc-900">{Number.parseInt(channelInfo.viewCount).toLocaleString()}</p>
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-xl">
-                      <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                      <p className="text-2xl font-bold text-green-900">
-                        {Number.parseInt(
-                          channelInfo.subscriberCount
-                        ).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-green-700">Subscribers</p>
+                    <div className="p-4 border border-zinc-200 bg-zinc-50">
+                      <div className="flex items-center space-x-2 mb-2 text-zinc-500 uppercase tracking-wider text-xs font-bold">
+                        <Users className="w-4 h-4" /> <span>Subscribers</span>
+                      </div>
+                      <p className="text-2xl font-bold text-zinc-900">{Number.parseInt(channelInfo.subscriberCount).toLocaleString()}</p>
                     </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-xl">
-                      <Video className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                      <p className="text-2xl font-bold text-purple-900">
-                        {Number.parseInt(
-                          channelInfo.videoCount
-                        ).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-purple-700">Videos</p>
+                    <div className="p-4 border border-zinc-200 bg-zinc-50">
+                      <div className="flex items-center space-x-2 mb-2 text-zinc-500 uppercase tracking-wider text-xs font-bold">
+                        <Video className="w-4 h-4" /> <span>Videos</span>
+                      </div>
+                      <p className="text-2xl font-bold text-zinc-900">{Number.parseInt(channelInfo.videoCount).toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -387,88 +277,69 @@ export default function YouTubePage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            
             {/* Quick Stats */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Stats</CardTitle>
+            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+              <CardHeader className="pb-3 border-b border-zinc-100">
+                <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">Quick Stats</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="pt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
-                    Videos published
-                  </span>
-                  <span className="font-semibold">12</span>
+                  <span className="text-sm font-medium text-zinc-600">Videos published</span>
+                  <span className="font-bold text-zinc-900">12</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
-                    Pending approval
-                  </span>
-                  <span className="font-semibold">3</span>
+                  <span className="text-sm font-medium text-zinc-600">Pending approval</span>
+                  <span className="font-bold text-zinc-900">3</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">This month</span>
-                  <span className="font-semibold">8</span>
+                  <span className="text-sm font-medium text-zinc-600">This month</span>
+                  <span className="font-bold text-zinc-900">8</span>
                 </div>
-                <Separator />
+                <Separator className="bg-zinc-100" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Success rate</span>
-                  <span className="font-semibold text-green-600">98%</span>
+                  <span className="text-sm font-medium text-zinc-600">Success rate</span>
+                  <span className="font-bold text-blue-600">98%</span>
                 </div>
               </CardContent>
             </Card>
 
             {/* Help & Support */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader>
-                <CardTitle className="text-lg">Help & Support</CardTitle>
+            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+              <CardHeader className="pb-3 border-b border-zinc-100">
+                <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">Help & Support</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start rounded-xl bg-transparent"
-                >
-                  <ExternalLink className="w-4 h-4 mr-3" />
-                  YouTube API Docs
+              <CardContent className="pt-4 space-y-2">
+                <Button variant="outline" className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 bg-white hover:bg-zinc-50 h-10">
+                  <ExternalLink className="w-4 h-4 mr-3" /> YouTube API Docs
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start rounded-xl bg-transparent"
-                >
-                  <MessageSquare className="w-4 h-4 mr-3" />
-                  Contact Support
+                <Button variant="outline" className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 bg-white hover:bg-zinc-50 h-10">
+                  <MessageSquare className="w-4 h-4 mr-3" /> Contact Support
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start rounded-xl bg-transparent"
-                >
-                  <Settings className="w-4 h-4 mr-3" />
-                  Troubleshooting
+                <Button variant="outline" className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 bg-white hover:bg-zinc-50 h-10">
+                  <Settings className="w-4 h-4 mr-3" /> Troubleshooting
                 </Button>
               </CardContent>
             </Card>
 
             {/* Recent Activity */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
+            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
+              <CardHeader className="pb-3 border-b border-zinc-100">
+                <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">Recent Activity</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-gray-600">
-                      Video published successfully
-                    </span>
+              <CardContent className="pt-4">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-600 shrink-0" />
+                    <span className="text-sm text-zinc-700 font-medium">Video published successfully</span>
                   </div>
-                  <div className="flex items-center space-x-3 text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <span className="text-gray-600">Channel info updated</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-zinc-900 shrink-0" />
+                    <span className="text-sm text-zinc-700 font-medium">Channel info updated</span>
                   </div>
-                  <div className="flex items-center space-x-3 text-sm">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full" />
-                    <span className="text-gray-600">
-                      Pending video approval
-                    </span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-zinc-400 shrink-0" />
+                    <span className="text-sm text-zinc-700 font-medium">Pending video approval</span>
                   </div>
                 </div>
               </CardContent>

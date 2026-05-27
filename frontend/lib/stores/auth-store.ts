@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { apiClient } from "@/lib/config/api";
 
 interface User {
@@ -15,6 +14,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
@@ -34,10 +34,10 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       user: null,
       isLoading: false,
+      isInitialized: false,
       error: null,
 
       // Initialize auth state on app startup
@@ -49,11 +49,11 @@ export const useAuthStore = create<AuthState>()(
             undefined,
             { withCredentials: true }
           );
-          set({ user: response.user });
+          set({ user: response.user, isInitialized: true });
         } catch (error) {
           console.log("No valid session found, user needs to login");
           // Clear any stale user data
-          set({ user: null });
+          set({ user: null, isInitialized: true });
         }
       },
 
@@ -171,12 +171,5 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
-    }),
-    {
-      name: "auth-storage",
-      partialize: (state) => ({
-        user: state.user,
-      }),
-    }
-  )
+  })
 );

@@ -292,6 +292,9 @@ export class CloudinaryService {
     } = {}
   ): Promise<any> {
     try {
+      // Initialize Cloudinary if not already done
+      initializeCloudinary();
+
       const result = await cloudinary.uploader.upload(dataUrl, {
         resource_type: "image",
         folder: options.folder || "videoflow",

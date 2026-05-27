@@ -6,6 +6,11 @@ import { MainNav } from "@/components/main-nav"
 import { DashboardNav } from "@/components/dashboard-nav"
 import { AuthProvider } from "@/components/auth-provider"
 
+// Fix Node 25 experimental localStorage crash
+if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+  delete (globalThis as any).localStorage;
+}
+
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {

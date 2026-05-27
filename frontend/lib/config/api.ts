@@ -1,27 +1,5 @@
-const normalizeBaseUrl = (url: string): string => {
-  if (!url) return "/api";
-  const trimmed = url.replace(/\/+$/, "");
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
-};
-
-const resolveBrowserBaseUrl = (): string | undefined => {
-  if (typeof window === "undefined") return undefined;
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  const origin = window.location?.origin;
-  return envUrl ? normalizeBaseUrl(envUrl) : normalizeBaseUrl(origin);
-};
-
-const resolveServerBaseUrl = (): string => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
-  }
-  return normalizeBaseUrl(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000");
-};
-
-const API_BASE_URL = resolveBrowserBaseUrl() || resolveServerBaseUrl();
-
-// console.log("API Base URL:", API_BASE_URL);
-// console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+// Use the environment variable if provided, otherwise default directly to the local backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 class ApiClient {
   private baseURL: string;

@@ -11,8 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { MainNav } from "@/components/main-nav";
-import { DashboardNav } from "@/components/dashboard-nav";
+
 import { PasswordChangeModal } from "@/components/password-change-modal";
 import {
   Play,
@@ -51,25 +50,23 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user?.id) {
-      // Only check for user.id, not the entire user object
       fetchVideos();
       fetchAnalytics();
 
-      // Show password change modal if user needs to change password
       if (user.needsPasswordChange) {
         setShowPasswordModal(true);
       }
     }
-  }, [user?.id, user?.needsPasswordChange]); // Only depend on specific user properties
+  }, [user?.id, user?.needsPasswordChange]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "published":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        return "bg-zinc-100 text-zinc-900 border-zinc-300";
       case "approved":
         return "bg-blue-50 text-blue-700 border-blue-200";
       case "pending":
-        return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
       case "rejected":
         return "bg-red-50 text-red-700 border-red-200";
       default:
@@ -103,8 +100,8 @@ export default function DashboardPage() {
       ).length,
       changeText: "this month",
       icon: Video,
-      color: "from-blue-500 to-cyan-500",
-      bgColor: "from-blue-50 to-cyan-50",
+      color: "bg-blue-600",
+      bgColor: "bg-white",
     },
     {
       title: "Published",
@@ -116,8 +113,8 @@ export default function DashboardPage() {
       ),
       changeText: "of total",
       icon: Youtube,
-      color: "from-emerald-500 to-green-500",
-      bgColor: "from-emerald-50 to-green-50",
+      color: "bg-zinc-900",
+      bgColor: "bg-white",
     },
     {
       title: "Pending Review",
@@ -125,8 +122,8 @@ export default function DashboardPage() {
       change: 0,
       changeText: "awaiting approval",
       icon: Clock,
-      color: "from-amber-500 to-orange-500",
-      bgColor: "from-amber-50 to-orange-50",
+      color: "bg-zinc-600",
+      bgColor: "bg-white",
     },
     {
       title: "Total Views",
@@ -134,25 +131,25 @@ export default function DashboardPage() {
       change: analytics?.viewsGrowth || 0,
       changeText: "vs last month",
       icon: TrendingUp,
-      color: "from-purple-500 to-pink-500",
-      bgColor: "from-purple-50 to-pink-50",
+      color: "bg-blue-500",
+      bgColor: "bg-white",
       format: "number",
     },
   ];
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
-        <Card className="w-full max-w-md shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <Card className="w-full max-w-md shadow-sm border border-zinc-200 rounded-none">
           <CardContent className="text-center p-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-blue-600 flex items-center justify-center mx-auto mb-4 rounded-none">
               <Play className="w-8 h-8 text-white fill-white" />
             </div>
-            <h1 className="text-2xl font-bold mb-4">
-              Please log in to access dashboard
+            <h1 className="text-2xl font-bold mb-4 tracking-tight">
+              Access Restricted
             </h1>
             <Link href="/auth/login">
-              <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+              <Button className="bg-blue-600 hover:bg-blue-700 rounded-none w-full">
                 Go to Login
               </Button>
             </Link>
@@ -163,25 +160,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      <MainNav />
-      <DashboardNav />
-
+    <div className="min-h-screen bg-zinc-50 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-10">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {user.name.split(" ")[0]}! 👋
+              <h1 className="text-3xl font-bold text-zinc-950 tracking-tight">
+                Welcome back, {user.name.split(" ")[0]}
               </h1>
-              <p className="text-gray-600 mt-1">
-                Here's what's happening with your videos today.
+              <p className="text-zinc-500 mt-2 text-sm uppercase tracking-wider font-semibold">
+                Overview of your workspace
               </p>
             </div>
             <div className="hidden sm:flex items-center space-x-3">
               <Link href="/dashboard/upload">
-                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-lg">
+                <Button className="bg-blue-600 hover:bg-blue-700 rounded-none shadow-none text-white font-medium px-6">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Video
                 </Button>
@@ -191,36 +185,36 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className={`border-0 shadow-lg bg-gradient-to-br ${stat.bgColor} hover:shadow-xl transition-all duration-300`}
+              className={`border border-zinc-200 shadow-sm rounded-none bg-white`}
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">
                       {stat.title}
                     </p>
-                    <p className="text-3xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-zinc-950 tracking-tight">
                       {stat.format === "number"
                         ? stat.value.toLocaleString()
                         : stat.value}
                     </p>
-                    <div className="flex items-center mt-2">
+                    <div className="flex items-center mt-3">
                       {stat.change > 0 ? (
-                        <ArrowUpRight className="w-4 h-4 text-green-600 mr-1" />
+                        <ArrowUpRight className="w-3 h-3 text-blue-600 mr-1" />
                       ) : stat.change < 0 ? (
-                        <ArrowDownRight className="w-4 h-4 text-red-600 mr-1" />
+                        <ArrowDownRight className="w-3 h-3 text-red-600 mr-1" />
                       ) : null}
                       <span
-                        className={`text-sm ${
+                        className={`text-xs font-medium ${
                           stat.change > 0
-                            ? "text-green-600"
+                            ? "text-blue-600"
                             : stat.change < 0
                             ? "text-red-600"
-                            : "text-gray-600"
+                            : "text-zinc-500"
                         }`}
                       >
                         {stat.change > 0 ? "+" : ""}
@@ -231,9 +225,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div
-                    className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}
+                    className={`w-8 h-8 ${stat.color} rounded-none flex items-center justify-center`}
                   >
-                    <stat.icon className="w-6 h-6 text-white" />
+                    <stat.icon className="w-4 h-4 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -241,131 +235,126 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Videos */}
           <div className="lg:col-span-2">
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader className="pb-4">
+            <Card className="shadow-sm border border-zinc-200 rounded-none bg-white">
+              <CardHeader className="pb-4 border-b border-zinc-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl flex items-center">
-                      <Video className="w-5 h-5 mr-2 text-indigo-600" />
+                    <CardTitle className="text-lg flex items-center tracking-tight text-zinc-950">
                       Recent Videos
                     </CardTitle>
-                    <CardDescription>
-                      Your latest video uploads and their status
+                    <CardDescription className="text-sm mt-1">
+                      Your latest uploads and their current status
                     </CardDescription>
                   </div>
                   <Link href="/dashboard/videos">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-xl bg-transparent"
+                      className="rounded-none border-zinc-200 text-zinc-700 hover:bg-zinc-100"
                     >
                       View All
-                      <ArrowUpRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="pt-4">
+                <div className="space-y-3">
                   {videosLoading ? (
                     <div className="space-y-4">
                       {[...Array(3)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl animate-pulse"
-                        >
-                          <div className="w-20 h-12 bg-gray-200 rounded-lg" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-3/4" />
-                            <div className="h-3 bg-gray-200 rounded w-1/2" />
-                          </div>
-                        </div>
+                         <div
+                           key={i}
+                           className="flex items-center space-x-4 p-4 bg-zinc-50 border border-zinc-100 animate-pulse"
+                         >
+                           <div className="w-20 h-12 bg-zinc-200" />
+                           <div className="flex-1 space-y-2">
+                             <div className="h-4 bg-zinc-200 w-3/4" />
+                             <div className="h-3 bg-zinc-200 w-1/2" />
+                           </div>
+                         </div>
                       ))}
                     </div>
                   ) : videos.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-8 h-8 text-indigo-600" />
+                    <div className="text-center py-12 border border-dashed border-zinc-200">
+                      <div className="w-12 h-12 bg-zinc-100 flex items-center justify-center mx-auto mb-4">
+                        <Video className="w-6 h-6 text-zinc-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        No videos yet
+                      <h3 className="text-md font-semibold text-zinc-950 mb-1">
+                        No videos found
                       </h3>
-                      <p className="text-gray-500 mb-6">
-                        Upload your first video to get started with VideoFlow
+                      <p className="text-sm text-zinc-500 mb-6">
+                        Upload a video to populate your dashboard
                       </p>
                       <Link href="/dashboard/upload">
-                        <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload Your First Video
+                        <Button className="bg-blue-600 hover:bg-blue-700 rounded-none shadow-none">
+                          Upload Now
                         </Button>
                       </Link>
                     </div>
                   ) : (
                     videos.slice(0, 5).map((video) => (
-                      <div
-                        key={video.id}
-                        className="group flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100 hover:shadow-md hover:bg-white transition-all duration-200"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <img
-                              src={
-                                video.cloudinaryThumbnailUrl ||
-                                "/placeholder.svg?height=48&width=80"
-                              }
-                              alt={video.title}
-                              className="w-20 h-12 object-cover rounded-lg shadow-sm"
-                            />
-                            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Play className="w-4 h-4 text-white fill-white" />
+                      <Link href={`/dashboard/videos/${video.id}`} key={video.id} className="block">
+                        <div
+                          className="group flex items-center justify-between p-3 bg-white border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="relative">
+                              <img
+                                src={
+                                  video.cloudinaryThumbnailUrl ||
+                                  "/placeholder.svg?height=48&width=80"
+                                }
+                                alt={video.title}
+                                className="w-24 h-14 object-cover border border-zinc-200"
+                              />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Play className="w-4 h-4 text-white fill-white" />
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold text-zinc-950 truncate group-hover:text-blue-600 transition-colors">
+                                {video.title}
+                              </h3>
+                              <div className="flex items-center space-x-3 mt-1 text-xs text-zinc-500">
+                                <span className="flex items-center">
+                                  <Calendar className="w-3 h-3 mr-1" />
+                                  {new Date(
+                                    video.uploadedAt
+                                  ).toLocaleDateString()}
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  {Math.floor(video.duration / 60)}:
+                                  {(video.duration % 60)
+                                    .toString()
+                                    .padStart(2, "0")}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {video.title}
-                            </h3>
-                            <div className="flex items-center space-x-3 mt-1 text-sm text-gray-500">
-                              <span className="flex items-center">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {new Date(
-                                  video.uploadedAt
-                                ).toLocaleDateString()}
+                          <div className="flex items-center space-x-4">
+                            <Badge
+                              className={`${getStatusColor(
+                                video.status
+                              )} border rounded-none px-2 py-0.5 shadow-none`}
+                            >
+                              <span className="capitalize text-[10px] font-bold uppercase tracking-wider">
+                                {video.status}
                               </span>
-                              <span>•</span>
-                              <span>
-                                {Math.floor(video.duration / 60)}:
-                                {(video.duration % 60)
-                                  .toString()
-                                  .padStart(2, "0")}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <Badge
-                            className={`${getStatusColor(
-                              video.status
-                            )} border rounded-full px-3 py-1`}
-                          >
-                            {getStatusIcon(video.status)}
-                            <span className="ml-1 capitalize text-xs font-medium">
-                              {video.status}
-                            </span>
-                          </Badge>
-                          <Link href={`/dashboard/videos/${video.id}`}>
+                            </Badge>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity bg-transparent"
+                              className="rounded-none h-8 w-8 p-0 text-zinc-400 group-hover:text-blue-600 group-hover:bg-blue-50"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
-                          </Link>
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                     ))
                   )}
                 </div>
@@ -376,36 +365,35 @@ export default function DashboardPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="shadow-lg  bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center">
-                  <BarChart3 className="w-5 h-5 mr-2 text-indigo-600" />
-                  Quick Actions
+            <Card className="shadow-sm border border-zinc-200 rounded-none bg-white">
+              <CardHeader className="pb-3 border-b border-zinc-100">
+                <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">
+                  Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col">
+              <CardContent className="pt-4 space-y-2 flex flex-col">
                 <Link href="/dashboard/upload">
-                  <Button className="w-full justify-start bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl">
+                  <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 rounded-none text-white font-medium shadow-none h-10">
                     <Upload className="w-4 h-4 mr-3" />
-                    Upload New Video
+                    New Upload
                   </Button>
                 </Link>
                 <Link href="/dashboard/team">
                   <Button
                     variant="outline"
-                    className="w-full justify-start rounded-xl bg-transparent"
+                    className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 h-10"
                   >
                     <Users className="w-4 h-4 mr-3" />
-                    Manage Team
+                    Team
                   </Button>
                 </Link>
                 <Link href="/dashboard/youtube">
                   <Button
                     variant="outline"
-                    className="w-full justify-start rounded-xl bg-transparent"
+                    className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 h-10"
                   >
                     <Youtube className="w-4 h-4 mr-3" />
-                    YouTube Settings
+                    Settings
                   </Button>
                 </Link>
               </CardContent>
@@ -413,110 +401,60 @@ export default function DashboardPage() {
 
             {/* Performance Overview */}
             {analytics && (
-              <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg flex items-center">
-                    <TrendingUp className="w-5 h-5 mr-2 text-indigo-600" />
-                    Performance
+              <Card className="shadow-sm border border-zinc-200 rounded-none bg-white">
+                <CardHeader className="pb-3 border-b border-zinc-100">
+                  <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">
+                    Metrics
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="pt-4 space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Eye className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm text-gray-600">Views</span>
+                        <Eye className="w-4 h-4 text-zinc-400" />
+                        <span className="text-sm text-zinc-600">Views</span>
                       </div>
-                      <span className="font-semibold">
+                      <span className="text-sm font-semibold text-zinc-950">
                         {analytics.totalViews.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <ThumbsUp className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-600">Likes</span>
+                        <ThumbsUp className="w-4 h-4 text-zinc-400" />
+                        <span className="text-sm text-zinc-600">Likes</span>
                       </div>
-                      <span className="font-semibold">
+                      <span className="text-sm font-semibold text-zinc-950">
                         {analytics.totalLikes.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <MessageSquare className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm text-gray-600">Comments</span>
+                        <MessageSquare className="w-4 h-4 text-zinc-400" />
+                        <span className="text-sm text-zinc-600">Comments</span>
                       </div>
-                      <span className="font-semibold">
+                      <span className="text-sm font-semibold text-zinc-950">
                         {analytics.totalComments.toLocaleString()}
                       </span>
                     </div>
                   </div>
-                  <div className="pt-3 border-t">
+                  <div className="pt-4 border-t border-zinc-100">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">
-                        Avg. Watch Time
+                      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                        Avg. Watch
                       </span>
-                      <span className="font-semibold">
+                      <span className="text-xs font-bold text-zinc-950">
                         {analytics.avgWatchTime}
                       </span>
                     </div>
-                    <Progress value={75} className="h-2" />
+                    <Progress value={75} className="h-1.5 rounded-none bg-zinc-100" />
                   </div>
                 </CardContent>
               </Card>
             )}
-
-            {/* YouTube Connection Status */}
-            <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center">
-                  <Youtube className="w-5 h-5 mr-2 text-red-600" />
-                  YouTube Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {user.youtubeConnected ? (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Connected
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Ready to publish videos
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-3 h-3 bg-amber-500 rounded-full" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Not Connected
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Connect to publish videos
-                        </p>
-                      </div>
-                    </div>
-                    <Link href="/dashboard/youtube">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full rounded-xl bg-transparent"
-                      >
-                        Connect YouTube
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
 
-      {/* Password Change Modal */}
       <PasswordChangeModal
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}

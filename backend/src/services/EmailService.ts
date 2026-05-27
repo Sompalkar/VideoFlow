@@ -86,41 +86,40 @@ export class EmailService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Team Invitation - VideoFlow</title>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-            .credentials { background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
-            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #18181b; background-color: #fafafa; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e4e4e7; }
+            .header { background: #09090b; color: white; padding: 40px 30px; text-align: center; }
+            .header img { height: 40px; margin-bottom: 20px; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.025em; }
+            .content { padding: 40px 30px; }
+            .credentials { background: #f4f4f5; padding: 20px; margin: 24px 0; border-left: 4px solid #2563eb; }
+            .credentials h3 { margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #52525b; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; font-weight: 600; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; margin: 24px 0; text-align: center; }
+            .footer { padding: 30px; text-align: center; color: #71717a; font-size: 13px; border-top: 1px solid #e4e4e7; background: #fafafa; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎬 Welcome to VideoFlow!</h1>
-              <p>You've been invited to join a creative team</p>
+              <h1>Welcome to VideoFlow</h1>
             </div>
             <div class="content">
               <h2>Hi there! 👋</h2>
               <p><strong>${data.inviterName}</strong> has invited you to join their team <strong>"${data.teamName}"</strong> as a <strong>${data.role}</strong>.</p>
               
               <div class="credentials">
-                <h3>🔐 Your Login Credentials:</h3>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Temporary Password:</strong> <code>${data.tempPassword}</code></p>
-                <p style="color: #e74c3c; font-size: 14px;">⚠️ Please change your password immediately after logging in.</p>
+                <h3>Your Login Credentials</h3>
+                <p style="margin-bottom: 8px;"><strong>Email:</strong> ${email}</p>
+                <p style="margin-top: 0;"><strong>Password:</strong> <code style="background: #e4e4e7; padding: 2px 6px; border-radius: 4px;">${data.tempPassword}</code></p>
+                <p style="color: #dc2626; font-size: 13px; margin-bottom: 0;">⚠️ Please change your password immediately after logging in.</p>
               </div>
 
               <div style="text-align: center;">
-                <a href="${data.loginUrl}" class="button">🚀 Get Started Now</a>
+                <a href="${data.loginUrl}" class="button">Get Started Now</a>
               </div>
-
-              <p>Welcome to the team! We're excited to have you on board. 🎉</p>
             </div>
             <div class="footer">
               <p>This invitation was sent by ${data.inviterName} from VideoFlow.</p>
-              <p>If you didn't expect this invitation, you can safely ignore this email.</p>
             </div>
           </div>
         </body>
@@ -164,40 +163,35 @@ export class EmailService {
           <meta charset="utf-8">
           <title>Video Approved - VideoFlow</title>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f0fdf4; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #18181b; background-color: #fafafa; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e4e4e7; }
+            .header { background: #09090b; color: white; padding: 40px 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.025em; }
+            .content { padding: 40px 30px; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; font-weight: 600; text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; margin: 24px 0; text-align: center; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎉 Video Approved!</h1>
+              <h1>Video Approved!</h1>
             </div>
             <div class="content">
               <h2>Great news! ✨</h2>
-              <p>Your video <strong>"${
-                data.videoTitle
-              }"</strong> has been approved by <strong>${
-      data.approverName
-    }</strong>.</p>
+              <p>Your video <strong>"${data.videoTitle}"</strong> has been approved by <strong>${data.approverName}</strong>.</p>
               
               ${
                 data.youtubeUrl
                   ? `
-                <p>🚀 <strong>It's now live on YouTube!</strong></p>
+                <p><strong>It's now live on YouTube!</strong></p>
                 <div style="text-align: center;">
-                  <a href="${data.youtubeUrl}" class="button">🎬 Watch on YouTube</a>
+                  <a href="${data.youtubeUrl}" class="button">Watch on YouTube</a>
                 </div>
               `
                   : `
-                <p>📤 It will be uploaded to YouTube shortly.</p>
+                <p>It will be uploaded to YouTube shortly.</p>
               `
               }
-              
-              <p>Keep up the excellent work! 👏</p>
             </div>
           </div>
         </body>
