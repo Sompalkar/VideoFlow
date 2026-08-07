@@ -39,7 +39,7 @@ export function MainNav() {
   if (!user) return null
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <nav className="bg-[#FAF6EE]/90 backdrop-blur-xl border-b border-stone-900/10 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -62,12 +62,12 @@ export function MainNav() {
                   href={item.href}
                   className={cn(
                     "flex items-center text-sm font-medium transition-colors relative py-2",
-                    isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900",
+                    isActive ? "text-teal-700" : "text-stone-600 hover:text-stone-900",
                   )}
                 >
                   {Icon && <Icon className="w-4 h-4 mr-2" />}
                   {item.name}
-                  {isActive && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />}
+                  {isActive && <div className="absolute -bottom-px left-0 right-0 h-0.5 bg-teal-700 rounded-full" />}
                 </Link>
               )
             })}
@@ -87,7 +87,7 @@ export function MainNav() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                    <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm">
+                    <AvatarFallback className="bg-teal-700 text-white text-sm font-semibold">
                       {user.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -128,7 +128,7 @@ export function MainNav() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 py-4">
+          <div className="md:hidden border-t border-stone-900/10 py-4">
             <div className="space-y-1">
               {navigation.map((item) => {
                 const isActive = pathname.startsWith(item.href)
@@ -138,8 +138,8 @@ export function MainNav() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-                      isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50",
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-xl",
+                      isActive ? "bg-teal-700/10 text-teal-700" : "text-stone-600 hover:bg-stone-900/5",
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >

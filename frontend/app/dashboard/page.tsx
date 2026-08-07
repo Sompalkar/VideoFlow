@@ -29,22 +29,18 @@ import {
   ArrowDownRight,
   MessageSquare,
   ThumbsUp,
-  BarChart3,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useVideoStore } from "@/lib/stores/video-store";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const { videos, fetchVideos, isLoading: videosLoading } = useVideoStore();
   const {
     analytics,
     fetchAnalytics,
-    isLoading: analyticsLoading,
   } = useDashboardStore();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -62,15 +58,15 @@ export default function DashboardPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "published":
-        return "bg-zinc-100 text-zinc-900 border-zinc-300";
+        return "bg-teal-700/10 text-teal-800 border-teal-700/20";
       case "approved":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "bg-teal-500/10 text-teal-700 border-teal-500/20";
       case "pending":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+        return "bg-yellow-400/20 text-yellow-700 border-yellow-500/30";
       case "rejected":
         return "bg-red-50 text-red-700 border-red-200";
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
+        return "bg-stone-100 text-stone-600 border-stone-200";
     }
   };
 
@@ -100,8 +96,7 @@ export default function DashboardPage() {
       ).length,
       changeText: "this month",
       icon: Video,
-      color: "bg-blue-600",
-      bgColor: "bg-white",
+      tile: "bg-teal-700",
     },
     {
       title: "Published",
@@ -113,8 +108,7 @@ export default function DashboardPage() {
       ),
       changeText: "of total",
       icon: Youtube,
-      color: "bg-zinc-900",
-      bgColor: "bg-white",
+      tile: "bg-stone-900",
     },
     {
       title: "Pending Review",
@@ -122,8 +116,7 @@ export default function DashboardPage() {
       change: 0,
       changeText: "awaiting approval",
       icon: Clock,
-      color: "bg-zinc-600",
-      bgColor: "bg-white",
+      tile: "bg-yellow-400 text-stone-900",
     },
     {
       title: "Total Views",
@@ -131,25 +124,24 @@ export default function DashboardPage() {
       change: analytics?.viewsGrowth || 0,
       changeText: "vs last month",
       icon: TrendingUp,
-      color: "bg-blue-500",
-      bgColor: "bg-white",
+      tile: "bg-teal-600",
       format: "number",
     },
   ];
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <Card className="w-full max-w-md shadow-sm border border-zinc-200 rounded-none">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF6EE]">
+        <Card className="w-full max-w-md shadow-sm border border-stone-900/10 rounded-3xl bg-white">
           <CardContent className="text-center p-8">
-            <div className="w-16 h-16 bg-blue-600 flex items-center justify-center mx-auto mb-4 rounded-none">
+            <div className="w-16 h-16 bg-teal-700 flex items-center justify-center mx-auto mb-4 rounded-2xl">
               <Play className="w-8 h-8 text-white fill-white" />
             </div>
-            <h1 className="text-2xl font-bold mb-4 tracking-tight">
+            <h1 className="font-display text-2xl font-semibold mb-4 tracking-tight text-stone-900">
               Access Restricted
             </h1>
             <Link href="/auth/login">
-              <Button className="bg-blue-600 hover:bg-blue-700 rounded-none w-full">
+              <Button className="bg-teal-700 hover:bg-teal-800 rounded-full w-full text-white">
                 Go to Login
               </Button>
             </Link>
@@ -160,27 +152,25 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans">
+    <div className="min-h-screen bg-[#FAF6EE] font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-10">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-stone-900/10 pb-6">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-950 tracking-tight">
+              <p className="text-xs uppercase tracking-widest font-semibold text-teal-700 mb-2">
+                Overview
+              </p>
+              <h1 className="font-display text-4xl font-semibold text-stone-900 tracking-tight">
                 Welcome back, {user.name.split(" ")[0]}
               </h1>
-              <p className="text-zinc-500 mt-2 text-sm uppercase tracking-wider font-semibold">
-                Overview of your workspace
-              </p>
             </div>
-            <div className="hidden sm:flex items-center space-x-3">
-              <Link href="/dashboard/upload">
-                <Button className="bg-blue-600 hover:bg-blue-700 rounded-none shadow-none text-white font-medium px-6">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Video
-                </Button>
-              </Link>
-            </div>
+            <Link href="/dashboard/upload">
+              <Button className="group bg-teal-700 hover:bg-teal-800 rounded-full text-white font-semibold px-6 h-11 shadow-lg shadow-teal-900/15 transition-all hover:-translate-y-0.5">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Video
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -189,32 +179,32 @@ export default function DashboardPage() {
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className={`border border-zinc-200 shadow-sm rounded-none bg-white`}
+              className="border border-stone-900/8 shadow-sm rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-stone-900/5"
             >
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1">
                       {stat.title}
                     </p>
-                    <p className="text-2xl font-bold text-zinc-950 tracking-tight">
+                    <p className="font-display text-3xl font-semibold text-stone-900 tracking-tight">
                       {stat.format === "number"
                         ? stat.value.toLocaleString()
                         : stat.value}
                     </p>
                     <div className="flex items-center mt-3">
                       {stat.change > 0 ? (
-                        <ArrowUpRight className="w-3 h-3 text-blue-600 mr-1" />
+                        <ArrowUpRight className="w-3 h-3 text-teal-700 mr-1" />
                       ) : stat.change < 0 ? (
                         <ArrowDownRight className="w-3 h-3 text-red-600 mr-1" />
                       ) : null}
                       <span
                         className={`text-xs font-medium ${
                           stat.change > 0
-                            ? "text-blue-600"
+                            ? "text-teal-700"
                             : stat.change < 0
                             ? "text-red-600"
-                            : "text-zinc-500"
+                            : "text-stone-500"
                         }`}
                       >
                         {stat.change > 0 ? "+" : ""}
@@ -225,9 +215,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div
-                    className={`w-8 h-8 ${stat.color} rounded-none flex items-center justify-center`}
+                    className={`w-11 h-11 ${stat.tile} rounded-2xl flex items-center justify-center shrink-0`}
                   >
-                    <stat.icon className="w-4 h-4 text-white" />
+                    <stat.icon className="w-5 h-5 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -238,14 +228,14 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Videos */}
           <div className="lg:col-span-2">
-            <Card className="shadow-sm border border-zinc-200 rounded-none bg-white">
-              <CardHeader className="pb-4 border-b border-zinc-100">
+            <Card className="shadow-sm border border-stone-900/8 rounded-2xl bg-white">
+              <CardHeader className="pb-4 border-b border-stone-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg flex items-center tracking-tight text-zinc-950">
+                    <CardTitle className="font-display text-xl flex items-center tracking-tight text-stone-900">
                       Recent Videos
                     </CardTitle>
-                    <CardDescription className="text-sm mt-1">
+                    <CardDescription className="text-sm mt-1 text-stone-500">
                       Your latest uploads and their current status
                     </CardDescription>
                   </div>
@@ -253,7 +243,7 @@ export default function DashboardPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-none border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+                      className="rounded-full border-stone-300 text-stone-700 hover:bg-stone-50"
                     >
                       View All
                     </Button>
@@ -263,33 +253,33 @@ export default function DashboardPage() {
               <CardContent className="pt-4">
                 <div className="space-y-3">
                   {videosLoading ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {[...Array(3)].map((_, i) => (
-                         <div
-                           key={i}
-                           className="flex items-center space-x-4 p-4 bg-zinc-50 border border-zinc-100 animate-pulse"
-                         >
-                           <div className="w-20 h-12 bg-zinc-200" />
-                           <div className="flex-1 space-y-2">
-                             <div className="h-4 bg-zinc-200 w-3/4" />
-                             <div className="h-3 bg-zinc-200 w-1/2" />
-                           </div>
-                         </div>
+                        <div
+                          key={i}
+                          className="flex items-center space-x-4 p-4 bg-[#FAF6EE] border border-stone-100 rounded-2xl animate-pulse"
+                        >
+                          <div className="w-24 h-14 bg-stone-200 rounded-xl" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-stone-200 w-3/4 rounded-full" />
+                            <div className="h-3 bg-stone-200 w-1/2 rounded-full" />
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : videos.length === 0 ? (
-                    <div className="text-center py-12 border border-dashed border-zinc-200">
-                      <div className="w-12 h-12 bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-6 h-6 text-zinc-400" />
+                    <div className="text-center py-12 border border-dashed border-stone-300 rounded-2xl bg-[#FAF6EE]">
+                      <div className="w-12 h-12 bg-teal-700/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Video className="w-6 h-6 text-teal-700" />
                       </div>
-                      <h3 className="text-md font-semibold text-zinc-950 mb-1">
+                      <h3 className="font-display text-lg font-semibold text-stone-900 mb-1">
                         No videos found
                       </h3>
-                      <p className="text-sm text-zinc-500 mb-6">
+                      <p className="text-sm text-stone-500 mb-6">
                         Upload a video to populate your dashboard
                       </p>
                       <Link href="/dashboard/upload">
-                        <Button className="bg-blue-600 hover:bg-blue-700 rounded-none shadow-none">
+                        <Button className="bg-teal-700 hover:bg-teal-800 rounded-full text-white">
                           Upload Now
                         </Button>
                       </Link>
@@ -297,50 +287,45 @@ export default function DashboardPage() {
                   ) : (
                     videos.slice(0, 5).map((video) => (
                       <Link href={`/dashboard/videos/${video.id}`} key={video.id} className="block">
-                        <div
-                          className="group flex items-center justify-between p-3 bg-white border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-colors cursor-pointer"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="relative">
+                        <div className="group flex items-center justify-between p-3 bg-white border border-stone-200 rounded-2xl hover:border-teal-300 hover:bg-teal-700/[0.03] transition-colors cursor-pointer">
+                          <div className="flex items-center space-x-4 min-w-0">
+                            <div className="relative shrink-0">
                               <img
                                 src={
                                   video.cloudinaryThumbnailUrl ||
                                   "/placeholder.svg?height=48&width=80"
                                 }
                                 alt={video.title}
-                                className="w-24 h-14 object-cover border border-zinc-200"
+                                className="w-24 h-14 object-cover rounded-xl border border-stone-200"
                               />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute inset-0 bg-stone-900/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Play className="w-4 h-4 text-white fill-white" />
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-semibold text-zinc-950 truncate group-hover:text-blue-600 transition-colors">
+                              <h3 className="text-sm font-semibold text-stone-900 truncate group-hover:text-teal-700 transition-colors">
                                 {video.title}
                               </h3>
-                              <div className="flex items-center space-x-3 mt-1 text-xs text-zinc-500">
+                              <div className="flex items-center space-x-3 mt-1 text-xs text-stone-500">
                                 <span className="flex items-center">
                                   <Calendar className="w-3 h-3 mr-1" />
-                                  {new Date(
-                                    video.uploadedAt
-                                  ).toLocaleDateString()}
+                                  {new Date(video.uploadedAt).toLocaleDateString()}
                                 </span>
                                 <span>•</span>
                                 <span>
                                   {Math.floor(video.duration / 60)}:
-                                  {(video.duration % 60)
-                                    .toString()
-                                    .padStart(2, "0")}
+                                  {(video.duration % 60).toString().padStart(2, "0")}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-3 shrink-0 pl-3">
                             <Badge
                               className={`${getStatusColor(
                                 video.status
-                              )} border rounded-none px-2 py-0.5 shadow-none`}
+                              )} border rounded-full px-2.5 py-0.5 shadow-none gap-1 hidden sm:inline-flex`}
                             >
+                              {getStatusIcon(video.status)}
                               <span className="capitalize text-[10px] font-bold uppercase tracking-wider">
                                 {video.status}
                               </span>
@@ -348,7 +333,7 @@ export default function DashboardPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="rounded-none h-8 w-8 p-0 text-zinc-400 group-hover:text-blue-600 group-hover:bg-blue-50"
+                              className="rounded-full h-8 w-8 p-0 text-stone-400 group-hover:text-teal-700 group-hover:bg-teal-700/10"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -365,15 +350,15 @@ export default function DashboardPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="shadow-sm border border-zinc-200 rounded-none bg-white">
-              <CardHeader className="pb-3 border-b border-zinc-100">
-                <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">
+            <Card className="shadow-sm border border-stone-900/8 rounded-2xl bg-white">
+              <CardHeader className="pb-3 border-b border-stone-100">
+                <CardTitle className="text-xs tracking-widest uppercase font-semibold text-stone-500">
                   Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 space-y-2 flex flex-col">
+              <CardContent className="pt-4 space-y-2.5 flex flex-col">
                 <Link href="/dashboard/upload">
-                  <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 rounded-none text-white font-medium shadow-none h-10">
+                  <Button className="w-full justify-start bg-teal-700 hover:bg-teal-800 rounded-xl text-white font-medium h-11">
                     <Upload className="w-4 h-4 mr-3" />
                     New Upload
                   </Button>
@@ -381,7 +366,7 @@ export default function DashboardPage() {
                 <Link href="/dashboard/team">
                   <Button
                     variant="outline"
-                    className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 h-10"
+                    className="w-full justify-start rounded-xl border-stone-300 text-stone-700 hover:bg-stone-50 hover:text-stone-900 h-11"
                   >
                     <Users className="w-4 h-4 mr-3" />
                     Team
@@ -390,10 +375,10 @@ export default function DashboardPage() {
                 <Link href="/dashboard/youtube">
                   <Button
                     variant="outline"
-                    className="w-full justify-start rounded-none border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 h-10"
+                    className="w-full justify-start rounded-xl border-stone-300 text-stone-700 hover:bg-stone-50 hover:text-stone-900 h-11"
                   >
                     <Youtube className="w-4 h-4 mr-3" />
-                    Settings
+                    YouTube
                   </Button>
                 </Link>
               </CardContent>
@@ -401,9 +386,9 @@ export default function DashboardPage() {
 
             {/* Performance Overview */}
             {analytics && (
-              <Card className="shadow-sm border border-zinc-200 rounded-none bg-white">
-                <CardHeader className="pb-3 border-b border-zinc-100">
-                  <CardTitle className="text-sm tracking-widest uppercase font-semibold text-zinc-500">
+              <Card className="shadow-sm border border-stone-900/8 rounded-2xl bg-white">
+                <CardHeader className="pb-3 border-b border-stone-100">
+                  <CardTitle className="text-xs tracking-widest uppercase font-semibold text-stone-500">
                     Metrics
                   </CardTitle>
                 </CardHeader>
@@ -411,42 +396,42 @@ export default function DashboardPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Eye className="w-4 h-4 text-zinc-400" />
-                        <span className="text-sm text-zinc-600">Views</span>
+                        <Eye className="w-4 h-4 text-teal-700" />
+                        <span className="text-sm text-stone-600">Views</span>
                       </div>
-                      <span className="text-sm font-semibold text-zinc-950">
+                      <span className="text-sm font-semibold text-stone-900">
                         {analytics.totalViews.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <ThumbsUp className="w-4 h-4 text-zinc-400" />
-                        <span className="text-sm text-zinc-600">Likes</span>
+                        <ThumbsUp className="w-4 h-4 text-teal-700" />
+                        <span className="text-sm text-stone-600">Likes</span>
                       </div>
-                      <span className="text-sm font-semibold text-zinc-950">
+                      <span className="text-sm font-semibold text-stone-900">
                         {analytics.totalLikes.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <MessageSquare className="w-4 h-4 text-zinc-400" />
-                        <span className="text-sm text-zinc-600">Comments</span>
+                        <MessageSquare className="w-4 h-4 text-teal-700" />
+                        <span className="text-sm text-stone-600">Comments</span>
                       </div>
-                      <span className="text-sm font-semibold text-zinc-950">
+                      <span className="text-sm font-semibold text-stone-900">
                         {analytics.totalComments.toLocaleString()}
                       </span>
                     </div>
                   </div>
-                  <div className="pt-4 border-t border-zinc-100">
+                  <div className="pt-4 border-t border-stone-100">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
                         Avg. Watch
                       </span>
-                      <span className="text-xs font-bold text-zinc-950">
+                      <span className="text-xs font-bold text-stone-900">
                         {analytics.avgWatchTime}
                       </span>
                     </div>
-                    <Progress value={75} className="h-1.5 rounded-none bg-zinc-100" />
+                    <Progress value={75} className="h-1.5 rounded-full bg-stone-100 [&>div]:bg-teal-700" />
                   </div>
                 </CardContent>
               </Card>

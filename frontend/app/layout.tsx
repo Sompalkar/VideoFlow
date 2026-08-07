@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Fraunces } from "next/font/google"
 import "./globals.css"
 import { MainNav } from "@/components/main-nav"
 import { DashboardNav } from "@/components/dashboard-nav"
@@ -11,7 +11,14 @@ if (typeof globalThis !== "undefined" && globalThis.localStorage) {
   delete (globalThis as any).localStorage;
 }
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  style: ["normal", "italic"],
+  axes: ["opsz", "SOFT", "WONK"],
+})
 
 export const metadata: Metadata = {
   title: "VideoFlow - Video Management Platform",
@@ -25,7 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${fraunces.variable} ${inter.className}`}>
         <AuthProvider>
           <main>{children}</main>
         </AuthProvider>

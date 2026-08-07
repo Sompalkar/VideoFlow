@@ -3,13 +3,6 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +15,11 @@ import {
   Loader2,
   AlertCircle,
   ArrowRight,
+  ShieldCheck,
+  Star,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -59,163 +55,171 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Play className="w-8 h-8 text-white fill-white" />
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Sign in to your VideoFlow account
+    <div className="min-h-screen bg-[#FAF6EE] text-stone-900 lg:grid lg:grid-cols-2">
+      {/* ===== Brand panel ===== */}
+      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-teal-900 text-white p-12 xl:p-16">
+        <div className="absolute inset-0 lp-dots-light" aria-hidden />
+        <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full bg-yellow-400/20 blur-3xl" aria-hidden />
+
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl bg-yellow-400 flex items-center justify-center">
+            <Play className="w-4 h-4 text-stone-900 fill-stone-900 ml-0.5" />
+          </span>
+          <span className="font-display text-2xl font-semibold tracking-tight">videoflow</span>
+        </Link>
+
+        <div className="relative">
+          <h2 className="font-display text-4xl xl:text-5xl font-semibold leading-[1.05] tracking-tight text-balance">
+            Welcome back to the calm side of{" "}
+            <span className="italic text-yellow-300">publishing.</span>
+          </h2>
+          <p className="mt-6 text-lg text-teal-100/90 max-w-md leading-relaxed">
+            Review, approve, and ship your team's videos to YouTube—without ever sharing your password.
           </p>
+
+          <div className="mt-10 rounded-2xl bg-white/8 border border-white/12 p-6 backdrop-blur max-w-md">
+            <div className="flex gap-1 mb-3">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              ))}
+            </div>
+            <p className="font-display italic text-[17px] text-teal-50 leading-relaxed">
+              "Editors upload drafts, I approve on my phone, and they go live. Effortless."
+            </p>
+            <div className="mt-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-yellow-400 text-stone-900 flex items-center justify-center font-bold text-sm">
+                SC
+              </div>
+              <div className="text-sm">
+                <div className="font-semibold">Sarah Chen</div>
+                <div className="text-teal-200/80">Tech Creator · 2.5M subs</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold text-center">
-              Sign In
-            </CardTitle>
-            <CardDescription className="text-center">
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email Address
-                </Label>
+        <div className="relative flex items-center gap-2 text-sm text-teal-100/80">
+          <ShieldCheck className="w-4 h-4 text-yellow-400" />
+          Your YouTube password is never shared
+        </div>
+      </aside>
+
+      {/* ===== Form panel ===== */}
+      <main className="relative flex items-center justify-center p-6 sm:p-10">
+        <div className="absolute inset-0 lp-dots opacity-70 lg:hidden" aria-hidden />
+        <div className="relative w-full max-w-md">
+          {/* Mobile logo */}
+          <Link href="/" className="lg:hidden flex justify-center mb-8">
+            <div className="relative w-40 h-11">
+              <Image src="/image.png" alt="VideoFlow" fill className="object-contain" priority />
+            </div>
+          </Link>
+
+          <div className="mb-8">
+            <h1 className="font-display text-4xl font-semibold tracking-tight text-stone-900">Sign in</h1>
+            <p className="mt-2 text-stone-600">
+              New here?{" "}
+              <Link href="/auth/register" className="font-semibold text-teal-700 hover:text-teal-800 underline-offset-4 hover:underline">
+                Create an account
+              </Link>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-stone-700">
+                Email address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="you@channel.com"
+                required
+                disabled={isLoading}
+                className="h-12 rounded-xl bg-white border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-stone-700">
+                Password
+              </Label>
+              <div className="relative">
                 <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  placeholder="Enter your email"
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                  placeholder="Enter your password"
                   required
                   disabled={isLoading}
-                  className="h-11 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  className="h-12 rounded-xl bg-white border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30 pr-12"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        password: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter your password"
-                    required
-                    disabled={isLoading}
-                    className="h-11 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={setRememberMe}
-                  />
-                  <Label htmlFor="remember" className="text-sm cursor-pointer">
-                    Remember me
-                  </Label>
-                </div>
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-12 px-3.5 hover:bg-transparent text-stone-400 hover:text-stone-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
-                  Forgot password?
-                </Link>
-              </div>
-
-              {error && (
-                <Alert variant="destructive" className="rounded-xl">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">
-                  New to VideoFlow?
-                </span>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
 
-            <Link href="/auth/register">
-              <Button
-                variant="outline"
-                className="w-full h-11 rounded-xl border-gray-200 hover:bg-gray-50 font-medium"
-              >
-                Create Account
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  className="data-[state=checked]:bg-teal-700 data-[state=checked]:border-teal-700"
+                />
+                <Label htmlFor="remember" className="text-sm text-stone-600 cursor-pointer">
+                  Remember me
+                </Label>
+              </div>
+              <Link href="/auth/forgot-password" className="text-sm font-medium text-teal-700 hover:text-teal-800">
+                Forgot password?
+              </Link>
+            </div>
 
-        <div className="text-center mt-8">
-          <Link
-            href="/"
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            ← Back to home
-          </Link>
+            {error && (
+              <Alert variant="destructive" className="rounded-xl">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              className="group w-full h-12 bg-teal-700 hover:bg-teal-800 text-white rounded-full font-semibold shadow-lg shadow-teal-900/15 transition-all hover:-translate-y-0.5"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center mt-10">
+            <Link href="/" className="text-sm text-stone-500 hover:text-stone-800 transition-colors">
+              ← Back to home
+            </Link>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

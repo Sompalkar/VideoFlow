@@ -3,17 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MainNav } from "@/components/main-nav";
 
 import {
   Sparkles,
   ImageIcon,
   Wand2,
-  Type,
   Download,
   RefreshCw,
   Eye,
@@ -50,19 +40,10 @@ interface Frame {
   timestamp: number;
 }
 
-interface GeneratedThumbnail {
-  url: string;
-  publicId: string;
-  style?: string;
-  prompt?: string;
-}
-
 export default function ThumbnailGeneratorPage() {
   const { user } = useAuthStore();
   const {
     uploadedVideos,
-    isLoading,
-    isGenerating,
     isEnhancing,
     error,
     fetchUploadedVideos,
@@ -81,9 +62,9 @@ export default function ThumbnailGeneratorPage() {
   const [aiPrompt, setAIPrompt] = useState("");
   const aiService = "huggingface";
   const [overlayText, setOverlayText] = useState("");
-  const [fontFamily, setFontFamily] = useState("Arial");
-  const [fontSize, setFontSize] = useState(60);
-  const [fontColor, setFontColor] = useState("#FFFFFF");
+  const [fontFamily] = useState("Arial");
+  const [fontSize] = useState(60);
+  const [fontColor] = useState("#FFFFFF");
   const [overlayedUrl, setOverlayedUrl] = useState<string | null>(null);
   const [finalThumbnail, setFinalThumbnail] = useState<string | null>(null);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -344,37 +325,38 @@ export default function ThumbnailGeneratorPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Please log in to access tools</h1>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF6EE]">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-stone-900">Please log in to access tools</h1>
       </div>
     );
   }
 
+  const sectionHeader = "flex items-center gap-2 text-xs font-bold text-stone-500 uppercase tracking-widest";
+
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50 font-sans">
-      <div className="flex-1 max-w-[1400px] mx-auto px-4 py-6 w-full">
-        <div className="mb-6 border-b border-zinc-200 pb-4">
-          <h1 className="text-2xl font-bold text-zinc-950 flex items-center gap-2 tracking-tight">
-            <Sparkles className="w-5 h-5 text-blue-600" />
-            AI Thumbnail Generator
+    <div className="flex flex-col min-h-screen bg-[#FAF6EE] font-sans">
+      <div className="flex-1 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div className="mb-8 border-b border-stone-900/10 pb-6">
+          <p className="text-xs uppercase tracking-widest font-semibold text-teal-700 mb-2">AI Studio</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900 tracking-tight flex items-center gap-2.5">
+            <Sparkles className="w-7 h-7 text-teal-700" />
+            Thumbnail Generator
           </h1>
-          <p className="text-zinc-500 mt-1 text-sm font-semibold uppercase tracking-wider">
-            Create stunning thumbnails with AI
-          </p>
+          <p className="text-stone-500 mt-2">Turn any frame into a scroll-stopping thumbnail with AI.</p>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-4 rounded-none border-red-200 bg-red-50 text-red-900">
+          <Alert variant="destructive" className="mb-4 rounded-2xl border-red-200 bg-red-50 text-red-900">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {(isEnhancing || enhancementStatus) && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200">
+          <div className="mb-4 p-3.5 bg-teal-700/5 border border-teal-700/15 rounded-2xl">
             <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-              <span className="text-sm font-semibold text-blue-900">
+              <Loader2 className="h-4 w-4 animate-spin text-teal-700" />
+              <span className="text-sm font-semibold text-teal-800">
                 {enhancementStatus || "Enhancing thumbnail with AI..."}
               </span>
             </div>
@@ -384,31 +366,28 @@ export default function ThumbnailGeneratorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Column: Controls */}
           <div className="lg:col-span-3 flex flex-col gap-6 min-w-0">
-            
-            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
-              <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
+            <Card className="rounded-2xl shadow-sm border border-stone-900/8 bg-white">
+              <CardHeader className="bg-[#FAF6EE] border-b border-stone-100 p-4 rounded-t-2xl">
+                <CardTitle className={sectionHeader}>
+                  <Sparkles className="w-4 h-4 text-teal-700" />
                   AI Enhancement Options
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
                 <div>
-                  <Label className="text-zinc-900 font-bold text-xs uppercase tracking-widest">
-                    AI Prompt
-                  </Label>
+                  <Label className="text-stone-700 font-medium text-xs uppercase tracking-widest">AI Prompt</Label>
                   <Textarea
                     placeholder="Describe how to enhance this frame..."
                     value={aiPrompt}
                     onChange={(e) => setAIPrompt(e.target.value)}
                     rows={2}
-                    className="mt-1 text-sm rounded-none border-zinc-300 focus-visible:ring-blue-600"
+                    className="mt-1.5 text-sm rounded-xl border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30"
                   />
                 </div>
                 <Button
                   onClick={handleGenerateAI}
                   disabled={isEnhancing}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none h-10 font-bold"
+                  className="w-full bg-teal-700 hover:bg-teal-800 text-white rounded-full h-11 font-semibold shadow-lg shadow-teal-900/15"
                 >
                   {isEnhancing ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enhancing...</>
@@ -419,16 +398,16 @@ export default function ThumbnailGeneratorPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
-              <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
-                  <Layers className="w-4 h-4 text-zinc-400" />
+            <Card className="rounded-2xl shadow-sm border border-stone-900/8 bg-white">
+              <CardHeader className="bg-[#FAF6EE] border-b border-stone-100 p-4 rounded-t-2xl">
+                <CardTitle className={sectionHeader}>
+                  <Layers className="w-4 h-4 text-stone-400" />
                   Select Source Video
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
                 {uploadedVideos.length === 0 ? (
-                  <div className="text-center text-zinc-500 text-sm py-8 font-semibold">
+                  <div className="text-center text-stone-500 text-sm py-8 font-medium">
                     No uploaded videos found
                   </div>
                 ) : (
@@ -437,15 +416,15 @@ export default function ThumbnailGeneratorPage() {
                       <div
                         key={video.id}
                         className={cn(
-                          "border rounded-none cursor-pointer transition-all p-2 flex flex-col items-center bg-zinc-50",
+                          "border rounded-xl cursor-pointer transition-all p-2 flex flex-col items-center bg-[#FAF6EE]",
                           selectedVideoForThumbnail?.id === video.id
-                            ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50"
-                            : "border-zinc-200 hover:border-blue-400"
+                            ? "border-teal-600 ring-1 ring-teal-600 bg-teal-700/5"
+                            : "border-stone-200 hover:border-teal-400"
                         )}
                         onClick={() => handleSelectUploadedVideo(video)}
                       >
-                        <video src={video.cloudinaryVideoUrl} className="w-full h-24 object-cover mb-2 border border-zinc-200" muted playsInline />
-                        <div className="text-xs text-center text-zinc-900 truncate w-full font-bold">
+                        <video src={video.cloudinaryVideoUrl} className="w-full h-24 object-cover mb-2 rounded-lg border border-stone-200" muted playsInline />
+                        <div className="text-xs text-center text-stone-900 truncate w-full font-semibold">
                           {video.title}
                         </div>
                       </div>
@@ -457,26 +436,32 @@ export default function ThumbnailGeneratorPage() {
 
             {selectedVideoForThumbnail && (
               <>
-                <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
-                  <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
-                    <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
-                      <Video className="w-4 h-4 text-zinc-400" />
+                <Card className="rounded-2xl shadow-sm border border-stone-900/8 bg-white">
+                  <CardHeader className="bg-[#FAF6EE] border-b border-stone-100 p-4 rounded-t-2xl">
+                    <CardTitle className={sectionHeader}>
+                      <Video className="w-4 h-4 text-stone-400" />
                       Video Preview
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
-                    <video src={selectedVideoForThumbnail.cloudinaryVideoUrl} className="w-full h-32 object-cover border border-zinc-200 mb-3 bg-black" controls />
-                    <div className="text-sm text-center text-zinc-900 font-bold truncate">
+                    <video src={selectedVideoForThumbnail.cloudinaryVideoUrl} className="w-full h-32 object-cover rounded-xl border border-stone-200 mb-3 bg-black" controls />
+                    <div className="text-sm text-center text-stone-900 font-semibold truncate">
                       {selectedVideoForThumbnail.title}
                     </div>
                   </CardContent>
                 </Card>
 
+                {isExtracting && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-stone-500 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-teal-700" /> Extracting frames...
+                  </div>
+                )}
+
                 {frames.length > 0 && (
-                  <Card className="rounded-none shadow-none border border-zinc-200 bg-white">
-                    <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4">
-                      <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
-                        <ImageIcon className="w-4 h-4 text-zinc-400" />
+                  <Card className="rounded-2xl shadow-sm border border-stone-900/8 bg-white">
+                    <CardHeader className="bg-[#FAF6EE] border-b border-stone-100 p-4 rounded-t-2xl">
+                      <CardTitle className={sectionHeader}>
+                        <ImageIcon className="w-4 h-4 text-stone-400" />
                         Select Frame
                       </CardTitle>
                     </CardHeader>
@@ -486,15 +471,15 @@ export default function ThumbnailGeneratorPage() {
                           <div
                             key={idx}
                             className={cn(
-                              "border rounded-none cursor-pointer transition-all bg-zinc-50",
+                              "border rounded-xl overflow-hidden cursor-pointer transition-all bg-[#FAF6EE]",
                               selectedFrame?.url === frame.url
-                                ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50"
-                                : "border-zinc-200 hover:border-blue-400"
+                                ? "border-teal-600 ring-1 ring-teal-600"
+                                : "border-stone-200 hover:border-teal-400"
                             )}
                             onClick={() => handleFrameSelect(frame)}
                           >
-                            <img src={frame.url} alt={`Frame ${idx + 1}`} className="w-full h-20 object-cover border-b border-zinc-200" />
-                            <div className="text-center text-xs text-zinc-600 font-bold py-1.5 uppercase tracking-widest">
+                            <img src={frame.url} alt={`Frame ${idx + 1}`} className="w-full h-20 object-cover border-b border-stone-200" />
+                            <div className="text-center text-xs text-stone-600 font-semibold py-1.5 uppercase tracking-widest">
                               {frame.timestamp}s
                             </div>
                           </div>
@@ -509,70 +494,68 @@ export default function ThumbnailGeneratorPage() {
 
           {/* Right Column: Generated Thumbnails */}
           <div className="lg:col-span-2 min-w-0">
-            <div className="sticky top-6">
-              <Card className="bg-white shadow-none border border-zinc-200 rounded-none flex flex-col">
-                <CardHeader className="bg-zinc-50 border-b border-zinc-200 p-4 shrink-0">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold text-zinc-900 uppercase tracking-widest">
-                  <Wand2 className="w-4 h-4 text-blue-600" />
-                  Generated Thumbnails
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent className="p-6 flex-1 flex flex-col gap-8">
-                
-                <div className="w-full">
-                  <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">
-                    AI Enhanced Result
-                  </h3>
-                  {aiResult ? (
-                    <div className="p-4 border border-zinc-200 bg-zinc-50 flex flex-col gap-3">
-                      <img src={aiResult.url} alt="AI Enhanced" className="w-full h-40 object-cover border border-zinc-200 bg-zinc-200" />
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button size="sm" onClick={() => handlePreviewThumbnail(aiResult.url)} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold">
-                          <Eye className="w-3.5 h-3.5 mr-2 text-zinc-400" /> Preview
-                        </Button>
-                        <Button size="sm" onClick={() => handleDownload(aiResult.url, "ai-enhanced.png")} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold">
-                          <Download className="w-3.5 h-3.5 mr-2 text-zinc-400" /> Download
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-zinc-400 text-sm py-12 flex flex-col items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 font-semibold text-center px-4">
-                      <Sparkles className="w-6 h-6 mb-2 text-zinc-300" />
-                      Complete the workflow to generate
-                    </div>
-                  )}
-                </div>
+            <div className="sticky top-24">
+              <Card className="bg-white shadow-sm border border-stone-900/8 rounded-2xl flex flex-col">
+                <CardHeader className="bg-[#FAF6EE] border-b border-stone-100 p-4 shrink-0 rounded-t-2xl">
+                  <CardTitle className={sectionHeader}>
+                    <Wand2 className="w-4 h-4 text-teal-700" />
+                    Generated Thumbnails
+                  </CardTitle>
+                </CardHeader>
 
-                <div className="w-full">
-                  <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">
-                    Final Thumbnail
-                  </h3>
-                  {finalThumbnail ? (
-                    <div className="p-4 border border-zinc-200 bg-zinc-50 flex flex-col gap-3">
-                      <img src={finalThumbnail} alt="Final Thumbnail" className="w-full h-40 object-cover border border-zinc-200 bg-zinc-200" />
-                      <div className="flex flex-col sm:flex-row gap-2">
-                         <Button size="sm" onClick={() => handlePreviewThumbnail(finalThumbnail)} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold px-2">
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button size="sm" onClick={() => handleDownload(finalThumbnail, "final-thumbnail.png")} className="flex-1 bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-50 rounded-none font-bold px-2">
-                          <Download className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button size="sm" onClick={handleSetAsMainThumbnail} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white rounded-none font-bold">
-                          <CheckCircle className="w-3.5 h-3.5 mr-2" /> Set Main
-                        </Button>
+                <CardContent className="p-6 flex-1 flex flex-col gap-8">
+                  <div className="w-full">
+                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">
+                      AI Enhanced Result
+                    </h3>
+                    {aiResult ? (
+                      <div className="p-4 border border-stone-200 bg-[#FAF6EE] rounded-2xl flex flex-col gap-3">
+                        <img src={aiResult.url} alt="AI Enhanced" className="w-full h-40 object-cover rounded-xl border border-stone-200 bg-stone-200" />
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button size="sm" onClick={() => handlePreviewThumbnail(aiResult.url)} className="flex-1 bg-white border border-stone-300 text-stone-900 hover:bg-stone-50 rounded-full font-semibold">
+                            <Eye className="w-3.5 h-3.5 mr-2 text-stone-400" /> Preview
+                          </Button>
+                          <Button size="sm" onClick={() => handleDownload(aiResult.url, "ai-enhanced.png")} className="flex-1 bg-white border border-stone-300 text-stone-900 hover:bg-stone-50 rounded-full font-semibold">
+                            <Download className="w-3.5 h-3.5 mr-2 text-stone-400" /> Download
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-zinc-400 text-sm py-12 flex flex-col items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 font-semibold text-center px-4">
-                      <ImageIcon className="w-6 h-6 mb-2 text-zinc-300" />
-                      No final thumbnail yet
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="text-stone-400 text-sm py-12 flex flex-col items-center justify-center border border-dashed border-stone-300 rounded-2xl bg-[#FAF6EE] font-medium text-center px-4">
+                        <Sparkles className="w-6 h-6 mb-2 text-stone-300" />
+                        Complete the workflow to generate
+                      </div>
+                    )}
+                  </div>
 
-              </CardContent>
-            </Card>
+                  <div className="w-full">
+                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">
+                      Final Thumbnail
+                    </h3>
+                    {finalThumbnail ? (
+                      <div className="p-4 border border-stone-200 bg-[#FAF6EE] rounded-2xl flex flex-col gap-3">
+                        <img src={finalThumbnail} alt="Final Thumbnail" className="w-full h-40 object-cover rounded-xl border border-stone-200 bg-stone-200" />
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button size="sm" onClick={() => handlePreviewThumbnail(finalThumbnail)} className="flex-1 bg-white border border-stone-300 text-stone-900 hover:bg-stone-50 rounded-full font-semibold px-2">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="sm" onClick={() => handleDownload(finalThumbnail, "final-thumbnail.png")} className="flex-1 bg-white border border-stone-300 text-stone-900 hover:bg-stone-50 rounded-full font-semibold px-2">
+                            <Download className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="sm" onClick={handleSetAsMainThumbnail} className="flex-[2] bg-teal-700 hover:bg-teal-800 text-white rounded-full font-semibold">
+                            <CheckCircle className="w-3.5 h-3.5 mr-2" /> Set Main
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-stone-400 text-sm py-12 flex flex-col items-center justify-center border border-dashed border-stone-300 rounded-2xl bg-[#FAF6EE] font-medium text-center px-4">
+                        <ImageIcon className="w-6 h-6 mb-2 text-stone-300" />
+                        No final thumbnail yet
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -582,44 +565,43 @@ export default function ThumbnailGeneratorPage() {
             <Button
               variant="outline"
               onClick={resetWorkflow}
-              className="border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm rounded-none px-6 h-10 font-bold uppercase tracking-widest text-xs"
+              className="border border-stone-300 bg-white text-stone-900 hover:bg-stone-50 shadow-lg rounded-full px-6 h-11 font-semibold"
             >
-              <RefreshCw className="mr-2 h-4 w-4 text-zinc-400" /> Start Over
+              <RefreshCw className="mr-2 h-4 w-4 text-stone-400" /> Start Over
             </Button>
           </div>
         )}
 
         {/* Dialogs */}
         <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-          <DialogContent className="bg-white rounded-none border-zinc-200">
+          <DialogContent className="bg-white rounded-2xl border-stone-200">
             <DialogHeader>
-              <DialogTitle className="text-zinc-900 font-bold">Success!</DialogTitle>
-              <DialogDescription className="text-zinc-500">Thumbnail set as the main thumbnail.</DialogDescription>
+              <DialogTitle className="font-display text-xl font-semibold text-stone-900">Success!</DialogTitle>
+              <DialogDescription className="text-stone-500">Thumbnail set as the main thumbnail.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button onClick={() => setShowPreviewDialog(false)} className="rounded-none bg-blue-600 text-white font-bold">Close</Button>
+              <Button onClick={() => setShowPreviewDialog(false)} className="rounded-full bg-teal-700 hover:bg-teal-800 text-white font-semibold">Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
-          <DialogContent className="max-w-4xl bg-white rounded-none border-zinc-200 p-0 overflow-hidden">
-            <div className="bg-zinc-900 w-full flex items-center justify-center p-4">
+          <DialogContent className="max-w-4xl bg-white rounded-2xl border-stone-200 p-0 overflow-hidden">
+            <div className="bg-stone-900 w-full flex items-center justify-center p-4">
               {previewThumbnail && (
-                <img src={previewThumbnail} alt="Thumbnail preview" className="max-w-full max-h-[70vh] object-contain border border-zinc-800" />
+                <img src={previewThumbnail} alt="Thumbnail preview" className="max-w-full max-h-[70vh] object-contain rounded-lg border border-stone-800" />
               )}
             </div>
-            <div className="p-4 flex justify-end gap-2 bg-white border-t border-zinc-200">
-              <Button variant="outline" onClick={() => setShowPreviewModal(false)} className="rounded-none border-zinc-200 text-zinc-900 font-bold">Close</Button>
+            <div className="p-4 flex justify-end gap-2 bg-white border-t border-stone-200">
+              <Button variant="outline" onClick={() => setShowPreviewModal(false)} className="rounded-full border-stone-300 text-stone-900 font-semibold">Close</Button>
               {previewThumbnail && (
-                <Button onClick={() => { handleDownload(previewThumbnail, "thumbnail-preview.png"); setShowPreviewModal(false); }} className="rounded-none bg-blue-600 text-white font-bold">
+                <Button onClick={() => { handleDownload(previewThumbnail, "thumbnail-preview.png"); setShowPreviewModal(false); }} className="rounded-full bg-teal-700 hover:bg-teal-800 text-white font-semibold">
                   <Download className="w-4 h-4 mr-2" /> Download
                 </Button>
               )}
             </div>
           </DialogContent>
         </Dialog>
-
       </div>
     </div>
   );

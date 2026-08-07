@@ -3,13 +3,6 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +20,12 @@ import {
   Crown,
   Edit,
   Settings,
+  ShieldCheck,
+  Sparkles,
+  Youtube,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -53,14 +50,17 @@ export default function RegisterPage() {
     }
   }, [user, router]);
 
-  const [passwordStrength, setPasswordStrength] = useState({
+  const [passwordStrength, setPasswordStrength] = useState<{
+    score: number;
+    feedback: string[];
+  }>({
     score: 0,
     feedback: [],
   });
 
   const checkPasswordStrength = (password: string) => {
     let score = 0;
-    const feedback = [];
+    const feedback: string[] = [];
 
     if (password.length >= 8) score++;
     else feedback.push("At least 8 characters");
@@ -87,9 +87,9 @@ export default function RegisterPage() {
 
   const getPasswordStrengthColor = () => {
     if (passwordStrength.score <= 2) return "bg-red-500";
-    if (passwordStrength.score <= 3) return "bg-yellow-500";
-    if (passwordStrength.score <= 4) return "bg-blue-500";
-    return "bg-green-500";
+    if (passwordStrength.score <= 3) return "bg-yellow-400";
+    if (passwordStrength.score <= 4) return "bg-teal-400";
+    return "bg-teal-600";
   };
 
   const getPasswordStrengthText = () => {
@@ -125,305 +125,304 @@ export default function RegisterPage() {
     }
   };
 
+  const roles = [
+    {
+      value: "creator",
+      icon: Crown,
+      title: "Creator",
+      desc: "Manage your own channel and team",
+    },
+    {
+      value: "editor",
+      icon: Edit,
+      title: "Editor",
+      desc: "Upload and edit videos for creators",
+    },
+    {
+      value: "manager",
+      icon: Settings,
+      title: "Manager",
+      desc: "Manage team operations and analytics",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Play className="w-8 h-8 text-white fill-white" />
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Join VideoFlow
-          </h1>
-          <p className="text-gray-600 text-sm mt-2">
-            Create your account to get started
+    <div className="min-h-screen bg-[#FAF6EE] text-stone-900 lg:grid lg:grid-cols-2">
+      {/* ===== Brand panel ===== */}
+      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-teal-900 text-white p-12 xl:p-16">
+        <div className="absolute inset-0 lp-dots-light" aria-hidden />
+        <div className="absolute -bottom-20 -left-16 w-72 h-72 rounded-full bg-yellow-400/20 blur-3xl" aria-hidden />
+
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl bg-yellow-400 flex items-center justify-center">
+            <Play className="w-4 h-4 text-stone-900 fill-stone-900 ml-0.5" />
+          </span>
+          <span className="font-display text-2xl font-semibold tracking-tight">videoflow</span>
+        </Link>
+
+        <div className="relative">
+          <h2 className="font-display text-4xl xl:text-5xl font-semibold leading-[1.05] tracking-tight text-balance">
+            Start shipping videos <span className="italic text-yellow-300">without the chaos.</span>
+          </h2>
+          <p className="mt-6 text-lg text-teal-100/90 max-w-md leading-relaxed">
+            Set up your studio in minutes. Invite your editors, keep control, and publish straight to YouTube.
           </p>
+
+          <ul className="mt-10 space-y-4 max-w-md">
+            {[
+              { icon: ShieldCheck, text: "Your password is never shared with editors" },
+              { icon: Youtube, text: "One-click publishing with metadata & thumbnails" },
+              { icon: Sparkles, text: "AI thumbnail studio included on every plan" },
+            ].map((item, i) => (
+              <li key={i} className="flex items-center gap-3.5">
+                <span className="w-10 h-10 rounded-xl bg-white/10 border border-white/12 flex items-center justify-center shrink-0">
+                  <item.icon className="w-5 h-5 text-yellow-400" />
+                </span>
+                <span className="text-teal-50">{item.text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-center">
-              Create Account
-            </CardTitle>
-            <CardDescription className="text-sm text-center">
-              Fill in your details to create your VideoFlow account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name" className="text-sm font-medium">
-                  Full Name
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder="Enter your full name"
-                  required
-                  disabled={isLoading}
-                  className="h-10 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  placeholder="Enter your email"
-                  required
-                  disabled={isLoading}
-                  className="h-10 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) => handlePasswordChange(e.target.value)}
-                    placeholder="Create a password"
-                    required
-                    disabled={isLoading}
-                    className="h-10 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-10 w-10 px-0 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
-                </div>
-
-                {formData.password && (
-                  <div className="mt-2">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                        <div
-                          className={`h-1.5 rounded-full transition-all ${getPasswordStrengthColor()}`}
-                          style={{
-                            width: `${(passwordStrength.score / 5) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-600 font-medium">
-                        {getPasswordStrengthText()}
-                      </span>
-                    </div>
-                    {passwordStrength.feedback.length > 0 && (
-                      <p className="text-xs text-gray-500">
-                        Missing: {passwordStrength.feedback.join(", ")}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-medium"
-                >
-                  Confirm Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        confirmPassword: e.target.value,
-                      }))
-                    }
-                    placeholder="Confirm your password"
-                    required
-                    disabled={isLoading}
-                    className="h-10 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-10 w-10 px-0 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isLoading}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </Button>
-                </div>
-                {formData.confirmPassword &&
-                  formData.password !== formData.confirmPassword && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Passwords do not match
-                    </p>
-                  )}
-                {formData.confirmPassword &&
-                  formData.password === formData.confirmPassword && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Passwords match
-                    </p>
-                  )}
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Account Type</Label>
-                <RadioGroup
-                  value={formData.role}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, role: value }))
-                  }
-                  className="mt-3 space-y-3"
-                >
-                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 transition-colors">
-                    <RadioGroupItem value="creator" id="creator" />
-                    <Crown className="w-5 h-5 text-indigo-600" />
-                    <Label htmlFor="creator" className="cursor-pointer flex-1">
-                      <div>
-                        <div className="font-medium text-gray-900">Creator</div>
-                        <div className="text-xs text-gray-500">
-                          Manage your own channel and team
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 transition-colors">
-                    <RadioGroupItem value="editor" id="editor" />
-                    <Edit className="w-5 h-5 text-purple-600" />
-                    <Label htmlFor="editor" className="cursor-pointer flex-1">
-                      <div>
-                        <div className="font-medium text-gray-900">Editor</div>
-                        <div className="text-xs text-gray-500">
-                          Upload and edit videos for creators
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 transition-colors">
-                    <RadioGroupItem value="manager" id="manager" />
-                    <Settings className="w-5 h-5 text-green-600" />
-                    <Label htmlFor="manager" className="cursor-pointer flex-1">
-                      <div>
-                        <div className="font-medium text-gray-900">Manager</div>
-                        <div className="text-xs text-gray-500">
-                          Manage team operations and analytics
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={acceptTerms}
-                  onCheckedChange={setAcceptTerms}
-                />
-                <Label htmlFor="terms" className="text-xs cursor-pointer">
-                  I agree to the{" "}
-                  <Link
-                    href="/terms"
-                    className="text-indigo-600 hover:text-indigo-500 underline"
-                  >
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    href="/privacy"
-                    className="text-indigo-600 hover:text-indigo-500 underline"
-                  >
-                    Privacy Policy
-                  </Link>
-                </Label>
-              </div>
-
-              {error && (
-                <Alert variant="destructive" className="rounded-xl">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    {error}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                disabled={
-                  isLoading ||
-                  formData.password !== formData.confirmPassword ||
-                  !acceptTerms ||
-                  passwordStrength.score < 3
-                }
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  <>
-                    Create Account
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <div className="text-center mt-4">
-          <p className="text-gray-600 text-sm">
-            Already have an account?{" "}
-            <Link
-              href="/auth/login"
-              className="text-indigo-600 hover:text-indigo-500 font-medium"
-            >
-              Sign in
-            </Link>
-          </p>
+        <div className="relative text-sm text-teal-100/80">
+          No credit card required · 14-day free trial
         </div>
+      </aside>
 
-        <div className="text-center mt-6">
-          <Link
-            href="/"
-            className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            ← Back to home
+      {/* ===== Form panel ===== */}
+      <main className="relative flex items-center justify-center p-6 sm:p-10">
+        <div className="absolute inset-0 lp-dots opacity-70 lg:hidden" aria-hidden />
+        <div className="relative w-full max-w-md py-6">
+          {/* Mobile logo */}
+          <Link href="/" className="lg:hidden flex justify-center mb-8">
+            <div className="relative w-40 h-11">
+              <Image src="/image.png" alt="VideoFlow" fill className="object-contain" priority />
+            </div>
           </Link>
+
+          <div className="mb-8">
+            <h1 className="font-display text-4xl font-semibold tracking-tight text-stone-900">Create account</h1>
+            <p className="mt-2 text-stone-600">
+              Already have one?{" "}
+              <Link href="/auth/login" className="font-semibold text-teal-700 hover:text-teal-800 underline-offset-4 hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-stone-700">
+                Full name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Jane Creator"
+                required
+                disabled={isLoading}
+                className="h-12 rounded-xl bg-white border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-stone-700">
+                Email address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="you@channel.com"
+                required
+                disabled={isLoading}
+                className="h-12 rounded-xl bg-white border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-stone-700">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  placeholder="Create a password"
+                  required
+                  disabled={isLoading}
+                  className="h-12 rounded-xl bg-white border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30 pr-12"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-12 px-3.5 hover:bg-transparent text-stone-400 hover:text-stone-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+
+              {formData.password && (
+                <div className="mt-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <div className="flex-1 bg-stone-200 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${getPasswordStrengthColor()}`}
+                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-stone-600 font-medium">{getPasswordStrengthText()}</span>
+                  </div>
+                  {passwordStrength.feedback.length > 0 && (
+                    <p className="text-xs text-stone-500">Missing: {passwordStrength.feedback.join(", ")}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-stone-700">
+                Confirm password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="Confirm your password"
+                  required
+                  disabled={isLoading}
+                  className="h-12 rounded-xl bg-white border-stone-300 focus-visible:border-teal-600 focus-visible:ring-teal-600/30 pr-12"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-12 px-3.5 hover:bg-transparent text-stone-400 hover:text-stone-600"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                <p className="text-xs text-red-600">Passwords do not match</p>
+              )}
+              {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                <p className="text-xs text-teal-700 flex items-center">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Passwords match
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-stone-700">Account type</Label>
+              <RadioGroup
+                value={formData.role}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
+                className="space-y-2.5"
+              >
+                {roles.map((r) => {
+                  const active = formData.role === r.value;
+                  return (
+                    <Label
+                      key={r.value}
+                      htmlFor={r.value}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border cursor-pointer transition-colors ${
+                        active
+                          ? "border-teal-600 bg-teal-700/5 ring-1 ring-teal-600/30"
+                          : "border-stone-300 bg-white hover:border-teal-400"
+                      }`}
+                    >
+                      <RadioGroupItem
+                        value={r.value}
+                        id={r.value}
+                        className="border-stone-300 text-teal-700"
+                      />
+                      <span
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          active ? "bg-teal-700 text-white" : "bg-stone-100 text-stone-500"
+                        }`}
+                      >
+                        <r.icon className="w-4.5 h-4.5" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block font-semibold text-stone-900">{r.title}</span>
+                        <span className="block text-xs text-stone-500">{r.desc}</span>
+                      </span>
+                    </Label>
+                  );
+                })}
+              </RadioGroup>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <Checkbox
+                id="terms"
+                checked={acceptTerms}
+                onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+                className="mt-0.5 data-[state=checked]:bg-teal-700 data-[state=checked]:border-teal-700"
+              />
+              <Label htmlFor="terms" className="text-xs text-stone-600 cursor-pointer leading-relaxed">
+                I agree to the{" "}
+                <Link href="/terms" className="text-teal-700 hover:text-teal-800 underline">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-teal-700 hover:text-teal-800 underline">
+                  Privacy Policy
+                </Link>
+              </Label>
+            </div>
+
+            {error && (
+              <Alert variant="destructive" className="rounded-xl">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              className="group w-full h-12 bg-teal-700 hover:bg-teal-800 text-white rounded-full font-semibold shadow-lg shadow-teal-900/15 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+              disabled={
+                isLoading ||
+                formData.password !== formData.confirmPassword ||
+                !acceptTerms ||
+                passwordStrength.score < 3
+              }
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight className="w-4 h-4 ml-1.5 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center mt-8">
+            <Link href="/" className="text-sm text-stone-500 hover:text-stone-800 transition-colors">
+              ← Back to home
+            </Link>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

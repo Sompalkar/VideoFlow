@@ -24,8 +24,8 @@ export default function DashboardLayout({
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF6EE]">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-700" />
       </div>
     )
   }
@@ -35,7 +35,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-[#FAF6EE] font-sans flex flex-col">
       <MainNav />
       <div className="flex-1 flex flex-col min-h-0">
         {children}
