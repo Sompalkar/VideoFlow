@@ -1,10 +1,11 @@
 import { body } from "express-validator";
 
 export const validateVideoUpload = [
+  // 100 matches both the Video schema maxlength and YouTube's own title limit.
   body("title")
     .trim()
-    .isLength({ min: 1, max: 200 })
-    .withMessage("Title must be between 1 and 200 characters"),
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Title must be between 1 and 100 characters"),
   body("description")
     .optional({ checkFalsy: true })
     .trim()
@@ -15,13 +16,15 @@ export const validateVideoUpload = [
     .isLength({ min: 1 })
     .withMessage("Cloudinary Video URL is required for video upload"),
   body("cloudinaryVideoId")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ min: 1 })
     .withMessage("Cloudinary Video ID must not be empty if provided"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
+  // checkFalsy so an empty string from a client counts as "not provided"
+  // rather than being run through isURL() and rejected.
   body("cloudinaryThumbnailUrl")
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage("Thumbnail must be a valid URL"),
   body("fileSize")

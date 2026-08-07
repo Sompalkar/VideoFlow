@@ -4,11 +4,11 @@ export interface IVideo extends Document {
   title: string
   description: string
   tags: string[]
-  thumbnail: string
+  thumbnail?: string
   cloudinaryVideoId: string
   cloudinaryVideoUrl: string
   cloudinaryThumbnailId?: string
-  cloudinaryThumbnailUrl: string
+  cloudinaryThumbnailUrl?: string
   fileSize: number
   duration: number
   category: string
@@ -38,7 +38,7 @@ const VideoSchema = new Schema<IVideo>(
     },
     description: {
       type: String,
-      required: true,
+      default: "",
       maxlength: 5000,
     },
     tags: [
@@ -48,9 +48,9 @@ const VideoSchema = new Schema<IVideo>(
         maxlength: 50,
       },
     ],
+    // Optional: when no custom thumbnail is uploaded, YouTube generates one.
     thumbnail: {
       type: String,
-      required: true,
     },
     cloudinaryVideoId: {
       type: String,
@@ -65,7 +65,6 @@ const VideoSchema = new Schema<IVideo>(
     },
     cloudinaryThumbnailUrl: {
       type: String,
-      required: true,
     },
     fileSize: {
       type: Number,
