@@ -50,10 +50,10 @@ interface VideoState {
     title: string;
     description: string;
     tags: string[];
-    cloudinaryVideoId: string;
+    cloudinaryVideoId?: string;
     cloudinaryVideoUrl: string;
     cloudinaryThumbnailId?: string;
-    cloudinaryThumbnailUrl: string;
+    cloudinaryThumbnailUrl?: string;
     duration: number;
     fileSize: number;
     category?: string;

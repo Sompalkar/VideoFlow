@@ -49,6 +49,45 @@ interface ThumbnailFile {
   preview: string;
 }
 
+// Mirrors the backend rules in backend/src/middleware/validation.ts so the
+// user sees problems before we spend time uploading to Cloudinary.
+const TITLE_MAX = 200;
+const DESCRIPTION_MAX = 2000;
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+
+type FieldErrors = Partial<Record<"video" | "title" | "description" | "tags", string>>;
+
+function validateVideoDetails(
+  details: { title: string; description: string; tags: string },
+  video: VideoFile | null
+): FieldErrors {
+  const errors: FieldErrors = {};
+
+  if (!video) {
+    errors.video = "Select a video file to upload";
+  } else if (video.file.size > MAX_VIDEO_BYTES) {
+    errors.video = "Video must be smaller than 500MB";
+  }
+
+  const title = details.title.trim();
+  if (!title) {
+    errors.title = "Title is required";
+  } else if (title.length > TITLE_MAX) {
+    errors.title = `Title must be at most ${TITLE_MAX} characters (currently ${title.length})`;
+  }
+
+  if (details.description.trim().length > DESCRIPTION_MAX) {
+    errors.description = `Description must be at most ${DESCRIPTION_MAX} characters (currently ${details.description.trim().length})`;
+  }
+
+  const tags = details.tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+  if (tags.some((tag) => tag.length > 60)) {
+    errors.tags = "Each tag must be at most 60 characters";
+  }
+
+  return errors;
+}
+
 function getResourceType(file: File): "video" | "image" {
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
   const imageExts = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"];
@@ -79,6 +118,7 @@ export default function UploadPage() {
   const [thumbnailFile, setThumbnailFile] = useState<ThumbnailFile | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string>("");
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [videoDetails, setVideoDetails] = useState({
@@ -91,6 +131,12 @@ export default function UploadPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+
+  const validationErrors = validateVideoDetails(videoDetails, videoFile);
+  const isValid = Object.keys(validationErrors).length === 0;
+  // Only surface inline errors once the user has tried to publish, so a blank
+  // form doesn't greet them in red.
+  const shownErrors: FieldErrors = hasAttemptedSubmit ? validationErrors : {};
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -141,7 +187,14 @@ export default function UploadPage() {
   };
 
   const handleUpload = async () => {
-    if (!videoFile || !user || !videoDetails.title.trim() || isSubmitting) return;
+    if (!user || isSubmitting) return;
+
+    setHasAttemptedSubmit(true);
+    const errors = validateVideoDetails(videoDetails, videoFile);
+    if (Object.keys(errors).length > 0 || !videoFile) {
+      setError("Please fix the highlighted fields before publishing.");
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -168,7 +221,7 @@ export default function UploadPage() {
           videoResult?.data?.public_id ||
           videoResult?.publicId ||
           videoResult?.public_id ||
-          "",
+          undefined,
         cloudinaryVideoUrl:
           videoResult?.data?.url ||
           videoResult?.data?.secure_url ||
@@ -181,15 +234,24 @@ export default function UploadPage() {
           thumbnailResult?.publicId ||
           thumbnailResult?.public_id ||
           undefined,
+        // Must be undefined rather than "" when there is no thumbnail: the
+        // backend's optional() rule only skips undefined, so "" would be run
+        // through isURL() and rejected as a validation error.
         cloudinaryThumbnailUrl:
           thumbnailResult?.data?.url ||
           thumbnailResult?.data?.secure_url ||
           thumbnailResult?.url ||
           thumbnailResult?.secure_url ||
-          "",
+          undefined,
         fileSize: videoResult?.data?.bytes || videoResult?.bytes || videoFile.file.size,
         duration: videoResult?.data?.duration || videoResult?.duration || 0,
       };
+
+      if (!uploadPayload.cloudinaryVideoUrl) {
+        throw new Error(
+          "Cloudinary did not return a video URL. Please try uploading again."
+        );
+      }
 
       await uploadVideo(uploadPayload);
       setStep("success");
@@ -217,6 +279,7 @@ export default function UploadPage() {
       privacy: "public",
     });
     setError("");
+    setHasAttemptedSubmit(false);
     setIsSubmitting(false);
   };
 
@@ -301,7 +364,7 @@ export default function UploadPage() {
                   ) : (
                     <div className="flex flex-col gap-3">
                       <div className="relative aspect-video bg-black border border-zinc-200 group">
-                        <video 
+                        <video
                           src={videoFile.preview} 
                           className="w-full h-full object-contain"
                           controls
@@ -321,6 +384,11 @@ export default function UploadPage() {
                       </div>
                     </div>
                   )}
+                  {shownErrors.video && (
+                    <p className="mt-3 text-xs font-semibold text-red-600">
+                      {shownErrors.video}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -329,6 +397,9 @@ export default function UploadPage() {
                   <CardTitle className="text-sm font-bold uppercase tracking-widest text-zinc-900 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-blue-600" />
                     Custom Thumbnail
+                    <span className="ml-auto text-[10px] font-semibold text-zinc-400 normal-case tracking-normal">
+                      Optional
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -357,6 +428,11 @@ export default function UploadPage() {
                       <p className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Upload Image</p>
                       <p className="text-[10px] font-semibold text-zinc-400 mt-1 uppercase tracking-widest">16:9 Recommended</p>
                     </div>
+                  )}
+                  {!thumbnailFile && (
+                    <p className="mt-3 text-[11px] font-medium text-zinc-500 leading-relaxed">
+                      No thumbnail? YouTube will auto-generate one from your video.
+                    </p>
                   )}
                   <input
                     ref={thumbnailInputRef}
@@ -391,9 +467,33 @@ export default function UploadPage() {
                       value={videoDetails.title}
                       onChange={(e) => setVideoDetails((prev) => ({ ...prev, title: e.target.value }))}
                       placeholder="Enter a catchy title"
-                      className="rounded-none border-zinc-300 focus-visible:ring-blue-600 h-10 font-medium text-base"
+                      aria-invalid={!!shownErrors.title}
+                      aria-describedby={shownErrors.title ? "title-error" : undefined}
+                      className={cn(
+                        "rounded-none border-zinc-300 focus-visible:ring-blue-600 h-10 font-medium text-base",
+                        shownErrors.title && "border-red-500 focus-visible:ring-red-600"
+                      )}
                       required
                     />
+                    <div className="mt-1.5 flex items-center justify-between gap-3">
+                      {shownErrors.title ? (
+                        <p id="title-error" className="text-xs font-semibold text-red-600">
+                          {shownErrors.title}
+                        </p>
+                      ) : (
+                        <span />
+                      )}
+                      <span
+                        className={cn(
+                          "text-[10px] font-semibold uppercase tracking-widest shrink-0",
+                          videoDetails.title.trim().length > TITLE_MAX
+                            ? "text-red-600"
+                            : "text-zinc-400"
+                        )}
+                      >
+                        {videoDetails.title.trim().length}/{TITLE_MAX}
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -404,8 +504,32 @@ export default function UploadPage() {
                       onChange={(e) => setVideoDetails((prev) => ({ ...prev, description: e.target.value }))}
                       placeholder="Tell viewers about your video..."
                       rows={5}
-                      className="rounded-none border-zinc-300 focus-visible:ring-blue-600 font-medium"
+                      aria-invalid={!!shownErrors.description}
+                      aria-describedby={shownErrors.description ? "description-error" : undefined}
+                      className={cn(
+                        "rounded-none border-zinc-300 focus-visible:ring-blue-600 font-medium",
+                        shownErrors.description && "border-red-500 focus-visible:ring-red-600"
+                      )}
                     />
+                    <div className="mt-1.5 flex items-center justify-between gap-3">
+                      {shownErrors.description ? (
+                        <p id="description-error" className="text-xs font-semibold text-red-600">
+                          {shownErrors.description}
+                        </p>
+                      ) : (
+                        <span />
+                      )}
+                      <span
+                        className={cn(
+                          "text-[10px] font-semibold uppercase tracking-widest shrink-0",
+                          videoDetails.description.trim().length > DESCRIPTION_MAX
+                            ? "text-red-600"
+                            : "text-zinc-400"
+                        )}
+                      >
+                        {videoDetails.description.trim().length}/{DESCRIPTION_MAX}
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -417,9 +541,18 @@ export default function UploadPage() {
                         value={videoDetails.tags}
                         onChange={(e) => setVideoDetails((prev) => ({ ...prev, tags: e.target.value }))}
                         placeholder="gaming, tutorial, review (comma separated)"
-                        className="rounded-none border-zinc-300 focus-visible:ring-blue-600 h-10 pl-9 font-medium"
+                        aria-invalid={!!shownErrors.tags}
+                        className={cn(
+                          "rounded-none border-zinc-300 focus-visible:ring-blue-600 h-10 pl-9 font-medium",
+                          shownErrors.tags && "border-red-500 focus-visible:ring-red-600"
+                        )}
                       />
                     </div>
+                    {shownErrors.tags && (
+                      <p className="mt-1.5 text-xs font-semibold text-red-600">
+                        {shownErrors.tags}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-auto">
@@ -477,12 +610,24 @@ export default function UploadPage() {
                   </div>
 
                   <div className="pt-6 border-t border-zinc-200 mt-2 flex items-center justify-between">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                      {videoFile ? "Ready to publish" : "Waiting for video file"}
+                    <p
+                      className={cn(
+                        "text-xs font-bold uppercase tracking-widest",
+                        hasAttemptedSubmit && !isValid ? "text-red-600" : "text-zinc-400"
+                      )}
+                    >
+                      {!videoFile
+                        ? "Waiting for video file"
+                        : hasAttemptedSubmit && !isValid
+                          ? "Fix the highlighted fields"
+                          : "Ready to publish"}
                     </p>
                     <Button
                       onClick={handleUpload}
-                      disabled={!videoFile || !videoDetails.title.trim() || isSubmitting}
+                      // Intentionally not disabled on invalid input: clicking is
+                      // what reveals the inline errors explaining what's missing.
+                      disabled={isSubmitting}
+                      aria-disabled={!isValid}
                       className="bg-blue-600 hover:bg-blue-700 rounded-none text-white px-8 h-10 font-bold tracking-wide uppercase text-xs disabled:opacity-50"
                     >
                       <Upload className="w-4 h-4 mr-2" />
