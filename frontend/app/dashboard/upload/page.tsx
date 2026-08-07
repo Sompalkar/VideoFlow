@@ -51,8 +51,11 @@ interface ThumbnailFile {
 
 // Mirrors the backend rules in backend/src/middleware/validation.ts so the
 // user sees problems before we spend time uploading to Cloudinary.
-const TITLE_MAX = 200;
+// These must not exceed the Video schema's maxlength values in
+// backend/src/models/Video.ts, or Mongoose rejects the save with a 500.
+const TITLE_MAX = 100;
 const DESCRIPTION_MAX = 2000;
+const TAG_MAX = 50;
 const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 
 type FieldErrors = Partial<Record<"video" | "title" | "description" | "tags", string>>;
@@ -81,8 +84,8 @@ function validateVideoDetails(
   }
 
   const tags = details.tags.split(",").map((tag) => tag.trim()).filter(Boolean);
-  if (tags.some((tag) => tag.length > 60)) {
-    errors.tags = "Each tag must be at most 60 characters";
+  if (tags.some((tag) => tag.length > TAG_MAX)) {
+    errors.tags = `Each tag must be at most ${TAG_MAX} characters`;
   }
 
   return errors;
