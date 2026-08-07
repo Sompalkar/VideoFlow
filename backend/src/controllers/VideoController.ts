@@ -127,40 +127,6 @@ export class VideoController {
       await video.save();
       await video.populate("uploadedBy", "name email avatar");
 
-      // Notify all team members except uploader
-      const team = await Team.findById(teamId).populate(
-        "members.userId",
-        "email name"
-      );
-      if (team) {
-        const uploaderId = req.user!.userId;
-        // Defensive: uploadedBy may be ObjectId or User
-        const uploaderName =
-          video.uploadedBy &&
-          typeof video.uploadedBy === "object" &&
-          "name" in video.uploadedBy
-            ? (video.uploadedBy as any).name
-            : "";
-        const teamName = team.name;
-        for (const member of team.members) {
-          // Defensive: member.userId may be ObjectId or User
-          const memberUser = member.userId as any;
-          if (
-            memberUser &&
-            memberUser._id &&
-            memberUser._id.toString() !== uploaderId &&
-            memberUser.email
-          ) {
-            await EmailService.sendVideoUploadNotification(memberUser.email, {
-              videoTitle: video.title,
-              uploaderName,
-              teamName,
-              videoUrl: undefined, // Optionally add a link to the video in your frontend
-            });
-          }
-        }
-      }
-
       res.status(201).json({
         video: {
           id: video._id,
@@ -180,10 +146,63 @@ export class VideoController {
           teamId: video.teamId,
         },
       });
+
+      // Fire-and-forget: the upload has already succeeded and been reported to
+      // the client. Notification failures (e.g. SMTP timeouts) must never
+      // delay or fail the request.
+      void VideoController.notifyTeamOfUpload(
+        teamId,
+        video,
+        req.user!.userId
+      ).catch((error) => {
+        console.error("Video upload notification failed:", error);
+      });
     } catch (error) {
       console.error("Upload video error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
+  }
+
+  private static async notifyTeamOfUpload(
+    teamId: string,
+    video: any,
+    uploaderId: string
+  ): Promise<void> {
+    const team = await Team.findById(teamId).populate(
+      "members.userId",
+      "email name"
+    );
+    if (!team) return;
+
+    // Defensive: uploadedBy may be ObjectId or User
+    const uploaderName =
+      video.uploadedBy &&
+      typeof video.uploadedBy === "object" &&
+      "name" in video.uploadedBy
+        ? (video.uploadedBy as any).name
+        : "";
+
+    const recipients = team.members
+      .map((member) => member.userId as any)
+      .filter(
+        (memberUser) =>
+          memberUser &&
+          memberUser._id &&
+          memberUser._id.toString() !== uploaderId &&
+          memberUser.email
+      );
+
+    // allSettled so one bad address doesn't stop the rest.
+    await Promise.allSettled(
+      recipients.map((memberUser) =>
+        EmailService.sendVideoUploadNotification(memberUser.email, {
+          videoTitle: video.title,
+          uploaderName,
+          teamName: team.name,
+          videoUrl: undefined, // Optionally add a link to the video in your frontend
+        })
+      )
+    );
   }
 
   static async approveVideo(req: AuthRequest, res: Response): Promise<void> {
